@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,"/>
+<title>Defend the School: Phishing Sim (Grades 9-12)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f0;--surface:#fff;--surface2:#f7f9f8;--ink:#10222e;--muted:#5a6d78;--line:#d7e0dc;--teal:#0a7a68;--navy:#0f2a3d;--amber:#d97706;--amber-bg:#fef3c7;--red-bg:#fee2e2;--green-bg:#dcfce7;--green:#15803d}
+@media(prefers-color-scheme:dark){:root{--bg:#0a141e;--surface:#12202f;--surface2:#182a3d;--ink:#e8f0f2;--muted:#9ab0bc;--line:#24394d;--amber-bg:#3a2a08;--red-bg:#3d1a12;--green-bg:#123524}}
+*{box-sizing:border-box}body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+button{min-height:44px;min-width:44px}.mono{font-family:"JetBrains Mono",monospace}a{color:var(--teal)}
+.hud{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.hud-pills{display:flex;gap:8px;flex-wrap:wrap}.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600}.pill strong{color:#5eead4}
+.meter{height:8px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;width:120px;display:inline-block;vertical-align:middle;margin-left:6px}.meter i{display:block;height:100%;background:#2dd4bf;transition:width .4s}
+.wrap{max-width:1020px;margin:0 auto;padding:0 16px 40px}
+.hero{background:var(--navy);color:#fff;margin:0 -16px;padding:24px 20px 22px;border-bottom:6px solid var(--teal)}
+.hero h1{font-size:clamp(30px,6vw,48px);line-height:.95;letter-spacing:-.03em;margin:10px 0 8px}.hero h1 span{color:#5eead4}.hero p{color:#cbdce6;font-size:16px;margin:0;max-width:520px}
+.badge{display:inline-flex;background:#f59e0b;color:#111;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}@media(max-width:700px){.hero-grid{grid-template-columns:1fr}}
+.brief{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px}.brief h3{margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#5eead4}.brief ul{margin:0;padding-left:18px;color:#e2eef3;font-size:14px}.brief li{margin:4px 0}
+.section{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:18px}
+.section-head{display:flex;gap:12px;align-items:flex-start}.num{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px}
+.section h2{margin:0;font-size:22px;line-height:1.1}.section h2+p{color:var(--muted);margin:4px 0 0;font-size:15px}
+.tag{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--teal)}
+.inbox{display:grid;grid-template-columns:300px 1fr;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:14px}@media(max-width:760px){.inbox{grid-template-columns:1fr}}
+.mail-list{background:var(--surface2);border-right:1px solid var(--line)}.mail-item{width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:12px 14px;cursor:pointer;color:var(--ink)}.mail-item.active{background:var(--surface);box-shadow:inset 4px 0 0 var(--teal)}.mail-item strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mail-item span{font-size:12px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:6px}.dot.ok{background:var(--green)}.dot.bad{background:#dc2626}
+.mail-view{padding:16px;min-height:340px}.mail-meta{font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}.mail-meta b{color:var(--ink)}
+.fake-link{color:#2563eb;text-decoration:underline;cursor:help;border-bottom:1px dashed #2563eb}.url-tip{background:#111827;color:#a5f3fc;font-family:"JetBrains Mono",monospace;font-size:12px;padding:8px 10px;border-radius:8px;margin-top:8px;display:none;word-break:break-all}.url-tip.show{display:block}
+.verdicts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;font-size:14px}.btn.primary{background:var(--teal);color:#fff;border-color:var(--teal)}.btn.danger{background:#fff1f2;border-color:#fecdd3;color:#9f1239}@media(prefers-color-scheme:dark){.btn.danger{background:#3d1a24}}
+.feedback{margin-top:12px;padding:12px;border-radius:12px;font-size:14px;display:none}.feedback.show{display:block}.feedback.good{background:var(--green-bg);border:1px solid #86efac}.feedback.bad{background:var(--red-bg);border:1px solid #fca5a5}
+.flag-email{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface2);margin-top:14px;line-height:1.65}.flag{cursor:pointer;border-bottom:2px dotted var(--amber);padding:1px 2px;border-radius:3px}.flag.found{background:var(--amber-bg);font-weight:700}.flag-count{font-weight:800;color:var(--amber)}.progress-line{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}.progress-line i{display:block;height:100%;background:var(--amber);width:0;transition:width .3s}
+.scen-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}@media(max-width:700px){.scen-grid{grid-template-columns:1fr}}.scen{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface2)}.scen h4{margin:0 0 4px;font-size:15px}.scen .chan{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--teal)}.scen p{font-size:14px;color:var(--muted);margin:4px 0 8px}.opt{width:100%;text-align:left;margin-top:6px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;color:var(--ink)}.opt.correct{border-color:var(--green);background:var(--green-bg)}.opt.wrong{border-color:#dc2626;background:var(--red-bg)}.scen-fb{font-size:13px;margin-top:8px;display:none}.scen-fb.show{display:block}
+.scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}@media(max-width:600px){.scoreboard{grid-template-columns:1fr}}.stat{border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;background:var(--surface2)}.stat b{font-size:30px;display:block;line-height:1}
+.toolkit{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:600px){.toolkit{grid-template-columns:1fr}}.toolkit li{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;background:var(--surface2)}.toolkit li b{display:block}
+.cert{border:2px dashed var(--teal);border-radius:16px;padding:18px;text-align:center;margin-top:16px;background:var(--surface2)}.cert input{width:min(340px,100%);padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;text-align:center}
+.teacher{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:14px;margin-top:16px;font-size:13.5px}@media(prefers-color-scheme:dark){.teacher{background:#2a2106}}
+footer{color:var(--muted);font-size:12.5px;text-align:center;padding:18px}
+.mode-bar{padding:12px 0 2px}.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.mode-switch{grid-template-columns:1fr}}.mode-card{text-align:left;border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 16px;cursor:pointer;color:var(--ink);display:flex;gap:12px;align-items:flex-start;width:100%}.mode-card.active{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,122,104,.18)}.mode-card .icon{width:44px;height:44px;flex:0 0 44px;border-radius:12px;display:grid;place-items:center;font-size:22px}.mode-card.teacher .icon{background:#fef3c7}.mode-card.student .icon{background:#ccfbf1}.mode-card b{font-size:16px;display:block}.mode-card span{font-size:13px;color:var(--muted);display:block;margin-top:2px}.mode-card small{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:var(--teal)}
+.teacher-only{display:none!important}.student-only{display:none!important}body[data-mode="teacher"] .teacher-only{display:block!important}body[data-mode="student"] .student-only{display:block!important}body[data-mode="teacher"] li.teacher-only,body[data-mode="student"] li.student-only{display:list-item!important}body[data-mode="teacher"] span.teacher-only,body[data-mode="student"] span.student-only{display:inline!important}
+.guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}@media(max-width:760px){.guide-grid{grid-template-columns:1fr}}.guide-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface2)}.guide-card h3{margin:0 0 6px;font-size:16px}.guide-card h4{margin:12px 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal)}.guide-card ul,.guide-card ol{margin:4px 0;padding-left:18px;font-size:13.5px}.guide-card li{margin:3px 0}
+.timeline{list-style:none;padding:0!important;margin:6px 0 0!important}.timeline li{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}.timeline li:first-child{border-top:0}.time-badge{flex:0 0 68px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;background:var(--navy);color:#fff;text-align:center;padding:4px 6px;border-radius:999px;height:fit-content}
+.callout{border-radius:12px;padding:10px 12px;margin-top:12px;font-size:13.5px}.callout-teacher{background:#fffbeb;border:1px solid #fde68a}.callout-student{background:#f0fdfa;border:1px solid #99f6e4}@media(prefers-color-scheme:dark){.callout-teacher{background:#2a2106}.callout-student{background:#0b2e2a}}.callout b.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.checklist{list-style:none;padding:0;margin:6px 0 0}.checklist li{padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;background:var(--surface);font-size:13.5px;display:flex;gap:8px}.checklist li::before{content:"○";color:var(--teal);font-weight:800}
+body.present{font-size:18px}body.present .section h2{font-size:28px}body.present .hero h1{font-size:clamp(36px,7vw,60px)}
+.silent-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px}.silent-bar b{color:var(--teal)}
+.listen-btn{border:1px solid var(--line);background:var(--surface2);color:var(--muted);padding:6px 12px;border-radius:999px;font-weight:600;cursor:pointer;font-size:12.5px;min-height:36px}.listen-btn:hover{color:var(--ink);border-color:var(--teal)}
+.exit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}@media(max-width:640px){.exit-grid{grid-template-columns:1fr}}.exit-box{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);font-size:13.5px}
+.bypass-btn{position:fixed;right:10px;bottom:10px;z-index:60;background:var(--surface);color:var(--muted);border:1px solid var(--line);font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;min-height:32px;min-width:0;opacity:.72;cursor:pointer;letter-spacing:.02em}.bypass-btn:hover,.bypass-btn:focus{opacity:1;color:var(--ink)}
+.bypass-panel{position:fixed;right:10px;bottom:50px;z-index:60;width:min(236px,calc(100vw - 20px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;display:none;box-shadow:0 10px 28px rgba(0,0,0,.20);font-size:13px}.bypass-panel.open{display:block}.bypass-panel h4{margin:0 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.bypass-panel p{margin:0 0 6px;font-size:12px;color:var(--muted)}.bypass-panel button{width:100%;text-align:left;margin-top:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:13px;font-weight:600;min-height:36px;min-width:0}.bypass-panel button:hover{border-color:var(--teal)}.bypass-note{font-size:12px;color:var(--muted);margin-top:8px;min-height:16px}
+</style>
+</head>
+<body data-mode="student">
+<div class="hud"><div>🛡️ <b>DEFEND THE SCHOOL</b></div><div class="hud-pills"><span class="pill" id="modePill">MODE: STUDENT-LED</span><span class="pill">SCORE <strong id="scoreVal">0</strong> / 1400</span><span class="pill">INTEGRITY <span class="meter"><i id="meterFill" style="width:100%"></i></span> <strong id="meterVal">100%</strong></span><span class="pill" id="rankPill">RANK: TRAINEE</span></div></div>
+
+<div class="wrap">
+  <div class="mode-bar">
+    <p style="margin:4px 0 8px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:var(--muted)">Pick one — switch anytime</p>
+    <div class="mode-switch" role="group" aria-label="Choose version">
+      <button class="mode-card teacher" id="btnTeacher" onclick="setMode('teacher')"><span class="icon">👩‍🏫</span><span><small>Projected • Whole class</small><b>Teacher-Led</b><span>Teacher drives. Class reads + votes.</span></span></button>
+      <button class="mode-card student active" id="btnStudent" onclick="setMode('student')"><span class="icon">👆</span><span><small>1:1 • Self-paced • Silent OK</small><b>Student-Led</b><span>You read + tap. No sound needed.</span></span></button>
+    </div>
+  </div>
+
+  <header class="hero"><div class="hero-grid"><div>
+    <span class="badge" id="heroBadge">Grades 9–12 • Student-Led</span>
+    <h1 id="heroTitle">One click can take down <span>the whole school.</span></h1>
+    <p id="heroIntro">Spot the fakes. Protect the school.</p>
+    <p class="teacher-only" style="margin-top:8px;color:#fef3c7;font-size:14px"><strong>On screen:</strong> “You’re the security team. Vote on every message.” <span style="opacity:.85">(Read it aloud only if you want.)</span></p>
+    <p class="student-only" style="margin-top:8px;color:#ccfbf1;font-size:14px"><strong>Do:</strong> Round 1 → 2 → 3. Read each one. Check every link first.</p>
+    <p style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" onclick="document.getElementById('round1').scrollIntoView({behavior:'smooth'})">▶ Start Round 1</button><button class="btn teacher-only" id="presentBtn" onclick="togglePresent()">🔎 Bigger Text</button></p>
+  </div>
+  <aside class="brief"><h3>⚠ Know This</h3><ul>
+    <li><strong>Phishing</strong> = fake message that steals logins.</li>
+    <li><strong>Spear phishing</strong> = fake message made just for you.</li>
+    <li><strong>Rule:</strong> Check the address + link. Not the name.</li>
+  </ul></aside></div></header>
+
+  <div class="silent-bar" role="note"><span>🔇 <b>No sound needed.</b> Everything is on screen — read + tap to play.</span><span style="color:var(--muted)">Sound is off by default.</span><button class="listen-btn" id="listenIntro" type="button">🔊 Listen — optional</button><span style="font-size:12.5px;color:var(--muted)">Only if you want it. It never blocks you.</span></div>
+
+  <section class="section" id="howToRun">
+    <div class="section-head"><div class="num">◐</div><div><div class="tag">Start Here</div><h2 id="guideHeading">Your path</h2><p id="guideSub">3 rounds. 1,400 points.</p></div></div>
+
+    <div class="teacher-only"><div class="guide-grid">
+      <article class="guide-card"><h3>👩‍🏫 Teacher-Led</h3>
+        <h4>Set up — 2 min</h4><ul><li>Project this page. Turn on Bigger Text if needed.</li><li>Vote: 1 finger = Legit · 2 = Phish · 3 = Spear Phish.</li></ul>
+        <h4>Your moves</h4><ul><li>Show it. Let the class read it on screen.</li><li>Hover the link. Ask for proof.</li><li>Vote first. Reveal second.</li><li>After each one ask: “What was the clue?”</li></ul>
+      </article>
+      <article class="guide-card"><h3>⏱️ Plan — 35 min</h3><ul class="timeline">
+        <li><span class="time-badge">0–4</span><span><strong>Hook</strong> — Teach the rule above.</span></li>
+        <li><span class="time-badge">4–16</span><span><strong>Round 1</strong> — Vote on 8 emails. Pause on #3 + #5.</span></li>
+        <li><span class="time-badge">16–23</span><span><strong>Round 2</strong> — Students name each flag before you tap it.</span></li>
+        <li><span class="time-badge">23–32</span><span><strong>Round 3</strong> — Pairs debate, class votes.</span></li>
+        <li><span class="time-badge">32–35</span><span><strong>Debrief</strong> — Rank + exit ticket below.</span></li></ul>
+        <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Short on time? Round 1 only — 12 min.</p>
+      </article></div>
+      <div class="callout callout-teacher"><b class="label">Answer Key</b>1 Legit · 2 Phish · 3 Phish · 4 Legit · 5 Spear Phish · 6 Legit · 7 Phish · 8 Legit</div>
+    </div>
+
+    <div class="student-only"><div class="guide-grid">
+      <article class="guide-card"><h3>👆 How to play — read + tap</h3><ul><li><strong>1.</strong> Read the message on screen.</li><li><strong>2.</strong> Check the sender address.</li><li><strong>3.</strong> Tap the blue link. See where it really goes.</li><li><strong>4.</strong> Then pick your answer.</li></ul><p style="font-size:13px;color:var(--muted);margin:8px 0 0">No listening step. Never type a real password here.</p></article>
+      <article class="guide-card"><h3>✅ Checklist</h3><ul class="checklist"><li><span><strong>Round 1:</strong> Sort 8 emails.</span></li><li><span><strong>Round 2:</strong> Find 6 clues.</span></li><li><span><strong>Round 3:</strong> Handle 6 scams.</span></li><li><span><strong>Finish:</strong> Get your rank + certificate.</span></li></ul></article>
+    </div></div>
+  </section>
+
+  <section class="section" id="round1">
+    <div class="section-head"><div class="num">1</div><div><div class="tag">Round 1 • Inbox</div><h2>Real or fake?</h2><p>Check sender + link. Then pick. <strong id="inboxProgress">0 / 8 sorted</strong></p></div></div>
+    <div class="callout callout-teacher teacher-only"><b class="label">Pause &amp; Discuss</b>Ask: “What’s your proof?” Vote, then reveal.</div>
+    <div class="callout callout-student student-only"><b class="label">Hint</b>Read the domain letter by letter. Fake domains look off.</div>
+    <div class="inbox"><div class="mail-list" id="mailList" role="list"></div><div class="mail-view" id="mailView"></div></div>
+  </section>
+
+  <section class="section" id="round2">
+    <div class="section-head"><div class="num">2</div><div><div class="tag">Round 2 • Forensics</div><h2>Find 6 clues</h2><p>Tap each clue in the email. <span class="flag-count" id="flagCount">0 / 6 found</span></p><div class="progress-line"><i id="flagBar"></i></div></div></div>
+    <div class="flag-email" id="flagEmail">
+      <div style="font-size:13px;color:var(--muted)">From: <span class="flag" data-flag="1" data-explain="Fake domain — westfield-hs-support.com is not your school.">Principal Johnson &lt;principal@westfield-hs-support.com&gt;</span> • <span class="flag" data-flag="2" data-explain="“Deleted in 2 hours” = pressure trick.">Subject: URGENT!!! Account Deleted in 2 HOURS</span></div>
+      <p>Dear Student,</p>
+      <p>We found <span class="flag" data-flag="3" data-explain="“Unusual activity” is vague on purpose — to scare you.">unusual activity</span> on your account. Verify your password immediatly or your grades will be permenantly deleted.</p>
+      <p><span class="flag" data-flag="4" data-explain="Link looks real. It goes to weeblysite.com.">Click here: www.westfield-portal.weeblysite.com/verify</span> and enter your password and your <span class="flag" data-flag="5" data-explain="School never asks for your SSN by email.">Social Security number</span>.</p>
+      <p>Do not tell anyone about this email.</p>
+      <p><span class="flag" data-flag="6" data-explain="No name or number + “don’t tell anyone” = isolate you.">— IT Department</span></p>
+    </div>
+    <div class="feedback" id="flagFeedback"></div>
+    <div class="callout callout-teacher teacher-only"><b class="label">Pause &amp; Discuss</b>Student names the clue + why. Then you tap it.</div>
+    <div class="callout callout-student student-only"><b class="label">Hint</b>Check From + Subject too. 2 clues are up there.</div>
+  </section>
+
+  <section class="section" id="round3">
+    <div class="section-head"><div class="num">3</div><div><div class="tag">Round 3 • Beyond Email</div><h2>Not just email</h2><p>Pick the safest move. <strong id="scenProgress">0 / 6 handled</strong></p></div></div>
+    <div class="callout callout-teacher teacher-only"><b class="label">Pause &amp; Discuss</b>Pairs debate 60 seconds. Class votes. You tap.</div>
+    <div class="callout callout-student student-only"><b class="label">Hint</b>Safest move = leave the message. Go direct.</div>
+    <div class="scen-grid" id="scenGrid"></div>
+  </section>
+
+  <section class="section" id="report">
+    <div class="section-head"><div class="num">✓</div><div><div class="tag">Debrief</div><h2 id="finalHeading">Your report</h2><p id="finalSub">Finish all 3 rounds.</p></div></div>
+    <div class="scoreboard">
+      <div class="stat"><span style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">Score</span><b id="finalScore">0</b><span style="font-size:12px;color:var(--muted)">/ 1,400 pts</span></div>
+      <div class="stat"><span style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">Integrity</span><b id="finalIntegrity">100%</b><span style="font-size:12px;color:var(--muted)">No one phished = 100%</span></div>
+      <div class="stat"><span style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">Rank</span><b id="finalRank" style="font-size:22px;padding-top:6px">Trainee</b><span style="font-size:12px;color:var(--muted)" id="rankHint">Keep playing</span></div>
+    </div>
+
+    <h3 style="margin:18px 0 0;font-size:17px">Remember these 6</h3>
+    <ul class="toolkit">
+      <li><b>🔍 Check the address</b>Not the name.</li>
+      <li><b>🔗 Check the link</b>Long-press on a phone.</li>
+      <li><b>⏸️ Rush = stop</b>“Act now” is a trick.</li>
+      <li><b>🚪 Go direct</b>Open the real app or site.</li>
+      <li><b>🔐 Turn on MFA</b>Blocks stolen passwords.</li>
+      <li><b>📣 Report it</b>Tell IT + a teacher.</li>
+    </ul>
+
+    <div class="teacher-only" style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:16px">👩‍🏫 Exit Ticket</h3><div class="exit-grid">
+      <div class="exit-box"><strong>3 questions</strong><ol style="margin:6px 0;padding-left:18px"><li>Hardest phish? What was the clue?</li><li>Why does spear phishing work?</li><li>You get a “password expires” text. What 2 steps do you take?</li></ol></div>
+      <div class="exit-box"><strong>Discuss</strong><ul style="margin:6px 0;padding-left:18px"><li>How should students report a suspicious message here?</li><li>Who would an attacker fake first at our school?</li><li>Turn on MFA tonight — on what?</li></ul></div>
+    </div></div>
+
+    <div class="student-only" style="margin-top:16px"><h3 style="margin:0 0 4px;font-size:16px">✅ Quick check</h3><div class="exit-grid">
+      <div class="exit-box"><strong>Ask yourself</strong><ul style="margin:6px 0;padding-left:18px"><li>Which one almost fooled me?</li><li>Is MFA on for my main accounts?</li><li>Who would I tell if I clicked?</li></ul></div>
+      <div class="exit-box"><strong>Do one today</strong><br>Turn on MFA. Or teach someone the gift-card scam.</div>
+    </div></div>
+
+    <div class="cert"><div style="font-size:26px">🏆</div><h3 style="margin:4px 0" id="certTitle">Certificate</h3><p style="color:var(--muted);margin:0 0 10px;font-size:14px" id="certText">Type your name. Get your line.</p><input id="certName" type="text" placeholder="Your name" aria-label="Your name"/><div style="margin-top:10px"><button class="btn primary" id="certBtn">Make My Certificate</button></div><p class="mono" id="certOut" style="font-weight:700;margin-top:12px;font-size:14px"></p></div>
+
+    <div class="teacher"><strong>Teachers:</strong> Same 8 emails, 6 clues, 6 scams in both modes. Works fully silent — no speakers, headphones, or read-aloud needed. The Listen button is an optional extra only. No real passwords. All links are fake + safe.</div>
+  </section>
+  <footer>Defend the School • Grades 9–12 • All senders + links are fictional.</footer>
+</div>
+
+<script>
+function setMode(mode){
+  document.body.setAttribute('data-mode', mode);
+  document.getElementById('btnTeacher').classList.toggle('active', mode==='teacher');
+  document.getElementById('btnStudent').classList.toggle('active', mode==='student');
+  document.getElementById('modePill').textContent = mode==='teacher' ? 'MODE: TEACHER-LED' : 'MODE: STUDENT-LED';
+  if(mode==='teacher'){
+    document.getElementById('heroBadge').textContent='Grades 9–12 • Teacher-Led • 35 min';
+    document.getElementById('guideHeading').textContent='Teacher-Led: you lead, class decides';
+    document.getElementById('guideSub').textContent='Project one screen. Vote, then reveal.';
+    document.getElementById('finalHeading').textContent='Class report';
+    document.getElementById('finalSub').textContent='This is a class score.';
+    document.getElementById('certTitle').textContent='Class Certificate';
+    document.getElementById('certText').textContent='Type your class name.';
+    document.getElementById('certName').placeholder='e.g. Period 3';
+  } else {
+    document.getElementById('heroBadge').textContent='Grades 9–12 • Student-Led';
+    document.getElementById('guideHeading').textContent='Your path';
+    document.getElementById('guideSub').textContent='3 rounds. 1,400 points.';
+    document.getElementById('finalHeading').textContent='Your report';
+    document.getElementById('finalSub').textContent='Finish all 3 rounds.';
+    document.getElementById('certTitle').textContent='Certificate';
+    document.getElementById('certText').textContent='Type your name. Get your line.';
+    document.getElementById('certName').placeholder='Your name';
+  }
+}
+function togglePresent(){ document.body.classList.toggle('present'); }
+var score=0, integrity=100;
+function updateHUD(){
+  document.getElementById('scoreVal').textContent=score;
+  document.getElementById('meterFill').style.width=integrity+'%';
+  document.getElementById('meterVal').textContent=integrity+'%';
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('finalIntegrity').textContent=integrity+'%';
+  var rank='Trainee', hint='Keep playing';
+  if(score>=1200){rank='Cyber Guardian';hint='Top defender';}
+  else if(score>=900){rank='Threat Hunter';hint='Strong work';}
+  else if(score>=550){rank='Analyst';hint='Getting sharp';}
+  else if(score>=250){rank='Responder';hint='On your way';}
+  document.getElementById('finalRank').textContent=rank;
+  document.getElementById('rankHint').textContent=hint;
+  document.getElementById('rankPill').textContent='RANK: '+rank.toUpperCase();
+}
+function addScore(n, hurt){ score+=n; if(hurt) integrity=Math.max(40, integrity-6); updateHUD(); }
+
+var EMAILS=[
+ {from:'Canvas LMS', addr:'no-reply@instructure.com', subj:'Your password was reset', time:'8:02 AM', verdict:'legit', body:'<p>You asked to reset your Canvas password. Use the Canvas app or school portal. Link expires in 1 hour.</p><p><span class="fake-link" data-url="https://westfield.instructure.com/login">Reset via Canvas</span></p><p style="color:var(--muted);font-size:13px">Didn\'t ask? Ignore this. Nothing changes.</p>', why:'<strong>LEGIT.</strong> Real domain: instructure.com. No rush, no threat.'},
+ {from:'Free V-Bucks Giveaway', addr:'winner@free-vbucks-claims.xyz', subj:'🎉 You won 13,500 V-Bucks — claim NOW', time:'8:14 AM', verdict:'phish', body:'<p>You won! Claim in 10 minutes or lose it!</p><p><span class="fake-link" data-url="http://free-vbucks-claims.xyz/login — asks for your Epic password">CLAIM NOW</span></p>', why:'<strong>PHISH.</strong> Fake .xyz domain + prize asks for your password.'},
+ {from:'Westfield High School', addr:'grades@westfield-hs-schooI.com', subj:'Your report card is ready', time:'9:01 AM', verdict:'phish', body:'<p>Your report card is ready. Log in to see your grades.</p><p><span class="fake-link" data-url="https://westfield-hs-schooI.com — capital I, not l, in schooI">View report card</span></p>', why:'<strong>PHISH.</strong> Clue: capital I replaces l in “schooI.”'},
+ {from:'Mrs. Alvarez — Biology', addr:'lalvarez@westfield.k12.ms.us', subj:'Lab report extension + field trip form', time:'9:22 AM', verdict:'legit', body:'<p>Lab report now due Friday. Field trip form is in Google Classroom. Questions? Room 214.</p>', why:'<strong>LEGIT.</strong> Real school domain + details you can check in Room 214.'},
+ {from:'Principal Johnson', addr:'principal.johnson.westfield@gmail.com', subj:'Quick favor — need your help today', time:'10:05 AM', verdict:'spear', body:'<p>I\'m in a meeting. As class treasurer, buy 4 gift cards for a teacher surprise. Keep it secret. Send me the codes.</p>', why:'<strong>SPEAR PHISH.</strong> Knows your role — but Gmail + gift cards + secrecy = scam.'},
+ {from:'College Board', addr:'collegeboard@e.collegeboard.org', subj:'Your SAT scores are available', time:'10:40 AM', verdict:'legit', body:'<p>Your SAT scores are ready. Sign in on the College Board site or app.</p><p><span class="fake-link" data-url="https://account.collegeboard.org — real domain">Sign in to view scores</span></p>', why:'<strong>LEGIT.</strong> Real domain: collegeboard.org. Normal timing.'},
+ {from:'USPS Delivery', addr:'tracking@usps-delivery-alerts.net', subj:'Package held — confirm your address', time:'11:15 AM', verdict:'phish', body:'<p>Package held. Confirm your address + pay $1.99 in 24 hours.</p><p><span class="fake-link" data-url="http://usps-delivery-alerts.net — NOT usps.com">Confirm &amp; pay</span></p>', why:'<strong>PHISH.</strong> Real USPS is usps.com only. No email fees.'},
+ {from:'IT Help Desk', addr:'helpdesk@westfield.k12.ms.us', subj:'New MFA setup required by Friday', time:'11:48 AM', verdict:'legit', body:'<p>Set up MFA by Friday. Steps are on the school tech page. Help in person: Library, 2nd floor, lunch. We never ask for your password.</p>', why:'<strong>LEGIT.</strong> Real school domain + days to act + help in person.'}
+];
+var current=0, answered={};
+var listEl=document.getElementById('mailList'), viewEl=document.getElementById('mailView');
+EMAILS.forEach(function(e,i){
+  var b=document.createElement('button'); b.className='mail-item'+(i===0?' active':''); b.setAttribute('role','listitem');
+  b.innerHTML='<strong><span class="dot" id="dot'+i+'"></span>'+e.from+'</strong><span>'+e.subj+'</span><span>'+e.time+' • '+e.addr+'</span>';
+  b.onclick=function(){current=i; renderMail(); document.querySelectorAll('.mail-item').forEach(function(x,j){x.classList.toggle('active',j===i)});};
+  listEl.appendChild(b);
+});
+function renderMail(){
+  var e=EMAILS[current], done=answered[current];
+  viewEl.innerHTML='<div class="mail-meta">From: <b>'+e.from+' &lt;'+e.addr+'&gt;</b><br>Subject: <b>'+e.subj+'</b> • '+e.time+'<br><span style="font-size:12px">💡 Tap a blue link to see where it goes.</span></div>'
+   +'<div>'+e.body+'</div>'
+   +'<div class="url-tip" id="urlTip"></div>'
+   +'<div class="verdicts">'
+   +'<button class="btn" data-v="legit" '+(done?'disabled':'')+'>✅ Legit</button>'
+   +'<button class="btn danger" data-v="phish" '+(done?'disabled':'')+'>🎣 Phish</button>'
+   +'<button class="btn danger" data-v="spear" '+(done?'disabled':'')+'>🎯 Spear Phish</button>'
+   +'</div><div class="feedback '+(done?'show '+((done.correct||done.skipped)?'good':'bad'):'')+'" id="mailFb">'+(done?e.why+'<br><strong>'+(done.skipped?'Revealed — skipped':(done.correct?'+100 pts':' +25 pts'))+'</strong>':'')+'</div>';
+  viewEl.querySelectorAll('.fake-link').forEach(function(l){
+    function show(){var t=document.getElementById('urlTip'); t.textContent='Real link → '+l.getAttribute('data-url'); t.classList.add('show');}
+    l.addEventListener('mouseenter',show); l.addEventListener('click',show);
+  });
+  viewEl.querySelectorAll('[data-v]').forEach(function(btn){
+    btn.onclick=function(){
+      if(answered[current])return;
+      var correct=btn.getAttribute('data-v')===e.verdict;
+      answered[current]={correct:correct};
+      addScore(correct?100:25, !correct && e.verdict!=='legit');
+      document.getElementById('dot'+current).className='dot '+(correct?'ok':'bad');
+      document.getElementById('inboxProgress').textContent=Object.keys(answered).length+' / 8 sorted';
+      renderMail();
+    };
+  });
+}
+renderMail();
+
+var flagsFound={};
+document.querySelectorAll('.flag').forEach(function(f){
+  f.addEventListener('click',function(){
+    var id=f.getAttribute('data-flag');
+    if(flagsFound[id])return;
+    flagsFound[id]=true; f.classList.add('found');
+    var n=Object.keys(flagsFound).length;
+    document.getElementById('flagCount').textContent=n+' / 6 found';
+    document.getElementById('flagBar').style.width=(n/6*100)+'%';
+    addScore(50,false);
+    var fb=document.getElementById('flagFeedback');
+    fb.className='feedback show good'; fb.innerHTML='✅ <strong>'+n+' / 6:</strong> '+f.getAttribute('data-explain')+(n===6?'<br><strong>All 6 found!</strong>':'');
+  });
+});
+
+var SCEN=[
+ {chan:'📱 Text', title:'“Your bank account is locked”', text:'Text from a random number. Link: bank-secure-login.com. You don\'t use that bank.', opts:['Tap the link fast','Delete it. Open your real bank app if worried','Reply and ask who this is'], correct:1, why:'Don\'t tap text links. Go direct in the real app.'},
+ {chan:'📷 QR Code', title:'Sticker over a poster code', text:'QR sticker says “Free prom tickets!” It covers the real code.', opts:['Scan it','Don\'t scan. Find the official source','Scan but don\'t type anything'], correct:1, why:'A sticker QR can send you to a fake site.'},
+ {chan:'🎮 Discord DM', title:'“I reported you by mistake!”', text:'A “friend” says: talk to a mod + share the code sent to your phone or get banned.', opts:['Send the code','Never share it. That code logs them into your account','Ask the mod to prove it'], correct:1, why:'That code = your login code. Never share it.'},
+ {chan:'📞 Call', title:'“This is the school office…”', text:'Caller asks for your student ID + birthday “to verify you.” Caller ID says the school.', opts:['Give it — caller ID proves it','Hang up. Call the school number yourself','Give ID only'], correct:1, why:'Caller ID can be faked. Call the real number yourself.'},
+ {chan:'📸 Social', title:'“Is this you in this video??”', text:'DM link opens a fake Instagram login page.', opts:['Log in to see it','Close it. Open Instagram yourself. Warn your friend','Log in, then change password'], correct:1, why:'Fake login page steals your password when you type it.'},
+ {chan:'💼 Job Bait', title:'“$30/hr — just cash this check”', text:'“Internship” sends a check. Deposit it, send part back for “supplies.”', opts:['Deposit it','Say no + report it','Deposit + wait a day'], correct:1, why:'Fake check. You owe the bank when it bounces.'}
+];
+var scenDone=0;
+var grid=document.getElementById('scenGrid');
+SCEN.forEach(function(s){
+  var card=document.createElement('div'); card.className='scen';
+  card.innerHTML='<div class="chan">'+s.chan+'</div><h4>'+s.title+'</h4><p>'+s.text+'</p>';
+  var fb=document.createElement('div'); fb.className='scen-fb';
+  s.opts.forEach(function(o,oi){
+    var b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=function(){
+      if(card.dataset.done)return; card.dataset.done='1'; scenDone++;
+      document.getElementById('scenProgress').textContent=scenDone+' / 6 handled';
+      var ok=oi===s.correct;
+      b.classList.add(ok?'correct':'wrong');
+      card.querySelectorAll('.opt').forEach(function(x,xi){ if(xi===s.correct) x.classList.add('correct'); x.disabled=true; });
+      addScore(ok?100:25, !ok);
+      fb.className='scen-fb show'; fb.innerHTML=(ok?'✅ ':'❌ ')+s.why;
+    };
+    card.appendChild(b);
+  });
+  card.appendChild(fb); grid.appendChild(card);
+});
+
+document.getElementById('certBtn').addEventListener('click',function(){
+  var isTeacher=document.body.getAttribute('data-mode')==='teacher';
+  var name=document.getElementById('certName').value.trim()||(isTeacher?'Our Class':'Student Defender');
+  var rank=document.getElementById('finalRank').textContent;
+  var modeLabel=isTeacher?'Teacher-Led':'Student-Led';
+  document.getElementById('certOut').textContent='🏅 '+name+' — '+rank+' — '+modeLabel+' — '+score+'/1400 — Integrity: '+integrity+'%';
+  document.getElementById('certText').textContent='Screenshot this line.';
+});
+var _speaking=false;
+function speakOptional(text, btn){
+  if(!('speechSynthesis' in window)){ if(btn) btn.textContent='🔊 Not available here — just read on screen'; return; }
+  if(_speaking){ window.speechSynthesis.cancel(); _speaking=false; if(btn) btn.textContent='🔊 Listen — optional'; return; }
+  var u=new SpeechSynthesisUtterance(text); u.rate=1;
+  u.onend=function(){_speaking=false; if(btn) btn.textContent='🔊 Listen — optional';};
+  u.onerror=function(){_speaking=false; if(btn) btn.textContent='🔊 Listen — optional';};
+  _speaking=true; if(btn) btn.textContent='⏹ Stop';
+  window.speechSynthesis.speak(u);
+}
+var li=document.getElementById('listenIntro');
+if(li){ li.addEventListener('click',function(){ speakOptional('Defend the School. Spot the fakes. Protect the school. Check the address and the link, not the name. Round 1, sort 8 emails. Round 2, find 6 clues. Round 3, handle 6 scams.', li); }); }
+updateHUD();
+</script>
+
+<button class="bypass-btn" id="bypassBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="bypassPanel">Teacher</button>
+<div class="bypass-panel" id="bypassPanel" role="dialog" aria-label="Teacher bypass">
+  <h4>Teacher Bypass</h4>
+  <p>Jump to any round</p>
+  <button type="button" onclick="bypassJump('round1')">Round 1 — Inbox</button>
+  <button type="button" onclick="bypassJump('round2')">Round 2 — Red Flags</button>
+  <button type="button" onclick="bypassJump('round3')">Round 3 — Beyond Email</button>
+  <button type="button" onclick="bypassJump('report')">Defender Report</button>
+  <button type="button" onclick="bypassSkip()">Skip this item — reveal</button>
+  <button type="button" onclick="bypassReset()">Reset</button>
+  <div class="bypass-note" id="bypassNote" aria-live="polite"></div>
+</div>
+
+<script>
+var bypassActive='round1';
+(function(){
+  var btn=document.getElementById('bypassBtn'), panel=document.getElementById('bypassPanel');
+  btn.addEventListener('click',function(){
+    var open=panel.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open?'true':'false');
+  });
+  document.addEventListener('click',function(ev){
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && ev.target!==btn){
+      panel.classList.remove('open'); btn.setAttribute('aria-expanded','false');
+    }
+  });
+  var ids=['round1','round2','round3','report'];
+  function onScroll(){
+    var y=window.scrollY+window.innerHeight*0.35, cur='round1';
+    ids.forEach(function(id){ var el=document.getElementById(id); if(el && el.getBoundingClientRect().top+window.scrollY<=y) cur=id; });
+    bypassActive=cur;
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+function bypassNote(msg){ var n=document.getElementById('bypassNote'); if(n) n.textContent=msg; }
+function bypassJump(id){
+  bypassActive=id;
+  var el=document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  var panel=document.getElementById('bypassPanel'); panel.classList.remove('open');
+  document.getElementById('bypassBtn').setAttribute('aria-expanded','false');
+}
+function bypassReset(){ window.location.reload(); }
+function bypassSkip(){
+  if(bypassActive==='round1'){
+    if(answered[current]){ bypassNote('This email is already revealed. Pick another email to skip.'); return; }
+    answered[current]={correct:false,skipped:true};
+    var dot=document.getElementById('dot'+current); if(dot) dot.className='dot ok';
+    document.getElementById('inboxProgress').textContent=Object.keys(answered).length+' / 8 sorted';
+    renderMail();
+    bypassNote('Email revealed. No points added for a skip.');
+    return;
+  }
+  if(bypassActive==='round2'){
+    var target=null;
+    document.querySelectorAll('.flag').forEach(function(f){ if(!target && !flagsFound[f.getAttribute('data-flag')]) target=f; });
+    if(!target){ bypassNote('All 6 clues are already revealed.'); return; }
+    var id=target.getAttribute('data-flag');
+    flagsFound[id]=true; target.classList.add('found');
+    var n=Object.keys(flagsFound).length;
+    document.getElementById('flagCount').textContent=n+' / 6 found';
+    document.getElementById('flagBar').style.width=(n/6*100)+'%';
+    var fb=document.getElementById('flagFeedback');
+    fb.className='feedback show good'; fb.innerHTML='✅ <strong>'+n+' / 6:</strong> '+target.getAttribute('data-explain')+(n===6?'<br><strong>All 6 found!</strong>':'');
+    bypassNote('Clue revealed. No points added for a skip.');
+    return;
+  }
+  if(bypassActive==='round3'){
+    var cards=document.querySelectorAll('#scenGrid .scen'), doneCard=null, doneIdx=-1;
+    cards.forEach(function(c,i){ if(!doneCard && !c.dataset.done){ doneCard=c; doneIdx=i; } });
+    if(!doneCard){ bypassNote('All 6 scenarios are already handled.'); return; }
+    var s=SCEN[doneIdx];
+    doneCard.dataset.done='1'; scenDone++;
+    document.getElementById('scenProgress').textContent=scenDone+' / 6 handled';
+    doneCard.querySelectorAll('.opt').forEach(function(x,xi){ if(xi===s.correct) x.classList.add('correct'); x.disabled=true; });
+    var sfb=doneCard.querySelector('.scen-fb');
+    sfb.className='scen-fb show'; sfb.innerHTML='✅ '+s.why;
+    bypassNote('Scenario revealed. No points added for a skip.');
+    return;
+  }
+  bypassNote('Nothing to skip on the Defender Report.');
+}
+</script>
+</body>
+</html>

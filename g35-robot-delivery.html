@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Robot Delivery</title>
+<style>
+  :root{
+    --raspberry:#CD2653; --navy:#273791; --sky:#00ADEF; --teal:#13A89E;
+    --bg:#F2F8FF; --card:#FFFFFF; --ink:#1B2452; --muted:#5A6390;
+    --road:#DCEEFF; --road2:#CDE7FB; --line:#B9D9F2;
+    --good:#0E8A7D; --warnbg:#FFF3D6; --shadow:0 6px 18px rgba(39,55,145,.14);
+    --radius:18px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131A3D; --card:#1E2653; --ink:#F2F5FF; --muted:#B9C0E8;
+      --road:#2A3670; --road2:#253064; --line:#3A4790;
+      --warnbg:#4A3D14; --shadow:0 6px 18px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink);
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font-family:inherit; cursor:pointer; min-height:44px;}
+  .wrap{max-width:1060px; margin:0 auto; padding:14px 14px 90px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- Start screen ---------- */
+  .hero{text-align:center; padding:18px 8px 6px;}
+  .hero-bot{font-size:76px; line-height:1; filter:drop-shadow(0 6px 8px rgba(39,55,145,.25));}
+  h1{font-size:clamp(34px,6vw,52px); margin:8px 0 2px; color:var(--navy); font-weight:900; letter-spacing:.2px;}
+  @media (prefers-color-scheme: dark){ h1{color:#fff;} }
+  .subtitle{color:var(--raspberry); font-weight:800; font-size:clamp(15px,2.6vw,19px); margin:0 0 6px;}
+  .goal-line{font-size:clamp(17px,3vw,21px); font-weight:700; margin:6px auto 4px; max-width:560px;}
+  .quiet-note{color:var(--muted); font-weight:700; font-size:15px; margin:2px 0 0;}
+  .std-chip{display:inline-block; margin-top:10px; background:var(--card); border:2px solid var(--line);
+    color:var(--muted); border-radius:999px; padding:5px 14px; font-weight:800; font-size:13.5px;}
+  .mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:680px; margin:22px auto 0;}
+  @media (max-width:560px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-card{border:none; border-radius:22px; padding:22px 16px 18px; color:#fff; text-align:center;
+    box-shadow:var(--shadow); transition:transform .12s ease;}
+  .mode-card:active{transform:scale(.98);}
+  .mode-card .mc-icon{font-size:40px; display:block; margin-bottom:6px;}
+  .mode-card .mc-title{font-size:24px; font-weight:900; display:block;}
+  .mode-card .mc-sub{font-size:15px; font-weight:700; opacity:.92; display:block; margin-top:4px;}
+  .mode-teacher{background:var(--navy);}
+  .mode-student{background:var(--raspberry);}
+  .route-preview{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:22px auto 0; max-width:680px;}
+  .rp-chip{background:var(--card); border:2px solid var(--line); border-radius:999px; padding:7px 13px;
+    font-weight:800; font-size:14px; color:var(--ink);}
+
+  /* ---------- Play screen ---------- */
+  .topbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
+  .home-btn{background:var(--card); border:2px solid var(--line); border-radius:12px; font-size:19px;
+    width:48px; min-height:44px; padding:0;}
+  .pills{display:flex; gap:6px; flex-wrap:wrap; flex:1;}
+  .pill{border-radius:999px; padding:6px 12px; font-size:13.5px; font-weight:800;
+    background:var(--card); border:2px solid var(--line); color:var(--muted);}
+  .pill.now{background:var(--sky); border-color:var(--sky); color:#fff;}
+  .pill.done{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .stars-box{font-size:19px; font-weight:900; color:var(--navy); background:var(--card);
+    border:2px solid var(--line); border-radius:12px; padding:7px 12px; min-height:44px; display:flex; align-items:center;}
+  @media (prefers-color-scheme: dark){ .stars-box{color:#FFD94D;} }
+  .route-head{display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+  .route-title{font-size:clamp(24px,4.4vw,34px); font-weight:900; margin:2px 0; color:var(--navy);}
+  @media (prefers-color-scheme: dark){ .route-title{color:#fff;} }
+  .route-goal{font-size:clamp(16px,3vw,20px); font-weight:800; margin:0; flex:1; min-width:220px;}
+  .hear-btn{background:transparent; border:2px solid var(--line); color:var(--muted); border-radius:999px;
+    font-size:12.5px; font-weight:800; padding:4px 11px; min-height:36px; white-space:nowrap;}
+  .teacher-box{background:var(--warnbg); border-radius:var(--radius); padding:10px 16px 10px 8px; margin:10px 0;}
+  .teacher-box .tb-title{font-weight:900; font-size:14px; color:var(--navy); margin:0 0 2px 8px;}
+  @media (prefers-color-scheme: dark){ .teacher-box .tb-title{color:#FFD94D;} }
+  .teacher-box ul{margin:4px 0 4px 10px; padding-left:16px;}
+  .teacher-box li{font-weight:700; font-size:15px; margin:3px 0;}
+
+  .play-grid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:16px; margin-top:12px; align-items:start;}
+  @media (max-width:760px){ .play-grid{grid-template-columns:1fr;} }
+
+  .town-card{background:var(--card); border-radius:22px; box-shadow:var(--shadow); padding:12px;}
+  .town{display:grid; gap:5px;}
+  .cell{border-radius:12px; background:var(--road); min-height:56px; position:relative;
+    display:flex; align-items:center; justify-content:center; font-size:30px; user-select:none;}
+  button.cell{border:none; width:100%; font-family:inherit; padding:0;}
+  .cell.alt{background:var(--road2);}
+  .cell.blocked{background:#8B93B8; font-size:26px;}
+  @media (prefers-color-scheme: dark){ .cell.blocked{background:#0E1330;} }
+  .cell.depot{background:#FFE1EC; outline:3px solid var(--raspberry); outline-offset:-3px;}
+  .cell .cell-label{position:absolute; left:5px; bottom:3px; font-size:10.5px; font-weight:900; color:var(--navy);
+    background:rgba(255,255,255,.85); border-radius:6px; padding:1px 5px;}
+  @media (prefers-color-scheme: dark){ .cell .cell-label{color:#1B2452;} }
+  .cell.target{outline:4px solid var(--raspberry); outline-offset:-4px; background:#FFE1EC; animation:pulse 1.4s ease-in-out infinite;}
+  .cell.target.next2{outline-color:var(--sky); background:#D8F3FF;}
+  .cell.delivered{outline:4px solid var(--teal); outline-offset:-4px; background:#D9F6F2; animation:none;}
+  .cell.pickable{cursor:pointer; outline:3px dashed var(--sky); outline-offset:-3px;}
+  .cell .pkg{position:absolute; right:4px; top:2px; font-size:16px;}
+  .cell .done-mark{position:absolute; right:4px; top:2px; font-size:16px;}
+  .robot{font-size:36px; line-height:1; z-index:2; transition:transform .2s; filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));}
+  .robot.bonk{animation:bonk .45s ease;}
+  @keyframes bonk{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}55%{transform:translateX(6px);}80%{transform:translateX(-3px);}}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}
+  .legend{display:flex; gap:12px; flex-wrap:wrap; font-size:13.5px; font-weight:800; color:var(--muted); margin-top:9px;}
+  .feedback{margin-top:10px; border-radius:14px; padding:11px 14px; font-size:17px; font-weight:800;
+    background:var(--card); border:2px solid var(--line); min-height:52px; display:flex; align-items:center; gap:10px;}
+  .feedback.good{border-color:var(--teal); background:#D9F6F2; color:#0B5A52;}
+  .feedback.warn{border-color:#E8A100; background:var(--warnbg);}
+  @media (prefers-color-scheme: dark){ .feedback.good{color:#0B5A52;} .feedback.warn{color:#FFE9A8;} }
+  .feedback .hear-btn{margin-left:auto;}
+  .solution-banner{margin-top:10px; border-radius:14px; padding:10px 14px; background:#EFEAFF; border:2px dashed var(--navy);
+    font-weight:800; font-size:15px; display:none;}
+  @media (prefers-color-scheme: dark){ .solution-banner{background:#2A2A5E;} }
+  .solution-banner.show{display:block;}
+  .solution-banner .sol-blocks{margin-top:6px; display:flex; gap:5px; flex-wrap:wrap;}
+
+  .build-card{background:var(--card); border-radius:22px; box-shadow:var(--shadow); padding:14px;}
+  .build-label{font-weight:900; font-size:14px; color:var(--muted); margin:0 0 7px; letter-spacing:.3px;}
+  .program-strip{display:flex; flex-wrap:wrap; gap:6px; min-height:56px; border:2px dashed var(--line);
+    border-radius:14px; padding:8px; align-items:center;}
+  .program-strip .empty-msg{color:var(--muted); font-weight:700; font-size:14.5px; padding:4px;}
+  .step-block{border:none; border-radius:11px; color:#fff; font-weight:900; font-size:19px;
+    min-width:48px; min-height:48px; padding:4px 9px; position:relative; line-height:1.1;}
+  .step-block small{display:block; font-size:10px; font-weight:800; opacity:.85;}
+  .step-block.mv{background:var(--navy);}
+  .step-block.drop{background:var(--raspberry); font-size:15px;}
+  .step-block.rep{background:var(--teal); font-size:15px;}
+  .step-block.running{outline:4px solid #FFD94D; outline-offset:1px;}
+  .step-block.bad{outline:4px solid var(--raspberry); outline-offset:1px;}
+  .palette{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:6px;}
+  .pal-btn{border:none; border-radius:14px; color:#fff; font-size:27px; font-weight:900; min-height:58px;
+    box-shadow:0 3px 0 rgba(0,0,0,.18);}
+  .pal-btn:active{transform:translateY(2px); box-shadow:none;}
+  .pal-btn.up,.pal-btn.down,.pal-btn.left,.pal-btn.right{background:var(--sky); color:#083B57;}
+  .pal-btn.dropb{background:var(--raspberry); font-size:17px; grid-column:span 2;}
+  .pal-btn.undo{background:var(--card); color:var(--ink); border:2px solid var(--line); font-size:15px; box-shadow:none;}
+  .pal-btn.clearb{background:var(--card); color:var(--raspberry); border:2px solid var(--raspberry); font-size:15px; box-shadow:none;}
+  .repeat-row{display:none; margin-top:10px;}
+  .repeat-row.show{display:block;}
+  .repeat-btns{display:flex; gap:8px; flex-wrap:wrap;}
+  .rep-btn{flex:1; min-width:104px; border:none; border-radius:14px; background:var(--teal); color:#fff;
+    font-size:16.5px; font-weight:900; min-height:54px; box-shadow:0 3px 0 rgba(0,0,0,.18); padding:4px;}
+  .rep-btn small{display:block; font-size:11px; font-weight:800; opacity:.9;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .run-btn{flex:1; min-width:130px; background:var(--teal); color:#fff; border:none; border-radius:16px;
+    font-size:21px; font-weight:900; min-height:60px; box-shadow:0 4px 0 rgba(0,0,0,.18);}
+  .run-btn:disabled{opacity:.45;}
+  .step-btn{background:var(--navy); color:#fff; border:none; border-radius:16px; font-size:16px; font-weight:900;
+    min-height:60px; padding:0 18px; display:none;}
+  .step-btn.show{display:block;}
+  .step-btn:disabled{opacity:.45;}
+  .hint-btn{background:var(--card); border:2px solid var(--sky); color:var(--navy); border-radius:16px;
+    font-size:16px; font-weight:900; min-height:60px; padding:0 18px;}
+  @media (prefers-color-scheme: dark){ .hint-btn{color:#9ADCFB;} }
+  .next-btn{width:100%; margin-top:10px; background:var(--raspberry); color:#fff; border:none; border-radius:16px;
+    font-size:20px; font-weight:900; min-height:58px; display:none;}
+  .next-btn.show{display:block;}
+  .block-count{font-size:14px; font-weight:800; color:var(--muted); margin-top:8px;}
+  .star-burst{position:relative; height:0;}
+  .burst-star{position:absolute; font-size:26px; animation:burst 1s ease-out forwards; pointer-events:none;}
+  @keyframes burst{0%{transform:translate(0,0) scale(.4); opacity:1;}100%{transform:translate(var(--dx),var(--dy)) scale(1.25); opacity:0;}}
+
+  /* ---------- Vocab screen ---------- */
+  .vocab-head{text-align:center; padding-top:14px;}
+  .vocab-head .big{font-size:52px;}
+  .vocab-head h2{font-size:clamp(27px,5vw,38px); font-weight:900; color:var(--navy); margin:4px 0;}
+  @media (prefers-color-scheme: dark){ .vocab-head h2{color:#fff;} }
+  .vocab-head p{font-weight:800; font-size:17px; margin:2px 0 0;}
+  .chip-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:620px; margin:20px auto 0;}
+  @media (max-width:480px){ .chip-grid{grid-template-columns:1fr;} }
+  .vocab-chip{border:none; border-radius:18px; color:#fff; font-size:23px; font-weight:900; padding:20px 12px;
+    box-shadow:var(--shadow);}
+  .vocab-chip:nth-child(1){background:var(--raspberry);}
+  .vocab-chip:nth-child(2){background:var(--navy);}
+  .vocab-chip:nth-child(3){background:var(--teal);}
+  .vocab-chip:nth-child(4){background:var(--sky); color:#083B57;}
+  .def-box{max-width:620px; margin:16px auto 0; background:var(--card); border:2px solid var(--line);
+    border-radius:18px; padding:18px; font-size:20px; font-weight:800; text-align:center; min-height:86px;
+    display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
+  .def-box .def-word{color:var(--raspberry);}
+  .again-row{max-width:620px; margin:18px auto 0; display:flex; gap:10px; flex-wrap:wrap;}
+  .again-btn{flex:1; min-width:180px; background:var(--navy); color:#fff; border:none; border-radius:16px;
+    font-size:18px; font-weight:900; min-height:56px;}
+  .final-stars{text-align:center; font-size:21px; font-weight:900; margin-top:14px; color:var(--navy);}
+  @media (prefers-color-scheme: dark){ .final-stars{color:#FFD94D;} }
+
+  /* ---------- Teacher bypass ---------- */
+  #teacherBtn{position:fixed; right:0; top:46%; z-index:60; background:var(--card);
+    border:1.5px solid rgba(120,128,160,.5); border-right:none; color:rgba(120,128,160,.95);
+    border-radius:10px 0 0 10px; writing-mode:vertical-rl;
+    font-size:11.5px; font-weight:700; letter-spacing:1.5px; padding:12px 3px; min-height:84px; opacity:.6;}
+  #teacherBtn:hover,#teacherBtn:focus{opacity:1;}
+  #teacherPanel{position:fixed; inset:0; z-index:70; display:none; align-items:flex-end; justify-content:center;
+    background:rgba(15,20,50,.45);}
+  #teacherPanel.open{display:flex;}
+  .tp-card{background:var(--card); color:var(--ink); width:min(480px,100%); max-height:88vh; overflow:auto;
+    border-radius:22px 22px 0 0; padding:18px 18px 26px; box-shadow:var(--shadow);}
+  @media (min-width:640px){ #teacherPanel{align-items:center;} .tp-card{border-radius:22px;} }
+  .tp-card h3{margin:0 0 2px; font-size:20px; font-weight:900;}
+  .tp-card .tp-sub{color:var(--muted); font-weight:700; font-size:13.5px; margin:0 0 12px;}
+  .tp-label{font-size:12.5px; font-weight:900; color:var(--muted); letter-spacing:.4px; margin:14px 0 6px;}
+  .tp-jump{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .tp-btn{border:2px solid var(--line); background:var(--bg); color:var(--ink); border-radius:12px;
+    font-size:15px; font-weight:800; padding:9px 10px; min-height:48px; text-align:left;}
+  .tp-btn:active{background:var(--road);}
+  .tp-actions{display:grid; grid-template-columns:1fr; gap:8px;}
+  .tp-close{width:100%; margin-top:16px; background:var(--navy); color:#fff; border:none; border-radius:12px;
+    font-size:16px; font-weight:900; min-height:50px;}
+  .tp-sol{margin-top:8px; display:none; background:#EFEAFF; border:2px dashed var(--navy); border-radius:12px; padding:10px 12px;}
+  @media (prefers-color-scheme: dark){ .tp-sol{background:#2A2A5E;} }
+  .tp-sol.show{display:block;}
+  .tp-sol .sol-blocks{display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;}
+  .mini-block{border-radius:8px; color:#fff; font-weight:900; font-size:14px; padding:5px 9px;}
+  .mini-block.mv{background:var(--navy);} .mini-block.drop{background:var(--raspberry);} .mini-block.rep{background:var(--teal);}
+
+  @media (prefers-reduced-motion: reduce){
+    .cell.target{animation:none;} .robot.bonk{animation:none;} .burst-star{animation:none; opacity:0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- Teacher bypass: present on every screen -->
+<button id="teacherBtn" aria-haspopup="dialog">Teacher</button>
+<div id="teacherPanel" role="dialog" aria-modal="true" aria-label="Teacher tools">
+  <div class="tp-card">
+    <h3>Teacher Tools</h3>
+    <p class="tp-sub">Jump, skip, reveal, or reset — works in both modes.</p>
+    <p class="tp-label">JUMP TO…</p>
+    <div class="tp-jump">
+      <button class="tp-btn" data-jump="0">1 · Delivery Route 1</button>
+      <button class="tp-btn" data-jump="1">2 · Delivery Route 2</button>
+      <button class="tp-btn" data-jump="2">3 · Loop Street</button>
+      <button class="tp-btn" data-jump="3">4 · Free Delivery</button>
+      <button class="tp-btn" data-jump="vocab" style="grid-column:span 2;">★ Word Power (vocabulary)</button>
+    </div>
+    <p class="tp-label">THIS ACTIVITY</p>
+    <div class="tp-actions">
+      <button class="tp-btn" id="tpSkip">⏭ Skip this step</button>
+      <button class="tp-btn" id="tpReveal">👀 Reveal the solution route</button>
+      <button class="tp-btn" id="tpReset">↺ Reset this activity</button>
+    </div>
+    <div class="tp-sol" id="tpSol"></div>
+    <button class="tp-close" id="tpClose">Close</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ START ============ -->
+  <section class="screen active" id="screen-start">
+    <div class="hero">
+      <div class="hero-bot" aria-hidden="true">🤖📦</div>
+      <h1>Robot Delivery</h1>
+      <p class="subtitle">CS Education Week · Center for Cyber Education</p>
+      <p class="goal-line">Deliver the packages! Build steps. Press Run. 🚚</p>
+      <p class="quiet-note">🔇 No sound needed — read and play.</p>
+      <div><span class="std-chip">Grades 3–5 · Standard AP.1B.4 · Steps &amp; Loops</span></div>
+    </div>
+    <div class="mode-grid">
+      <button class="mode-card mode-teacher" id="modeTeacher">
+        <span class="mc-icon">👩‍🏫</span>
+        <span class="mc-title">Teacher-Led</span>
+        <span class="mc-sub">For the projector · We build together</span>
+      </button>
+      <button class="mode-card mode-student" id="modeStudent">
+        <span class="mc-icon">⭐</span>
+        <span class="mc-title">Student-Led</span>
+        <span class="mc-sub">On your own · Earn stars</span>
+      </button>
+    </div>
+    <div class="route-preview" aria-hidden="true">
+      <span class="rp-chip">1 · Route 1 🏠</span>
+      <span class="rp-chip">2 · Route 2 🏠🏠</span>
+      <span class="rp-chip">3 · Loop Street ↻</span>
+      <span class="rp-chip">4 · Free Delivery 🗺️</span>
+    </div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="screen-play">
+    <div class="topbar">
+      <button class="home-btn" id="homeBtn" aria-label="Back to start">🏠</button>
+      <div class="pills" id="pills"></div>
+      <div class="stars-box" id="starsBox">⭐ 0</div>
+    </div>
+    <div class="route-head">
+      <div>
+        <h2 class="route-title" id="routeTitle">Route 1</h2>
+        <p class="route-goal" id="routeGoal"></p>
+      </div>
+      <button class="hear-btn" id="hearGoal">🔊 Hear it · optional</button>
+    </div>
+    <div class="teacher-box" id="teacherBox" style="display:none;">
+      <p class="tb-title">💬 Talk about it</p>
+      <ul id="teacherPrompts"></ul>
+    </div>
+    <div class="play-grid">
+      <div>
+        <div class="town-card">
+          <div class="town" id="town"></div>
+          <div class="legend"><span>🤖 Robot</span><span>🏠 House</span><span>🚧 Blocked</span><span>📦 Package</span></div>
+        </div>
+        <div class="star-burst" id="burst"></div>
+        <div class="feedback" id="feedback"><span id="feedbackText">Build your steps, then press Run.</span>
+          <button class="hear-btn" id="hearFeedback">🔊 Hear it · optional</button></div>
+        <div class="solution-banner" id="solutionBanner"></div>
+      </div>
+      <div class="build-card">
+        <p class="build-label">YOUR PROGRAM — tap a step to remove it</p>
+        <div class="program-strip" id="programStrip"></div>
+        <p class="build-label" style="margin-top:12px;">ADD STEPS</p>
+        <div class="palette">
+          <button class="pal-btn up" data-add="U" aria-label="Add up">↑</button>
+          <button class="pal-btn left" data-add="L" aria-label="Add left">←</button>
+          <button class="pal-btn down" data-add="D" aria-label="Add down">↓</button>
+          <button class="pal-btn right" data-add="R" aria-label="Add right">→</button>
+          <button class="pal-btn dropb" data-add="DROP">📦 Drop</button>
+          <button class="pal-btn undo" id="undoBtn">⌫ Undo</button>
+          <button class="pal-btn clearb" id="clearBtn">Clear</button>
+        </div>
+        <div class="repeat-row" id="repeatRow">
+          <p class="build-label">↻ REPEAT — one block, many steps!</p>
+          <div class="repeat-btns">
+            <button class="rep-btn" data-rep="2">Repeat 2 × →<small>goes right 2 times</small></button>
+            <button class="rep-btn" data-rep="3">Repeat 3 × →<small>goes right 3 times</small></button>
+            <button class="rep-btn" data-rep="4">Repeat 4 × →<small>goes right 4 times</small></button>
+            <button class="rep-btn" data-rep="5">Repeat 5 × →<small>goes right 5 times</small></button>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="run-btn" id="runBtn">▶ Run</button>
+          <button class="step-btn" id="stepBtn">👣 One Step</button>
+          <button class="hint-btn" id="hintBtn">💡 Hint</button>
+        </div>
+        <p class="block-count" id="blockCount"></p>
+        <button class="next-btn" id="nextBtn">Next ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VOCAB ============ -->
+  <section class="screen" id="screen-vocab">
+    <div class="topbar">
+      <button class="home-btn" id="homeBtn2" aria-label="Back to start">🏠</button>
+      <div class="pills"><span class="pill done">Routes ✓</span><span class="pill now">Word Power</span></div>
+      <div class="stars-box" id="starsBox2">⭐ 0</div>
+    </div>
+    <div class="vocab-head">
+      <div class="big" aria-hidden="true">🎉🤖📦</div>
+      <h2>Great delivering!</h2>
+      <p>Tap a word. Read what it means.</p>
+      <button class="hear-btn" id="hearVocab" style="margin-top:8px;">🔊 Hear it · optional</button>
+    </div>
+    <div class="teacher-box" id="teacherBox2" style="display:none; max-width:620px; margin-left:auto; margin-right:auto;">
+      <p class="tb-title">💬 Talk about it</p>
+      <ul>
+        <li>Use each word in a sentence.</li>
+        <li>Which word fits Loop Street?</li>
+        <li>When did we debug today?</li>
+      </ul>
+    </div>
+    <div class="chip-grid">
+      <button class="vocab-chip" data-word="algorithm">algorithm</button>
+      <button class="vocab-chip" data-word="program">program</button>
+      <button class="vocab-chip" data-word="loop">loop</button>
+      <button class="vocab-chip" data-word="debug">debug</button>
+    </div>
+    <div class="def-box" id="defBox"><span>👆 Tap a word above.</span></div>
+    <p class="final-stars" id="finalStars"></p>
+    <div class="again-row">
+      <button class="again-btn" id="againBtn">↺ Play Again</button>
+      <button class="again-btn" id="freeBtn" style="background:var(--teal);">🗺️ Free Delivery</button>
+    </div>
+  </section>
+
+</main>
+<script>
+(function(){
+"use strict";
+var DIRS={U:{dx:0,dy:-1,arrow:"↑"},D:{dx:0,dy:1,arrow:"↓"},L:{dx:-1,dy:0,arrow:"←"},R:{dx:1,dy:0,arrow:"→"}};
+
+var ROUTES=[
+ { id:"r1", name:"Delivery Route 1", short:"Route 1",
+   goal:"Deliver 📦 to the pink house.",
+   cols:5, rows:4, start:{x:0,y:2},
+   blocked:[[1,0],[1,1],[3,2]],
+   deco:[[0,0],[4,0],[4,3]],
+   targets:[{x:2,y:0,label:"A"}],
+   solution:[{t:"move",d:"R"},{t:"move",d:"R"},{t:"move",d:"U"},{t:"move",d:"U"},{t:"drop"}],
+   repeat:false,
+   prompts:["What is our goal?","What step comes first?","How do we fix a bonk?"] },
+ { id:"r2", name:"Delivery Route 2", short:"Route 2",
+   goal:"Deliver to House A first, then House B. Watch out — a street is blocked!",
+   cols:5, rows:4, start:{x:0,y:0},
+   blocked:[[2,0],[0,2],[2,3]],
+   deco:[[3,0],[0,3]],
+   targets:[{x:4,y:0,label:"A"},{x:4,y:3,label:"B"}],
+   solution:[{t:"move",d:"D"},{t:"move",d:"R"},{t:"move",d:"R"},{t:"move",d:"R"},{t:"move",d:"R"},
+             {t:"move",d:"U"},{t:"drop"},
+             {t:"move",d:"D"},{t:"move",d:"D"},{t:"move",d:"D"},{t:"drop"}],
+   repeat:false,
+   prompts:["Which house is first?","How do we get around the blocked street?","What is longer than Route 1?"] },
+ { id:"r3", name:"Loop Street", short:"Loop Street",
+   goal:"Deliver 📦 to the pink house. Try REPEAT — use fewer blocks!",
+   cols:6, rows:3, start:{x:0,y:1},
+   blocked:[[2,0],[3,2]],
+   deco:[[0,0],[5,2],[0,2]],
+   targets:[{x:5,y:1,label:"A"}],
+   solution:[{t:"repeat",d:"R",n:5},{t:"drop"}],
+   solutionAlt:"Repeat 5 × → , then Drop — just 2 blocks!",
+   repeat:true,
+   prompts:["What steps repeat?","How does Repeat save blocks?","Which program is shorter?"] },
+ { id:"r4", name:"Free Delivery", short:"Free Delivery",
+   goal:"Tap a house to pick it. Then deliver 📦 your way!",
+   cols:5, rows:4, start:{x:0,y:3},
+   blocked:[[1,2],[3,2]],
+   deco:[],
+   targets:[], freeHouses:[{x:0,y:0,label:"A"},{x:4,y:0,label:"B"},{x:2,y:0,label:"C"},{x:4,y:3,label:"D"}],
+   solution:null,
+   repeat:true,
+   prompts:["Pick a house together.","Plan before you press Run.","What would you debug?"] }
+];
+
+var VOCAB={
+ algorithm:"A list of steps to solve a problem.",
+ program:"Steps a computer follows.",
+ loop:"Steps that repeat again and again.",
+ debug:"Find a mistake and fix it."
+};
+
+var mode="student";           // "student" | "teacher"
+var routeIdx=0;
+var program=[];               // tokens: {t:'move',d} {t:'drop'} {t:'repeat',d,n}
+var robot={x:0,y:0};
+var delivered=[];             // booleans per target
+var selectedFree=-1;          // index into freeHouses
+var bonks=0;
+var totalStars=0;
+var running=false;
+var stepQueue=null, stepPos=0; // for teacher Step mode
+var currentScreen="start";
+var lastFeedback="Build your steps, then press Run.";
+var lastDefText="";
+
+function $(id){return document.getElementById(id);}
+function route(){return ROUTES[routeIdx];}
+function key(x,y){return x+","+y;}
+function isBlocked(r,x,y){
+  if(x<0||y<0||x>=r.cols||y>=r.rows) return true;
+  for(var i=0;i<r.blocked.length;i++){ if(r.blocked[i][0]===x&&r.blocked[i][1]===y) return true; }
+  return false;
+}
+function activeTargets(){
+  var r=route();
+  if(r.id==="r4"){
+    if(selectedFree<0) return [];
+    return [r.freeHouses[selectedFree]];
+  }
+  return r.targets;
+}
+function speak(text){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.rate=0.95;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---------- screens ---------- */
+function showScreen(name){
+  currentScreen=name;
+  $("screen-start").classList.toggle("active",name==="start");
+  $("screen-play").classList.toggle("active",name==="play");
+  $("screen-vocab").classList.toggle("active",name==="vocab");
+  window.scrollTo(0,0);
+}
+function loadRoute(idx){
+  routeIdx=idx;
+  var r=route();
+  program=[]; bonks=0; running=false; stepQueue=null; stepPos=0;
+  robot={x:r.start.x,y:r.start.y};
+  selectedFree=-1;
+  delivered=activeTargets().map(function(){return false;});
+  $("solutionBanner").className="solution-banner";
+  $("solutionBanner").innerHTML="";
+  $("routeTitle").textContent=r.name;
+  $("routeGoal").textContent=r.goal;
+  // teacher prompts
+  if(mode==="teacher"){
+    $("teacherBox").style.display="block";
+    $("teacherPrompts").innerHTML=r.prompts.map(function(p){return "<li>"+p+"</li>";}).join("");
+  } else { $("teacherBox").style.display="none"; }
+  $("starsBox").style.display=(mode==="student")?"flex":"none";
+  $("stepBtn").classList.toggle("show",mode==="teacher");
+  $("repeatRow").classList.toggle("show",!!r.repeat);
+  setFeedback(r.id==="r4" ? "Tap a house first, then build steps." : "Build your steps, then press Run.","");
+  renderPills(); renderTown(); renderProgram(); updateNext();
+  showScreen("play");
+}
+function renderPills(){
+  var html="";
+  for(var i=0;i<ROUTES.length;i++){
+    var cls="pill"+(i===routeIdx?" now":(i<routeIdx?" done":""));
+    html+='<span class="'+cls+'">'+(i+1)+" · "+ROUTES[i].short+"</span>";
+  }
+  html+='<span class="pill">Words</span>';
+  $("pills").innerHTML=html;
+}
+function setFeedback(text,kind){
+  lastFeedback=text;
+  $("feedbackText").textContent=text;
+  $("feedback").className="feedback"+(kind?" "+kind:"");
+}
+function updateNext(){
+  var btn=$("nextBtn");
+  var r=route();
+  var show=false, label="Next ▶";
+  if(mode==="teacher"){ show=true; }
+  else if(delivered.length>0 && delivered.every(function(d){return d;})){ show=true; }
+  if(r.id==="r4"){ label="Word Power ★ ▶"; if(mode==="teacher") show=true; }
+  else if(routeIdx===ROUTES.length-1){ label="Finish ▶"; }
+  btn.textContent=label;
+  btn.classList.toggle("show",show);
+}
+
+/* ---------- town ---------- */
+function renderTown(highlightStep){
+  var r=route();
+  var town=$("town");
+  town.style.gridTemplateColumns="repeat("+r.cols+",1fr)";
+  var targets=activeTargets();
+  var html="";
+  for(var y=0;y<r.rows;y++){
+    for(var x=0;x<r.cols;x++){
+      var cls="cell"+(((x+y)%2===0)?"":" alt");
+      var content="", label="", extra="";
+      var blocked=isBlocked(r,x,y) && !(x>=0&&y>=0&&x<r.cols&&y<r.rows&&false);
+      var isB=false;
+      for(var b=0;b<r.blocked.length;b++){ if(r.blocked[b][0]===x&&r.blocked[b][1]===y) isB=true; }
+      if(x===r.start.x&&y===r.start.y){ cls+=" depot"; label="DEPOT"; }
+      if(isB){ cls+=" blocked"; content="🚧"; }
+      // deco houses
+      for(var d=0;d<r.deco.length;d++){ if(r.deco[d][0]===x&&r.deco[d][1]===y && !isB) content="🏠"; }
+      // free houses
+      var isFreeHouse=false, freeLabel="";
+      if(r.id==="r4"){
+        for(var f=0;f<r.freeHouses.length;f++){
+          var fh=r.freeHouses[f];
+          if(fh.x===x&&fh.y===y){
+            isFreeHouse=true; freeLabel=fh.label;
+            content="🏠"; label="House "+fh.label;
+            if(f===selectedFree){ cls+=(delivered[0]?" delivered":" target"); if(!delivered[0]) extra='<span class="pkg">📦</span>'; }
+            else cls+=" pickable";
+            if(f===selectedFree&&delivered[0]) extra='<span class="done-mark">✅</span>';
+          }
+        }
+      }
+      // targets
+      for(var t=0;t<targets.length;t++){
+        var tg=targets[t];
+        if(tg.x===x&&tg.y===y && r.id!=="r4"){
+          content="🏠"; label="House "+tg.label;
+          if(delivered[t]){ cls+=" delivered"; extra='<span class="done-mark">✅</span>'; }
+          else{
+            var isNext=(t===0||delivered[t-1]);
+            cls+=" target"+(t>0?" next2":"");
+            if(isNext) extra='<span class="pkg">📦</span>';
+          }
+        }
+      }
+      if(robot.x===x&&robot.y===y){
+        content='<span class="robot" id="robotEl">🤖</span>'+(content&&content!=="🏠"?"":"");
+        if(isB) content='<span class="robot" id="robotEl">🤖</span>';
+        // keep house visible behind robot on target cells
+        var onHouse=false;
+        for(var t2=0;t2<targets.length;t2++){ if(targets[t2].x===x&&targets[t2].y===y) onHouse=true; }
+        if(r.id==="r4"&&selectedFree>=0&&r.freeHouses[selectedFree].x===x&&r.freeHouses[selectedFree].y===y) onHouse=true;
+        if(onHouse) content='<span class="robot" id="robotEl">🤖</span><span style="font-size:19px;">🏠</span>';
+      }
+      var inner=content+extra+(label?'<span class="cell-label">'+label+"</span>":"");
+      if(isFreeHouse){
+        html+='<button type="button" class="'+cls+'" data-cell="'+x+","+y+'" aria-label="Pick House '+freeLabel+'">'+inner+"</button>";
+      } else {
+        html+='<div class="'+cls+'">'+inner+"</div>";
+      }
+    }
+  }
+  town.innerHTML=html;
+  if(r.id==="r4"){
+    var cells=town.querySelectorAll("[data-cell]");
+    for(var c=0;c<cells.length;c++){
+      cells[c].addEventListener("click",function(){
+        var parts=this.getAttribute("data-cell").split(",");
+        pickFreeHouse(parseInt(parts[0],10),parseInt(parts[1],10));
+      });
+    }
+  }
+}
+function pickFreeHouse(x,y){
+  if(running) return;
+  var r=route();
+  for(var f=0;f<r.freeHouses.length;f++){
+    if(r.freeHouses[f].x===x&&r.freeHouses[f].y===y){
+      selectedFree=f; delivered=[false];
+      robot={x:r.start.x,y:r.start.y}; stepQueue=null;
+      setFeedback("House "+r.freeHouses[f].label+" picked! Build your route.","");
+      renderTown(); updateNext();
+      return;
+    }
+  }
+}
+
+/* ---------- program ---------- */
+function tokenLabel(tok){
+  if(tok.t==="move") return DIRS[tok.d].arrow;
+  if(tok.t==="drop") return "📦 Drop";
+  if(tok.t==="repeat") return "↻ "+tok.n+" × "+DIRS[tok.d].arrow;
+  return "?";
+}
+function tokenClass(tok){ return tok.t==="move"?"mv":(tok.t==="drop"?"drop":"rep"); }
+function renderProgram(runningIdx,badIdx){
+  var strip=$("programStrip");
+  if(program.length===0){
+    strip.innerHTML='<span class="empty-msg">No steps yet. Tap arrows below. 👇</span>';
+  } else {
+    var html="";
+    for(var i=0;i<program.length;i++){
+      var cls="step-block "+tokenClass(program[i]);
+      if(runningIdx===i) cls+=" running";
+      if(badIdx===i) cls+=" bad";
+      html+='<button class="'+cls+'" data-step="'+i+'" aria-label="Remove step '+(i+1)+'"><small>STEP '+(i+1)+"</small>"+tokenLabel(program[i])+"</button>";
+    }
+    strip.innerHTML=html;
+    var btns=strip.querySelectorAll("[data-step]");
+    for(var b=0;b<btns.length;b++){
+      btns[b].addEventListener("click",function(){
+        if(running) return;
+        program.splice(parseInt(this.getAttribute("data-step"),10),1);
+        stepQueue=null;
+        renderProgram();
+      });
+    }
+  }
+  var bc=$("blockCount");
+  if(route().id==="r3"){
+    bc.textContent="Blocks used: "+program.length+(program.length<=3?" — Pro size! ⭐":" — can Repeat make it smaller?");
+  } else {
+    bc.textContent=program.length?("Blocks used: "+program.length):"";
+  }
+}
+function expandProgram(){
+  var steps=[];
+  for(var i=0;i<program.length;i++){
+    var tok=program[i];
+    if(tok.t==="move") steps.push({kind:"move",d:tok.d,src:i});
+    else if(tok.t==="drop") steps.push({kind:"drop",src:i});
+    else if(tok.t==="repeat"){ for(var k=0;k<tok.n;k++) steps.push({kind:"move",d:tok.d,src:i}); }
+  }
+  return steps;
+}
+
+/* ---------- pathfinding hint (BFS) ---------- */
+function bfsHint(){
+  var r=route(); var targets=activeTargets();
+  if(targets.length===0) return "Tap a house first! 🏠";
+  var ti=0; while(ti<targets.length&&delivered[ti]) ti++;
+  if(ti>=targets.length) return "All delivered! 🎉";
+  var goal=targets[ti];
+  var seen={}, prev={}, q=[[robot.x,robot.y]];
+  seen[key(robot.x,robot.y)]=true;
+  var found=false;
+  while(q.length){
+    var cur=q.shift();
+    if(cur[0]===goal.x&&cur[1]===goal.y){ found=true; break; }
+    for(var d in DIRS){
+      var nx=cur[0]+DIRS[d].dx, ny=cur[1]+DIRS[d].dy;
+      if(isBlocked(r,nx,ny)||seen[key(nx,ny)]) continue;
+      seen[key(nx,ny)]=true; prev[key(nx,ny)]={from:key(cur[0],cur[1]),dir:d};
+      q.push([nx,ny]);
+    }
+  }
+  if(!found) return "That house cannot be reached. Try another house.";
+  if(robot.x===goal.x&&robot.y===goal.y) return "You are at the house — add 📦 Drop!";
+  var k=key(goal.x,goal.y), firstDir=null;
+  while(prev[k]){ firstDir=prev[k].dir; k=prev[k].from; }
+  return "Hint: from here, go "+DIRS[firstDir].arrow+" next.";
+}
+
+/* ---------- run engine ---------- */
+function execOneStep(step,done){
+  var r=route();
+  if(step.kind==="move"){
+    var nx=robot.x+DIRS[step.d].dx, ny=robot.y+DIRS[step.d].dy;
+    var blockedCell=false;
+    for(var b=0;b<r.blocked.length;b++){ if(r.blocked[b][0]===nx&&r.blocked[b][1]===ny) blockedCell=true; }
+    if(blockedCell||nx<0||ny<0||nx>=r.cols||ny>=r.rows){
+      bonks++;
+      renderTown();
+      var el=$("robotEl"); if(el) el.classList.add("bonk");
+      setFeedback("Bonk! 🚧 That street is blocked. Check step "+(step.src+1)+".","warn");
+      renderProgram(-1,step.src);
+      done(false);
+      return;
+    }
+    robot.x=nx; robot.y=ny;
+    renderTown(); renderProgram(step.src,-1);
+    done(true);
+    return;
+  }
+  if(step.kind==="drop"){
+    var targets=activeTargets();
+    var ti=0; while(ti<targets.length&&delivered[ti]) ti++;
+    if(ti<targets.length && targets[ti].x===robot.x && targets[ti].y===robot.y){
+      delivered[ti]=true;
+      renderTown(); renderProgram(step.src,-1);
+      burst();
+      if(delivered.every(function(d){return d;})){ finishSuccess(); }
+      else setFeedback("Delivered! 📦 Now House "+targets[ti+1].label+".","good");
+      done(true);
+    } else {
+      setFeedback("No house to deliver here. Check step "+(step.src+1)+".","warn");
+      renderProgram(-1,step.src);
+      done(false);
+    }
+    return;
+  }
+  done(true);
+}
+function burst(){
+  if(mode!=="student" && mode!=="teacher") return;
+  var box=$("burst"); box.innerHTML="";
+  var glyphs=["⭐","✨","⭐"];
+  for(var i=0;i<3;i++){
+    var s=document.createElement("span");
+    s.className="burst-star"; s.textContent=glyphs[i];
+    s.style.left=(40+i*9)+"%"; s.style.top="-6px";
+    s.style.setProperty("--dx",((i-1)*46)+"px");
+    s.style.setProperty("--dy",(-34-Math.abs(i-1)*10)+"px");
+    box.appendChild(s);
+  }
+  setTimeout(function(){ box.innerHTML=""; },1100);
+}
+function finishSuccess(){
+  running=false; stepQueue=null;
+  var r=route();
+  var msg="You did it! 🎉 Package delivered!";
+  var stars=0;
+  if(r.id==="r3"){
+    if(program.length<=3){ msg="Pro move: fewer blocks! 🎉 You used the loop!"; stars=3; }
+    else { msg="You did it! 🎉 Now try Repeat to use fewer blocks."; stars=2; }
+  } else {
+    stars=(bonks===0)?3:2;
+    if(r.id==="r2") msg="You did it! 🎉 Both houses delivered!";
+    if(r.id==="r4") msg="You did it! 🎉 Delivered your way!";
+  }
+  if(mode==="student"){
+    totalStars+=stars;
+    $("starsBox").textContent="⭐ "+totalStars;
+    msg+=" "+"⭐".repeat(stars);
+  }
+  setFeedback(msg,"good");
+  renderProgram(-1,-1); updateNext();
+}
+function runProgram(){
+  if(running) return;
+  var r=route();
+  if(r.id==="r4"&&selectedFree<0){ setFeedback("Tap a house first! 🏠","warn"); return; }
+  if(program.length===0){ setFeedback("Add some steps first! 👇","warn"); return; }
+  // reset robot + deliveries for a fresh run
+  robot={x:r.start.x,y:r.start.y};
+  delivered=activeTargets().map(function(){return false;});
+  renderTown();
+  var steps=expandProgram();
+  running=true; $("runBtn").disabled=true; $("stepBtn").disabled=true;
+  var i=0;
+  function tick(){
+    if(i>=steps.length){
+      running=false; $("runBtn").disabled=false; $("stepBtn").disabled=false;
+      renderProgram(-1,-1);
+      if(!(delivered.length>0&&delivered.every(function(d){return d;}))){
+        if(lastFeedback.indexOf("Delivered")===-1 && lastFeedback.indexOf("You did it")===-1)
+          setFeedback("Robot stopped. Add more steps.","warn");
+      }
+      updateNext();
+      return;
+    }
+    execOneStep(steps[i],function(ok){
+      i++;
+      if(!ok){ running=false; $("runBtn").disabled=false; $("stepBtn").disabled=false; updateNext(); return; }
+      if(delivered.length>0&&delivered.every(function(d){return d;})){
+        running=false; $("runBtn").disabled=false; $("stepBtn").disabled=false; updateNext(); return;
+      }
+      setTimeout(tick,560);
+    });
+  }
+  setTimeout(tick,300);
+}
+function stepOnce(){
+  // Teacher step-by-step: executes one expanded step per tap
+  var r=route();
+  if(r.id==="r4"&&selectedFree<0){ setFeedback("Tap a house first! 🏠","warn"); return; }
+  if(program.length===0){ setFeedback("Add some steps first! 👇","warn"); return; }
+  if(!stepQueue){
+    robot={x:r.start.x,y:r.start.y};
+    delivered=activeTargets().map(function(){return false;});
+    stepQueue=expandProgram(); stepPos=0;
+    renderTown();
+  }
+  if(stepPos>=stepQueue.length){
+    setFeedback("Program finished. Press ↺ or edit steps.","");
+    stepQueue=null; return;
+  }
+  var st=stepQueue[stepPos];
+  execOneStep(st,function(ok){
+    stepPos++;
+    if(!ok){ stepQueue=null; return; }
+    if(delivered.length>0&&delivered.every(function(d){return d;})){ stepQueue=null; }
+    updateNext();
+  });
+}
+function resetActivity(){
+  var r=route();
+  program=[]; bonks=0; running=false; stepQueue=null; stepPos=0;
+  robot={x:r.start.x,y:r.start.y};
+  if(r.id==="r4"){ selectedFree=-1; delivered=[]; }
+  else delivered=r.targets.map(function(){return false;});
+  $("solutionBanner").className="solution-banner"; $("solutionBanner").innerHTML="";
+  $("runBtn").disabled=false; $("stepBtn").disabled=false;
+  setFeedback("Fresh start! Build your steps.","");
+  renderTown(); renderProgram(); updateNext();
+}
+
+/* ---------- solution display ---------- */
+function blocksHTML(tokens){
+  return tokens.map(function(tok){
+    return '<span class="mini-block '+tokenClass(tok)+'">'+tokenLabel(tok)+"</span>";
+  }).join("");
+}
+function freeSolution(){
+  // BFS shortest route for the selected free house
+  var r=route();
+  if(selectedFree<0) return null;
+  var goal=r.freeHouses[selectedFree];
+  var start=r.start;
+  var seen={}, prev={}, q=[[start.x,start.y]];
+  seen[key(start.x,start.y)]=true; var found=false;
+  while(q.length){
+    var cur=q.shift();
+    if(cur[0]===goal.x&&cur[1]===goal.y){ found=true; break; }
+    for(var d in DIRS){
+      var nx=cur[0]+DIRS[d].dx, ny=cur[1]+DIRS[d].dy;
+      if(isBlocked(r,nx,ny)||seen[key(nx,ny)]) continue;
+      seen[key(nx,ny)]=true; prev[key(nx,ny)]={from:key(cur[0],cur[1]),dir:d};
+      q.push([nx,ny]);
+    }
+  }
+  if(!found) return null;
+  var dirs=[], k=key(goal.x,goal.y);
+  while(prev[k]){ dirs.unshift(prev[k].dir); k=prev[k].from; }
+  var toks=dirs.map(function(d){return {t:"move",d:d};});
+  toks.push({t:"drop"});
+  return toks;
+}
+function currentSolution(){
+  var r=route();
+  if(r.id==="r4") return freeSolution();
+  return r.solution;
+}
+function revealSolution(){
+  var sol=currentSolution();
+  var r=route();
+  if(!sol){
+    return r.id==="r4" ? "Pick a house first — then I can show a route." : "No solution for this screen.";
+  }
+  var note=r.solutionAlt?(" "+r.solutionAlt):"";
+  return {html:'<strong>Solution for '+r.name+':</strong><div class="sol-blocks">'+blocksHTML(sol)+"</div>"+(note?'<div style="margin-top:5px;">'+note+"</div>":"")};
+}
+
+/* ---------- events: play ---------- */
+var palBtns=document.querySelectorAll("[data-add]");
+for(var p=0;p<palBtns.length;p++){
+  palBtns[p].addEventListener("click",function(){
+    if(running) return;
+    var v=this.getAttribute("data-add");
+    if(v==="DROP") program.push({t:"drop"});
+    else program.push({t:"move",d:v});
+    stepQueue=null;
+    renderProgram();
+  });
+}
+var repBtns=document.querySelectorAll("[data-rep]");
+for(var q2=0;q2<repBtns.length;q2++){
+  repBtns[q2].addEventListener("click",function(){
+    if(running) return;
+    program.push({t:"repeat",d:"R",n:parseInt(this.getAttribute("data-rep"),10)});
+    stepQueue=null;
+    renderProgram();
+  });
+}
+$("undoBtn").addEventListener("click",function(){ if(running)return; program.pop(); stepQueue=null; renderProgram(); });
+$("clearBtn").addEventListener("click",function(){ if(running)return; program=[]; stepQueue=null; renderProgram(); });
+$("runBtn").addEventListener("click",runProgram);
+$("stepBtn").addEventListener("click",stepOnce);
+$("hintBtn").addEventListener("click",function(){
+  if(route().id==="r4"&&selectedFree<0){ setFeedback("Tap a house first! 🏠","warn"); return; }
+  setFeedback("💡 "+bfsHint(),"");
+});
+$("nextBtn").addEventListener("click",function(){
+  if(routeIdx<ROUTES.length-1) loadRoute(routeIdx+1);
+  else showVocab();
+});
+$("homeBtn").addEventListener("click",function(){ showScreen("start"); });
+$("homeBtn2").addEventListener("click",function(){ showScreen("start"); });
+$("hearGoal").addEventListener("click",function(){ speak(route().goal); });
+$("hearFeedback").addEventListener("click",function(){ speak(lastFeedback); });
+
+/* ---------- vocab ---------- */
+function showVocab(){
+  showScreen("vocab");
+  $("teacherBox2").style.display=(mode==="teacher")?"block":"none";
+  $("starsBox2").style.display=(mode==="student")?"flex":"none";
+  $("starsBox2").textContent="⭐ "+totalStars;
+  $("finalStars").textContent=(mode==="student")?("You earned ⭐ "+totalStars+"!"):"";
+  $("defBox").innerHTML="<span>👆 Tap a word above.</span>";
+  lastDefText="";
+}
+var chips=document.querySelectorAll("[data-word]");
+for(var c2=0;c2<chips.length;c2++){
+  chips[c2].addEventListener("click",function(){
+    var w=this.getAttribute("data-word");
+    lastDefText=w+" — "+VOCAB[w];
+    $("defBox").innerHTML='<span><span class="def-word">'+w+"</span> — "+VOCAB[w]+'</span> <button class="hear-btn" id="hearDef">🔊 Hear it · optional</button>';
+    $("hearDef").addEventListener("click",function(){ speak(lastDefText); });
+  });
+}
+$("hearVocab").addEventListener("click",function(){ speak("Great delivering! Tap a word. Read what it means."); });
+$("againBtn").addEventListener("click",function(){ totalStars=0; $("starsBox").textContent="⭐ 0"; showScreen("start"); });
+$("freeBtn").addEventListener("click",function(){ loadRoute(3); });
+
+/* ---------- start / modes ---------- */
+$("modeTeacher").addEventListener("click",function(){ mode="teacher"; totalStars=0; loadRoute(0); });
+$("modeStudent").addEventListener("click",function(){ mode="student"; totalStars=0; $("starsBox").textContent="⭐ 0"; loadRoute(0); });
+
+/* ---------- teacher bypass ---------- */
+var panel=$("teacherPanel");
+$("teacherBtn").addEventListener("click",function(){ panel.classList.add("open"); $("tpSol").className="tp-sol"; $("tpSol").innerHTML=""; });
+$("tpClose").addEventListener("click",function(){ panel.classList.remove("open"); });
+panel.addEventListener("click",function(e){ if(e.target===panel) panel.classList.remove("open"); });
+var jumpBtns=panel.querySelectorAll("[data-jump]");
+for(var j=0;j<jumpBtns.length;j++){
+  jumpBtns[j].addEventListener("click",function(){
+    var v=this.getAttribute("data-jump");
+    panel.classList.remove("open");
+    if(v==="vocab") showVocab();
+    else loadRoute(parseInt(v,10));
+  });
+}
+$("tpSkip").addEventListener("click",function(){
+  panel.classList.remove("open");
+  if(currentScreen==="start"){ loadRoute(0); return; }
+  if(currentScreen==="vocab"){ showScreen("start"); return; }
+  if(routeIdx<ROUTES.length-1) loadRoute(routeIdx+1);
+  else showVocab();
+});
+$("tpReveal").addEventListener("click",function(){
+  var box=$("tpSol");
+  if(currentScreen!=="play"){
+    box.className="tp-sol show";
+    box.innerHTML="Open a route first — tap a route above, then Reveal.";
+    return;
+  }
+  var res=revealSolution();
+  if(typeof res==="string"){ box.className="tp-sol show"; box.innerHTML=res; return; }
+  box.className="tp-sol show"; box.innerHTML=res.html;
+  // also show banner on the play screen so the class can see it after closing
+  var banner=$("solutionBanner");
+  banner.className="solution-banner show"; banner.innerHTML=res.html;
+});
+$("tpReset").addEventListener("click",function(){
+  panel.classList.remove("open");
+  if(currentScreen==="play") resetActivity();
+  else if(currentScreen==="vocab") showVocab();
+  else showScreen("start");
+});
+})();
+</script>
+</body>
+</html>

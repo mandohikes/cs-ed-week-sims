@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Train a Machine: Machine Learning Sim (Grades 6-8) (Gemini Version)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F6F9; --card:#FFFFFF; --ink:#17233B; --muted:#5A6B84;
+    --teal:#0E7C7B; --teal-dark:#0A5E5D; --amber:#F2A81D; --amber-soft:#FEF3D8;
+    --coral:#D9481C; --coral-soft:#FDECE6; --green:#237A45; --green-soft:#E2F4E8;
+    --dog:#F2A81D; --dog-soft:#FEF3D8; --cat:#0E7C7B; --cat-soft:#E0F2F1;
+    --line:#D8E2EC; --shadow:0 10px 28px rgba(23,35,59,.10);
+    --radius:20px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101826; --card:#1B2739; --ink:#F2F6FB; --muted:#A9BCD4;
+      --teal:#2FB3B1; --teal-dark:#2FB3B1; --amber:#F5B83D; --amber-soft:#3A2F14;
+      --coral:#FF7A52; --coral-soft:#40231A; --green:#4CC477; --green-soft:#173626;
+      --dog-soft:#3A2F14; --cat-soft:#123B3A; --line:#33445E;
+      --shadow:0 10px 28px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Nunito",system-ui,-apple-system,sans-serif;
+    font-size:18px; line-height:1.35;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font-family:inherit; cursor:pointer; min-height:52px;}
+  h1,h2,h3{font-family:"Fredoka","Nunito",sans-serif; margin:0; line-height:1.1;}
+  .wrap{max-width:860px; margin:0 auto; padding:16px 16px 56px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:6px 0 12px;}
+  .topbar .spacer{flex:1;}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--card); border:2px solid var(--line); border-radius:999px;
+    padding:6px 14px; font-weight:800; font-size:.85rem;
+  }
+  .chip.mode{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+  .listen-btn, .home-btn{
+    border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:999px; padding:8px 18px; font-weight:900; font-size:.95rem;
+    display:inline-flex; align-items:center; gap:8px; min-height:48px;
+  }
+  .home-btn:active{transform:scale(.97);}
+  /* Voice is OPTIONAL — small, quiet, secondary. Nothing requires listening. */
+  .listen-btn{
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+    padding:6px 12px; font-weight:700; font-size:.82rem; min-height:40px; opacity:.9;
+  }
+  .listen-btn:active{transform:scale(.97);}
+  .listen-btn.speaking{background:var(--amber-soft); border-color:var(--amber); color:var(--ink);}
+  .sound-note{
+    text-align:center; font-weight:800; font-size:.92rem; color:var(--muted);
+    background:var(--bg); border:2px solid var(--line); border-radius:12px;
+    padding:10px 14px; margin:18px auto 0; max-width:560px; line-height:1.4;
+  }
+  .sound-note b{color:var(--ink);}
+  .visual-prompt{
+    text-align:center; font-weight:900; font-size:1.08rem; line-height:1.35;
+    background:var(--bg); border:2px solid var(--line); border-radius:14px;
+    padding:12px 16px; margin:0 auto 16px; max-width:560px;
+  }
+  .visual-prompt:empty{display:none;}
+
+  /* ---------- progress ---------- */
+  .progress{display:flex; gap:6px; margin:4px 0 20px;}
+  .pstep{
+    flex:1; text-align:center; font-size:.78rem; font-weight:900; color:var(--muted);
+    padding-top:8px; position:relative;
+  }
+  .pstep::before{
+    content:""; display:block; height:10px; border-radius:99px;
+    background:var(--line); margin-bottom:6px;
+  }
+  .pstep.done{color:var(--green);}
+  .pstep.done::before{background:var(--green);}
+  .pstep.now{color:var(--teal-dark);}
+  .pstep.now::before{background:var(--teal);}
+  @media (prefers-color-scheme: dark){ .pstep.now{color:var(--teal);} }
+
+  /* ---------- screens ---------- */
+  .screen{display:none;}
+  .screen.on{display:block; animation:pop .25s ease;}
+  @keyframes pop{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){ .screen.on{animation:none;} }
+
+  .card{
+    background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:24px;
+  }
+  .center{text-align:center;}
+  .stepline{
+    font-size:1.25rem; font-weight:900; text-align:center; margin:0 0 18px;
+  }
+  .stepline .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:50%; background:var(--teal); color:#fff;
+    font-size:1rem; margin-right:8px; vertical-align:middle;
+  }
+
+  /* ---------- start screen ---------- */
+  .hero-emoji{font-size:4.2rem; text-align:center; display:block; margin:6px 0 2px;}
+  .start-title{font-size:2.3rem; text-align:center; font-weight:700;}
+  .start-sub{text-align:center; font-weight:800; color:var(--muted); margin:8px 0 4px; font-size:1.05rem;}
+  .version-tag{text-align:center; margin:10px 0 22px;}
+  .version-tag span{
+    background:var(--amber-soft); border:2px solid var(--amber); color:var(--ink);
+    font-weight:900; font-size:.82rem; border-radius:999px; padding:5px 14px;
+    display:inline-block; white-space:nowrap; max-width:100%;
+  }
+  @media (max-width:480px){ .version-tag span{font-size:.7rem; padding:5px 10px;} }
+  .mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:560px){ .mode-grid{grid-template-columns:1fr;} .start-title{font-size:1.9rem;} }
+  .mode-btn{
+    border:3px solid var(--line); background:var(--card); border-radius:var(--radius);
+    padding:22px 18px; text-align:center; color:var(--ink); box-shadow:var(--shadow);
+  }
+  .mode-btn:hover{border-color:var(--teal);}
+  .mode-btn .big{font-size:2.4rem; display:block; margin-bottom:6px;}
+  .mode-btn .name{font-family:"Fredoka",sans-serif; font-size:1.35rem; font-weight:600; display:block;}
+  .mode-btn .desc{font-size:.92rem; font-weight:800; color:var(--muted); display:block; margin-top:4px;}
+  .how-row{
+    display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:22px;
+    font-weight:900; font-size:.9rem; color:var(--muted);
+  }
+  .how-row span{background:var(--card); border:2px solid var(--line); border-radius:999px; padding:6px 14px;}
+
+  /* ---------- teacher panel ---------- */
+  .teacher-panel{
+    display:none; background:var(--amber-soft); border:2px dashed var(--amber);
+    border-radius:16px; padding:14px 18px; margin:0 0 18px;
+  }
+  body.teacher .teacher-panel{display:block;}
+  .teacher-panel h3{font-size:.95rem; margin-bottom:6px;}
+  .teacher-panel ul{margin:0; padding-left:20px; font-weight:700; font-size:.95rem;}
+  .teacher-panel li{margin:3px 0;}
+
+  /* ---------- picture card ---------- */
+  .pic-stage{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0 4px;}
+  .pic-card{
+    width:210px; height:210px; border-radius:24px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px;
+    border:3px solid var(--line); background:var(--bg);
+    transition:transform .15s ease;
+  }
+  .pic-card.shake{animation:shake .35s ease;}
+  @keyframes shake{0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);}}
+  @media (prefers-reduced-motion: reduce){ .pic-card.shake{animation:none;} }
+  .pic-emoji{font-size:6rem; line-height:1.1;}
+  .pic-emoji.small{font-size:4rem;}
+  .pic-emoji.large{font-size:7.2rem;}
+  .pic-name{font-family:"Fredoka",sans-serif; font-weight:600; font-size:1.25rem;}
+  .pic-count{font-weight:900; color:var(--muted); font-size:.95rem;}
+
+  /* ---------- sort buttons ---------- */
+  .sort-row{display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:520px; margin:16px auto 0; width:100%;}
+  .sort-btn{
+    border-radius:18px; border:3px solid; padding:16px 10px;
+    font-family:"Fredoka",sans-serif; font-size:1.5rem; font-weight:600; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; gap:2px; min-height:96px; justify-content:center;
+  }
+  .sort-btn .e{font-size:2.4rem;}
+  .sort-btn.dog{background:var(--dog-soft); border-color:var(--dog);}
+  .sort-btn.cat{background:var(--cat-soft); border-color:var(--cat);}
+  .sort-btn:active{transform:scale(.96);}
+
+  /* ---------- piles ---------- */
+  .piles{display:flex; gap:12px; justify-content:center; margin-bottom:16px; flex-wrap:wrap;}
+  .pile{
+    border-radius:16px; padding:10px 18px; text-align:center; min-width:140px;
+    border:2px solid; font-weight:900;
+  }
+  .pile.dog{background:var(--dog-soft); border-color:var(--dog);}
+  .pile.cat{background:var(--cat-soft); border-color:var(--cat);}
+  .pile .count{font-family:"Fredoka",sans-serif; font-size:1.7rem; font-weight:700; display:block; line-height:1;}
+  .pile .lbl{font-size:.85rem;}
+
+  /* ---------- feedback ---------- */
+  .feedback{
+    min-height:34px; text-align:center; font-weight:900; font-size:1.1rem; margin-top:16px;
+  }
+  .feedback.good{color:var(--green);}
+  .feedback.bad{color:var(--coral);}
+
+  /* ---------- big next button ---------- */
+  .big-next{
+    display:none; margin:18px auto 0; background:var(--teal); color:#fff; border:none;
+    border-radius:999px; padding:16px 42px; font-size:1.2rem; font-weight:900;
+    font-family:"Fredoka",sans-serif; letter-spacing:.02em; min-height:60px;
+  }
+  .big-next.show{display:block;}
+  .big-next:active{transform:scale(.97);}
+  .big-next.amber{background:var(--amber); color:#17233B;}
+
+  /* ---------- machine test ---------- */
+  .machine-box{
+    max-width:520px; margin:14px auto 0; width:100%;
+    border:3px solid var(--line); border-radius:18px; padding:16px; text-align:center;
+    background:var(--bg); min-height:118px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px;
+  }
+  .machine-box .m-label{font-weight:900; color:var(--muted); font-size:.9rem;}
+  .machine-says{font-family:"Fredoka",sans-serif; font-size:1.9rem; font-weight:700; display:none;}
+  .machine-says.show{display:block;}
+  .stamp{
+    display:none; font-family:"Fredoka",sans-serif; font-weight:700; font-size:1.15rem;
+    border-radius:999px; padding:6px 20px;
+  }
+  .stamp.show{display:inline-block;}
+  .stamp.right{background:var(--green-soft); color:var(--green); border:2px solid var(--green);}
+  .stamp.wrong{background:var(--coral-soft); color:var(--coral); border:2px solid var(--coral);}
+  .thinking{display:none; font-weight:900; color:var(--muted); font-size:1.1rem;}
+  .thinking.show{display:block;}
+  .thinking .dot{animation:blink 1s infinite;}
+  .thinking .dot:nth-child(2){animation-delay:.2s;} .thinking .dot:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,100%{opacity:.2;} 50%{opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .thinking .dot{animation:none;} }
+
+  .score-box{max-width:520px; margin:16px auto 0; width:100%;}
+  .score-line{display:flex; justify-content:space-between; font-weight:900; margin-bottom:6px;}
+  .score-line .pct{font-family:"Fredoka",sans-serif; font-size:1.3rem;}
+  .bar-track{height:22px; border-radius:99px; background:var(--line); overflow:hidden;}
+  .bar-fill{height:100%; width:0%; background:var(--teal); border-radius:99px; transition:width .5s ease;}
+  .bar-fill.low{background:var(--coral);}
+  .bar-fill.mid{background:var(--amber);}
+
+  .result-line{
+    display:none; text-align:center; font-family:"Fredoka",sans-serif;
+    font-size:1.35rem; font-weight:600; margin-top:20px;
+  }
+  .result-line.show{display:block;}
+
+  /* ---------- bias screen ---------- */
+  .bias-bars{max-width:520px; margin:6px auto 0;}
+  .bias-row{margin-bottom:16px;}
+  .bias-row .score-line{margin-bottom:6px;}
+  .emoji-strip{font-size:1.5rem; letter-spacing:2px; text-align:center; margin-top:14px; word-break:break-all;}
+  .unbalanced{font-size:3.4rem; text-align:center; display:block; margin:4px 0;}
+
+  /* ---------- quiz ---------- */
+  .quiz-q{
+    font-family:"Fredoka",sans-serif; font-size:1.5rem; font-weight:600;
+    text-align:center; margin-bottom:18px;
+  }
+  .quiz-opts{display:flex; flex-direction:column; gap:12px; max-width:520px; margin:0 auto;}
+  .quiz-opt{
+    background:var(--card); border:3px solid var(--line); border-radius:16px;
+    padding:16px 18px; font-size:1.12rem; font-weight:900; color:var(--ink); text-align:center;
+    min-height:60px;
+  }
+  .quiz-opt:active{transform:scale(.98);}
+  .quiz-opt.picked-right{border-color:var(--green); background:var(--green-soft);}
+  .quiz-opt.picked-wrong{border-color:var(--coral); background:var(--coral-soft);}
+  .quiz-opt:disabled{opacity:.85; cursor:default;}
+
+  /* ---------- done screen ---------- */
+  .compare{max-width:540px; margin:0 auto;}
+  .compare .bias-row{margin-bottom:18px;}
+  .stars{font-size:2.8rem; text-align:center; letter-spacing:6px; margin:10px 0 2px;}
+  .done-title{font-size:2rem; text-align:center;}
+  .done-line{text-align:center; font-weight:900; color:var(--muted); margin-top:6px;}
+  .vocab-row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:22px;}
+  .vocab-row span{
+    background:var(--bg); border:2px solid var(--line); border-radius:12px;
+    padding:8px 14px; font-weight:900; font-size:.92rem;
+  }
+  .vocab-row b{color:var(--teal-dark);}
+  @media (prefers-color-scheme: dark){ .vocab-row b{color:var(--teal);} }
+  .again-btn{
+    display:block; margin:24px auto 0; background:var(--ink); color:var(--bg); border:none;
+    border-radius:999px; padding:15px 38px; font-size:1.1rem; font-weight:900; min-height:58px;
+    font-family:"Fredoka",sans-serif;
+  }
+
+  /* ---------- teacher bypass (additive) ---------- */
+  .tb-btn{
+    position:fixed; right:10px; bottom:calc(10px + env(safe-area-inset-bottom));
+    z-index:60; min-height:32px; padding:5px 12px;
+    font-size:.72rem; font-weight:700; letter-spacing:.02em;
+    color:var(--muted); background:var(--card);
+    border:1px solid var(--line); border-radius:999px; opacity:.55;
+  }
+  .tb-btn:active{transform:scale(.96);}
+  .tb-panel{
+    position:fixed; right:10px; bottom:calc(50px + env(safe-area-inset-bottom));
+    z-index:61; width:min(300px, calc(100vw - 20px));
+    max-height:calc(100vh - 80px); overflow:auto;
+    background:var(--card); border:2px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:14px; display:none;
+  }
+  .tb-panel.open{display:block;}
+  .tb-panel h3{font-size:.95rem; margin-bottom:4px;}
+  .tb-panel .tb-label{font-size:.75rem; font-weight:900; color:var(--muted); margin:10px 0 6px;}
+  .tb-item{
+    display:block; width:100%; text-align:left; min-height:44px;
+    background:var(--bg); color:var(--ink); border:2px solid var(--line);
+    border-radius:12px; padding:9px 12px; font-weight:800; font-size:.92rem; margin-bottom:8px;
+  }
+  .tb-item:active{transform:scale(.98);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- top bar -->
+  <div class="topbar">
+    <span class="chip">🐶 Train a Machine 🐱</span>
+    <span class="chip mode" id="modeChip" style="display:none;"></span>
+    <span class="spacer"></span>
+    <button class="listen-btn" id="listenBtn" type="button" aria-label="Optional: hear this step read aloud" title="Optional — you do not need sound to play">🔊 Hear it · optional</button>
+    <button class="home-btn" id="homeBtn" type="button" style="display:none;">⟲ Start</button>
+  </div>
+
+  <!-- progress -->
+  <div class="progress" id="progress" style="display:none;">
+    <div class="pstep" data-step="1">1 · Train</div>
+    <div class="pstep" data-step="2">2 · Test</div>
+    <div class="pstep" data-step="3">3 · Bias</div>
+    <div class="pstep" data-step="4">4 · Fix It</div>
+    <div class="pstep" data-step="5">5 · Quiz</div>
+  </div>
+
+  <!-- ============ START ============ -->
+  <section class="screen on" id="screen-start">
+    <div class="card">
+      <span class="hero-emoji">🤖</span>
+      <h1 class="start-title">Train a Machine</h1>
+      <p class="start-sub">Teach a machine to sort dogs and cats.</p>
+      <div class="version-tag"><span>GEMINI VERSION · GRADES 6–8</span></div>
+      <div class="mode-grid">
+        <button class="mode-btn" type="button" data-mode="teacher">
+          <span class="big">🖥️</span>
+          <span class="name">Teacher-Led</span>
+          <span class="desc">Teacher drives. Class votes together.</span>
+        </button>
+        <button class="mode-btn" type="button" data-mode="student">
+          <span class="big">📱</span>
+          <span class="name">Student-Led</span>
+          <span class="desc">Work alone. Read and tap at your own pace.</span>
+        </button>
+      </div>
+      <p class="sound-note"><b>No sound needed.</b> Every direction is written on the screen — just read and tap. The small <b>“Hear it · optional”</b> button at the top will read a step aloud only if you want it.</p>
+      <div class="how-row">
+        <span>1 · Sort pictures</span><span>2 · Machine tries</span><span>3 · Spot the bias</span><span>4 · Fix it</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRAIN ============ -->
+  <section class="screen" id="screen-train">
+    <div class="teacher-panel" data-tp="train"></div>
+    <div class="card">
+      <p class="stepline"><span class="num">1</span>Sort each picture. Teach the machine.</p>
+      <p class="visual-prompt" id="trainPrompt">Look at the picture below. Is it a dog or a cat? Tap DOG or CAT.</p>
+      <div class="piles">
+        <div class="pile dog"><span class="count" id="trainDogCount">0</span><span class="lbl">🐶 DOG pictures</span></div>
+        <div class="pile cat"><span class="count" id="trainCatCount">0</span><span class="lbl">🐱 CAT pictures</span></div>
+      </div>
+      <div class="pic-stage">
+        <div class="pic-card" id="trainCard">
+          <span class="pic-emoji" id="trainEmoji">🐶</span>
+          <span class="pic-name" id="trainName">Buddy</span>
+        </div>
+        <span class="pic-count" id="trainCount">Picture 1 of 12</span>
+      </div>
+      <div class="sort-row">
+        <button class="sort-btn dog" type="button" data-sort="dog"><span class="e">🐶</span>DOG</button>
+        <button class="sort-btn cat" type="button" data-sort="cat"><span class="e">🐱</span>CAT</button>
+      </div>
+      <p class="feedback" id="trainFeedback" aria-live="polite"></p>
+      <button class="big-next" id="trainNext" type="button">See the machine try →</button>
+    </div>
+  </section>
+
+  <!-- ============ TEST (shared runner) ============ -->
+  <section class="screen" id="screen-test">
+    <div class="teacher-panel" data-tp="test"></div>
+    <div class="card">
+      <p class="stepline" id="testStepLine"><span class="num">2</span><span id="testLineText">Watch the machine sort new pictures.</span></p>
+      <p class="visual-prompt" id="testPrompt">Read: look at the new picture. The machine will make a guess below. Check if it is right or wrong.</p>
+      <div class="pic-stage">
+        <div class="pic-card" id="testCard">
+          <span class="pic-emoji" id="testEmoji">🐕</span>
+          <span class="pic-name" id="testName">Duke</span>
+        </div>
+        <span class="pic-count" id="testCount">New picture 1 of 8</span>
+      </div>
+      <div class="machine-box">
+        <span class="m-label">🤖 THE MACHINE SAYS</span>
+        <span class="thinking" id="testThinking">Thinking<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+        <span class="machine-says" id="testSays">🐶 DOG</span>
+        <span class="stamp" id="testStamp">✓ Right</span>
+      </div>
+      <div class="score-box">
+        <div class="score-line"><span id="testScoreText">0 / 0 right</span><span class="pct" id="testPct">—</span></div>
+        <div class="bar-track"><div class="bar-fill" id="testBar"></div></div>
+      </div>
+      <p class="result-line" id="testResult"></p>
+      <button class="big-next" id="testReveal" type="button">Reveal the machine's guess →</button>
+      <button class="big-next" id="testNextItem" type="button">Next picture →</button>
+      <button class="big-next" id="testNextScreen" type="button">Keep going →</button>
+    </div>
+  </section>
+
+  <!-- ============ BIAS ============ -->
+  <section class="screen" id="screen-bias">
+    <div class="teacher-panel" data-tp="bias"></div>
+    <div class="card">
+      <p class="stepline"><span class="num">3</span>Meet Machine 2. Look at its training.</p>
+      <p class="visual-prompt">Read the bars below. Count the dog pictures and the cat pictures. Are they balanced?</p>
+      <span class="unbalanced">⚖️</span>
+      <div class="bias-bars">
+        <div class="bias-row">
+          <div class="score-line"><span>🐶 DOG pictures</span><span class="pct">8</span></div>
+          <div class="bar-track"><div class="bar-fill mid" style="width:100%"></div></div>
+          <div class="emoji-strip">🐶🐕🐩🦮🐶🐕🐩🐶</div>
+        </div>
+        <div class="bias-row">
+          <div class="score-line"><span>🐱 CAT pictures</span><span class="pct">2</span></div>
+          <div class="bar-track"><div class="bar-fill low" style="width:25%"></div></div>
+          <div class="emoji-strip">🐱🐈</div>
+        </div>
+      </div>
+      <p class="result-line show">Lots of dogs. Almost no cats.</p>
+      <button class="big-next show" id="biasNext" type="button">Watch Machine 2 try →</button>
+    </div>
+  </section>
+
+  <!-- ============ FIX ============ -->
+  <section class="screen" id="screen-fix">
+    <div class="teacher-panel" data-tp="fix"></div>
+    <div class="card">
+      <p class="stepline"><span class="num">4</span>Add the missing cat pictures.</p>
+      <p class="visual-prompt" id="fixPrompt">Look at each new picture. Tap CAT to add it and balance the piles.</p>
+      <div class="piles">
+        <div class="pile dog"><span class="count">8</span><span class="lbl">🐶 DOG pictures</span></div>
+        <div class="pile cat"><span class="count" id="fixCatCount">2</span><span class="lbl">🐱 CAT pictures</span></div>
+      </div>
+      <div class="pic-stage">
+        <div class="pic-card" id="fixCard">
+          <span class="pic-emoji" id="fixEmoji">🐱</span>
+          <span class="pic-name" id="fixName">Luna</span>
+        </div>
+        <span class="pic-count" id="fixCount">New picture 1 of 6</span>
+      </div>
+      <div class="sort-row">
+        <button class="sort-btn dog" type="button" data-fix="dog"><span class="e">🐶</span>DOG</button>
+        <button class="sort-btn cat" type="button" data-fix="cat"><span class="e">🐱</span>CAT</button>
+      </div>
+      <p class="feedback" id="fixFeedback" aria-live="polite"></p>
+      <button class="big-next" id="fixNext" type="button">Test the fixed machine →</button>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="screen" id="screen-quiz">
+    <div class="teacher-panel" data-tp="quiz"></div>
+    <div class="card">
+      <p class="stepline"><span class="num">5</span><span id="quizCount">Question 1 of 3</span></p>
+      <p class="visual-prompt">Read the question. Tap your answer.</p>
+      <p class="quiz-q" id="quizQ"></p>
+      <div class="quiz-opts" id="quizOpts"></div>
+      <p class="feedback" id="quizFeedback" aria-live="polite"></p>
+      <button class="big-next" id="quizNext" type="button">Next →</button>
+    </div>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section class="screen" id="screen-done">
+    <div class="card">
+      <span class="hero-emoji">🏆</span>
+      <h2 class="done-title" id="doneTitle">You trained a machine!</h2>
+      <div class="stars" id="doneStars">⭐⭐⭐</div>
+      <p class="done-line" id="doneLine">Balanced data wins.</p>
+      <div class="compare" style="margin-top:24px;">
+        <div class="bias-row">
+          <div class="score-line"><span>🤖 Machine 1 · balanced training</span><span class="pct">88%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:88%"></div></div>
+        </div>
+        <div class="bias-row">
+          <div class="score-line"><span>🤖 Machine 2 · lopsided training</span><span class="pct">50%</span></div>
+          <div class="bar-track"><div class="bar-fill low" style="width:50%"></div></div>
+        </div>
+        <div class="bias-row">
+          <div class="score-line"><span>🤖 Machine 2 · after your fix</span><span class="pct">100%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+      <p class="done-line" id="doneQuizLine" style="margin-top:14px;"></p>
+      <div class="vocab-row">
+        <span><b>Training data</b> = labeled pictures</span>
+        <span><b>Bias</b> = lopsided data</span>
+        <span><b>Accuracy</b> = how often it's right</span>
+      </div>
+      <button class="again-btn" id="againBtn" type="button">↻ Play again</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- teacher bypass (additive) -->
+<button class="tb-btn" id="tbBtn" type="button" aria-haspopup="true" aria-expanded="false">Teacher</button>
+<div class="tb-panel" id="tbPanel" role="dialog" aria-label="Teacher bypass">
+  <h3>Teacher bypass</h3>
+  <p class="tb-label">JUMP TO</p>
+  <button class="tb-item" type="button" data-jump="train">Sort to train Machine 1</button>
+  <button class="tb-item" type="button" data-jump="test1">Machine 1 test</button>
+  <button class="tb-item" type="button" data-jump="bias">Machine 2 lopsided test</button>
+  <button class="tb-item" type="button" data-jump="fix">Add missing cats and re-run</button>
+  <button class="tb-item" type="button" data-jump="quiz">Quiz</button>
+  <button class="tb-item" type="button" data-jump="done">Results</button>
+  <p class="tb-label">THIS STEP</p>
+  <button class="tb-item" type="button" id="tbSkip">Skip this step</button>
+  <button class="tb-item" type="button" id="tbReset">Reset</button>
+  <button class="tb-item" type="button" id="tbClose">Close</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  var TRAIN = [
+    {e:"🐶", n:"Buddy",    t:"dog"},
+    {e:"🐱", n:"Whiskers", t:"cat"},
+    {e:"🐕", n:"Rex",      t:"dog"},
+    {e:"🐈", n:"Ginger",   t:"cat"},
+    {e:"🐩", n:"Fifi",     t:"dog"},
+    {e:"🐈‍⬛", n:"Shadow",  t:"cat"},
+    {e:"🦮", n:"Scout",    t:"dog"},
+    {e:"😺", n:"Sunny",    t:"cat"},
+    {e:"🐶", n:"Milo",     t:"dog", s:"small"},
+    {e:"🐈", n:"Tiger",    t:"cat"},
+    {e:"🐕", n:"Rocky",    t:"dog", s:"large"},
+    {e:"🐱", n:"Ivy",      t:"cat", s:"small"}
+  ];
+  var TEST = [
+    {e:"🐕", n:"Duke",     t:"dog"},
+    {e:"🐱", n:"Mochi",    t:"cat"},
+    {e:"🐩", n:"Coco",     t:"dog"},
+    {e:"🐈‍⬛", n:"Midnight", t:"cat"},
+    {e:"🐶", n:"Daisy",    t:"dog"},
+    {e:"🐈", n:"Simba",    t:"cat"},
+    {e:"🦮", n:"Hero",     t:"dog"},
+    {e:"😸", n:"Joy",      t:"cat"}
+  ];
+  /* machine guesses per phase: 1 = balanced, 2 = biased, 3 = fixed */
+  var GUESSES = {
+    1: ["dog","cat","cat","cat","dog","cat","dog","cat"],  /* misses Coco -> 7/8 */
+    2: ["dog","dog","dog","dog","dog","dog","dog","dog"],  /* guesses dog every time -> 4/8 */
+    3: ["dog","cat","dog","cat","dog","cat","dog","cat"]   /* all right -> 8/8 */
+  };
+  var TEST_META = {
+    1: {step:2, num:"2", line:"Watch the machine sort new pictures.",
+        result:"7 out of 8 right. Good training works.",
+        nextLabel:"Meet Machine 2 →", nextScreen:"bias"},
+    2: {step:3, num:"3", line:"Watch Machine 2 sort the same pictures.",
+        result:"4 out of 8 right. It guessed DOG every time.",
+        nextLabel:"Fix Machine 2 →", nextScreen:"fix"},
+    3: {step:4, num:"4", line:"Watch the fixed machine sort again.",
+        result:"8 out of 8 right. Balanced data fixed it.",
+        nextLabel:"Take the quiz →", nextScreen:"quiz"}
+  };
+  var FIX = [
+    {e:"🐱", n:"Luna",   t:"cat"},
+    {e:"🐈", n:"Ruby",   t:"cat"},
+    {e:"🐈‍⬛", n:"Pepper", t:"cat"},
+    {e:"😺", n:"Cleo",   t:"cat"},
+    {e:"🐱", n:"Nova",   t:"cat", s:"small"},
+    {e:"🐈", n:"Maple",  t:"cat"}
+  ];
+  var QUIZ = [
+    {q:"What does the machine learn from?",
+     opts:["Magic tricks","Labeled pictures","Its dreams"],
+     right:1, fb:"Right — it learns from labeled pictures."},
+    {q:"Why did Machine 2 miss the cats?",
+     opts:["Cats are too fast","The screen was dark","Too few cat pictures"],
+     right:2, fb:"Right — its training was lopsided."},
+    {q:"How do you fix a biased machine?",
+     opts:["Add the missing examples","Turn it off","Guess louder"],
+     right:0, fb:"Right — add the missing examples."}
+  ];
+  var TEACHER = {
+    train: ["Ask: “How do you know?” before each tap.",
+            "Class votes DOG or CAT out loud.",
+            "Point out: labels are the teaching."],
+    test:  ["Ask the class to predict first.",
+            "Reveal, then check the score bar.",
+            "Ask: “Why did it miss that one?”"],
+    bias:  ["Ask: “What looks unfair here?”",
+            "8 dogs, only 2 cats — say it together.",
+            "Predict: “What will it guess for cats?”"],
+    fix:   ["Students call out each label.",
+            "Watch the cat pile grow: 2 → 8.",
+            "Ask: “Is it balanced now?”"],
+    quiz:  ["Show each question on screen — class reads it.",
+            "Class votes, then reveal.",
+            "Wrong answers: revisit the piles."]
+  };
+
+  /* ---------------- state ---------------- */
+  var mode = null;               /* "teacher" | "student" */
+  var currentSay = "Pick Teacher-Led or Student-Led to start.";
+  var trainIdx = 0, trainDogs = 0, trainCats = 0, trainLock = false;
+  var fixIdx = 0, fixCats = 2, fixLock = false;
+  var testPhase = 1, testIdx = 0, testRight = 0;
+  var quizIdx = 0, quizRight = 0;
+  var timers = [];
+
+  /* ---------------- helpers ---------------- */
+  function $(id){ return document.getElementById(id); }
+  function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+
+  function speak(text){
+    currentSay = text;
+    if (!("speechSynthesis" in window)) return;
+    try{
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      $("listenBtn").classList.add("speaking");
+      u.onend = u.onerror = function(){ $("listenBtn").classList.remove("speaking"); };
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  $("listenBtn").addEventListener("click", function(){ speak(currentSay); });
+  if ("speechSynthesis" in window){
+    try{ speechSynthesis.getVoices(); }catch(e){}
+  }
+
+  function showScreen(name){
+    clearTimers();
+    var screens = document.querySelectorAll(".screen");
+    for (var i=0;i<screens.length;i++) screens[i].classList.remove("on");
+    $("screen-"+name).classList.add("on");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function setProgress(step){
+    var steps = document.querySelectorAll(".pstep");
+    for (var i=0;i<steps.length;i++){
+      var s = parseInt(steps[i].getAttribute("data-step"),10);
+      steps[i].classList.toggle("done", s < step);
+      steps[i].classList.toggle("now", s === step);
+    }
+  }
+  function fillTeacher(key){
+    var panels = document.querySelectorAll('[data-tp="'+key+'"]');
+    for (var i=0;i<panels.length;i++){
+      var items = TEACHER[key].map(function(t){ return "<li>"+t+"</li>"; }).join("");
+      panels[i].innerHTML = "<h3>👩‍🏫 TEACHER GUIDE</h3><ul>"+items+"</ul>";
+    }
+  }
+  ["train","test","bias","fix","quiz"].forEach(fillTeacher);
+
+  function setPic(emojiEl, item){
+    emojiEl.textContent = item.e;
+    emojiEl.className = "pic-emoji" + (item.s ? " "+item.s : "");
+  }
+  function barClass(pct){
+    if (pct < 60) return "bar-fill low";
+    if (pct < 85) return "bar-fill mid";
+    return "bar-fill";
+  }
+
+  /* ---------------- mode select ---------------- */
+  var modeBtns = document.querySelectorAll(".mode-btn");
+  modeBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      mode = btn.getAttribute("data-mode");
+      document.body.classList.toggle("teacher", mode === "teacher");
+      var chip = $("modeChip");
+      chip.style.display = "inline-flex";
+      chip.textContent = mode === "teacher" ? "🖥️ Teacher-Led" : "📱 Student-Led";
+      $("homeBtn").style.display = "inline-flex";
+      $("progress").style.display = "flex";
+      startTrain();
+    });
+  });
+  $("homeBtn").addEventListener("click", function(){
+    if ("speechSynthesis" in window) try{ speechSynthesis.cancel(); }catch(e){}
+    showScreen("start");
+    currentSay = "Pick Teacher-Led or Student-Led to start.";
+  });
+
+  /* ---------------- step 1: train ---------------- */
+  function startTrain(){
+    trainIdx = 0; trainDogs = 0; trainCats = 0; trainLock = false;
+    $("trainDogCount").textContent = "0";
+    $("trainCatCount").textContent = "0";
+    $("trainNext").classList.remove("show");
+    renderTrain();
+    showScreen("train");
+    setProgress(1);
+  }
+  function renderTrain(){
+    if (trainIdx >= TRAIN.length) return;
+    var item = TRAIN[trainIdx];
+    setPic($("trainEmoji"), item);
+    $("trainName").textContent = item.n;
+    $("trainCount").textContent = "Picture " + (trainIdx+1) + " of " + TRAIN.length;
+    $("trainFeedback").textContent = "";
+    $("trainFeedback").className = "feedback";
+    $("trainCard").classList.remove("shake");
+    $("trainPrompt").textContent = "This is " + item.n + ". Is " + item.n + " a dog or a cat? Tap DOG or CAT below.";
+    currentSay = "Sort each picture. Is " + item.n + " a dog or a cat?";
+  }
+  document.querySelectorAll("[data-sort]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      if (trainIdx >= TRAIN.length || trainLock) return;
+      var item = TRAIN[trainIdx];
+      var pick = btn.getAttribute("data-sort");
+      if (pick === item.t){
+        trainLock = true;
+        if (item.t === "dog"){ trainDogs++; $("trainDogCount").textContent = trainDogs; }
+        else { trainCats++; $("trainCatCount").textContent = trainCats; }
+        trainIdx++;
+        if (trainIdx >= TRAIN.length){
+          $("trainFeedback").textContent = "✓ Training done. 6 dogs, 6 cats — balanced!";
+          $("trainFeedback").className = "feedback good";
+          $("trainPrompt").textContent = "✓ Done! You labeled 6 dogs and 6 cats. That is balanced training data. Tap the button below to continue.";
+          $("trainCount").textContent = "All 12 pictures sorted";
+          currentSay = "Training done. Six dogs and six cats. Balanced.";
+          if (mode === "teacher") $("trainNext").classList.add("show");
+          else later(function(){ startTest(1); }, 1600);
+        } else {
+          $("trainFeedback").textContent = item.t === "dog" ? "✓ Yes — a dog." : "✓ Yes — a cat.";
+          $("trainFeedback").className = "feedback good";
+          later(function(){ trainLock = false; renderTrain(); }, 650);
+        }
+      } else {
+        $("trainCard").classList.remove("shake");
+        void $("trainCard").offsetWidth;
+        $("trainCard").classList.add("shake");
+        $("trainFeedback").textContent = item.t === "dog" ? "Look again — that's a dog." : "Look again — that's a cat.";
+        $("trainFeedback").className = "feedback bad";
+        currentSay = $("trainFeedback").textContent;
+      }
+    });
+  });
+  $("trainNext").addEventListener("click", function(){ startTest(1); });
+
+  /* ---------------- steps 2/3/4: machine test runner ---------------- */
+  function startTest(phase){
+    testPhase = phase; testIdx = 0; testRight = 0;
+    var meta = TEST_META[phase];
+    $("testStepLine").innerHTML = '<span class="num">'+meta.num+'</span><span>'+meta.line+'</span>';
+    setProgress(meta.step);
+    $("testResult").textContent = "";
+    $("testResult").classList.remove("show");
+    $("testNextScreen").classList.remove("show");
+    renderTestItem();
+    showScreen("test");
+  }
+  function renderTestItem(){
+    var item = TEST[testIdx];
+    setPic($("testEmoji"), item);
+    $("testName").textContent = item.n;
+    $("testCount").textContent = "New picture " + (testIdx+1) + " of " + TEST.length;
+    $("testSays").classList.remove("show");
+    $("testStamp").classList.remove("show");
+    updateScore();
+    $("testPrompt").textContent = "New picture: " + item.n + " — a " + item.t + ". What will the machine say? Watch the box below.";
+    currentSay = "New picture: " + item.n + ". What will the machine say?";
+    if (mode === "teacher"){
+      $("testThinking").classList.remove("show");
+      $("testReveal").classList.add("show");
+      $("testNextItem").classList.remove("show");
+    } else {
+      $("testReveal").classList.remove("show");
+      $("testNextItem").classList.remove("show");
+      $("testThinking").classList.add("show");
+      later(revealGuess, 1100);
+    }
+  }
+  function updateScore(){
+    var seen = testIdx; /* items already judged */
+    $("testScoreText").textContent = testRight + " / " + seen + " right";
+    if (seen === 0){ $("testPct").textContent = "—"; $("testBar").style.width = "0%"; }
+    else {
+      var pct = Math.round(testRight/seen*100);
+      $("testPct").textContent = pct + "%";
+      $("testBar").style.width = pct + "%";
+      $("testBar").className = barClass(pct);
+    }
+  }
+  function revealGuess(){
+    var item = TEST[testIdx];
+    var guess = GUESSES[testPhase][testIdx];
+    var right = guess === item.t;
+    if (right) testRight++;
+    $("testThinking").classList.remove("show");
+    $("testReveal").classList.remove("show");
+    var says = $("testSays");
+    says.textContent = guess === "dog" ? "🐶 DOG" : "🐱 CAT";
+    says.classList.add("show");
+    var stamp = $("testStamp");
+    stamp.textContent = right ? "✓ Right" : "✗ Wrong — it's a " + item.t;
+    stamp.className = "stamp show " + (right ? "right" : "wrong");
+    testIdx++;               /* now counts as judged */
+    updateScore();
+    $("testPrompt").textContent = right
+      ? "The machine said " + guess.toUpperCase() + " — ✓ Right! " + item.n + " is a " + item.t + "."
+      : "The machine said " + guess.toUpperCase() + " — ✗ Wrong. " + item.n + " is a " + item.t + ". Read the stamp below.";
+    currentSay = "The machine said " + guess + ". " + (right ? "Right." : "Wrong. It is a " + item.t + ".");
+    if (testIdx >= TEST.length){
+      later(finishTest, mode === "teacher" ? 400 : 1500);
+    } else if (mode === "teacher"){
+      $("testNextItem").classList.add("show");
+    } else {
+      later(renderTestItem, 1800);
+    }
+  }
+  function finishTest(){
+    var meta = TEST_META[testPhase];
+    $("testResult").textContent = meta.result;
+    $("testResult").classList.add("show");
+    currentSay = meta.result;
+    var btn = $("testNextScreen");
+    btn.textContent = meta.nextLabel;
+    if (mode === "teacher") btn.classList.add("show");
+    else { btn.classList.add("show"); } /* student taps to continue — one clear tap */
+  }
+  $("testReveal").addEventListener("click", revealGuess);
+  $("testNextItem").addEventListener("click", renderTestItem);
+  $("testNextScreen").addEventListener("click", function(){
+    var next = TEST_META[testPhase].nextScreen;
+    if (next === "bias") startBias();
+    else if (next === "fix") startFix();
+    else if (next === "quiz") startQuiz();
+  });
+
+  /* ---------------- step 3: bias ---------------- */
+  function startBias(){
+    setProgress(3);
+    showScreen("bias");
+    currentSay = "Machine Two. Lots of dogs. Almost no cats. Its training is lopsided.";
+  }
+  $("biasNext").addEventListener("click", function(){ startTest(2); });
+
+  /* ---------------- step 4: fix ---------------- */
+  function startFix(){
+    fixIdx = 0; fixCats = 2; fixLock = false;
+    $("fixCatCount").textContent = "2";
+    $("fixNext").classList.remove("show");
+    renderFix();
+    showScreen("fix");
+    setProgress(4);
+  }
+  function renderFix(){
+    if (fixIdx >= FIX.length) return;
+    var item = FIX[fixIdx];
+    setPic($("fixEmoji"), item);
+    $("fixName").textContent = item.n;
+    $("fixCount").textContent = "New picture " + (fixIdx+1) + " of " + FIX.length;
+    $("fixFeedback").textContent = "";
+    $("fixFeedback").className = "feedback";
+    $("fixCard").classList.remove("shake");
+    $("fixPrompt").textContent = "This is " + item.n + ", a cat. Tap CAT to add " + item.n + " and balance the piles.";
+    currentSay = "Add the missing cat pictures. Is " + item.n + " a dog or a cat?";
+  }
+  document.querySelectorAll("[data-fix]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      if (fixIdx >= FIX.length || fixLock) return;
+      var item = FIX[fixIdx];
+      var pick = btn.getAttribute("data-fix");
+      if (pick === item.t){
+        fixLock = true;
+        fixCats++;
+        $("fixCatCount").textContent = fixCats;
+        fixIdx++;
+        if (fixIdx >= FIX.length){
+          $("fixFeedback").textContent = "✓ Balanced now — 8 dogs, 8 cats!";
+          $("fixFeedback").className = "feedback good";
+          $("fixPrompt").textContent = "✓ Done! The piles are balanced now — 8 dogs and 8 cats. Tap the button below to test the fixed machine.";
+          $("fixCount").textContent = "All 6 pictures added";
+          currentSay = "Balanced now. Eight dogs, eight cats.";
+          $("fixNext").classList.add("show");
+        } else {
+          $("fixFeedback").textContent = "✓ Added. Cat pile: " + fixCats;
+          $("fixFeedback").className = "feedback good";
+          later(function(){ fixLock = false; renderFix(); }, 650);
+        }
+      } else {
+        $("fixCard").classList.remove("shake");
+        void $("fixCard").offsetWidth;
+        $("fixCard").classList.add("shake");
+        $("fixFeedback").textContent = "Look again — that's a cat.";
+        $("fixFeedback").className = "feedback bad";
+        currentSay = "Look again. That is a cat.";
+      }
+    });
+  });
+  $("fixNext").addEventListener("click", function(){ startTest(3); });
+
+  /* ---------------- step 5: quiz ---------------- */
+  function startQuiz(){
+    quizIdx = 0; quizRight = 0;
+    renderQuiz();
+    showScreen("quiz");
+    setProgress(5);
+  }
+  function renderQuiz(){
+    var q = QUIZ[quizIdx];
+    $("quizCount").textContent = "Question " + (quizIdx+1) + " of " + QUIZ.length;
+    $("quizQ").textContent = q.q;
+    $("quizFeedback").textContent = "";
+    $("quizFeedback").className = "feedback";
+    $("quizNext").classList.remove("show");
+    var box = $("quizOpts");
+    box.innerHTML = "";
+    q.opts.forEach(function(opt, i){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "quiz-opt";
+      b.textContent = opt;
+      b.addEventListener("click", function(){ answerQuiz(i, b); });
+      box.appendChild(b);
+    });
+    currentSay = q.q;
+  }
+  function answerQuiz(i, btn){
+    var q = QUIZ[quizIdx];
+    var opts = document.querySelectorAll(".quiz-opt");
+    opts.forEach(function(o){ o.disabled = true; });
+    if (i === q.right){
+      quizRight++;
+      btn.classList.add("picked-right");
+      $("quizFeedback").textContent = "✓ " + q.fb;
+      $("quizFeedback").className = "feedback good";
+    } else {
+      btn.classList.add("picked-wrong");
+      opts[q.right].classList.add("picked-right");
+      $("quizFeedback").textContent = q.fb;
+      $("quizFeedback").className = "feedback good";
+    }
+    currentSay = q.fb;
+    var nextBtn = $("quizNext");
+    nextBtn.textContent = quizIdx >= QUIZ.length-1 ? "See my results →" : "Next question →";
+    if (mode === "teacher") nextBtn.classList.add("show");
+    else nextBtn.classList.add("show");
+  }
+  $("quizNext").addEventListener("click", function(){
+    quizIdx++;
+    if (quizIdx >= QUIZ.length) finishAll();
+    else renderQuiz();
+  });
+
+  /* ---------------- done ---------------- */
+  function finishAll(){
+    setProgress(5);
+    document.querySelectorAll(".pstep").forEach(function(s){ s.classList.add("done"); s.classList.remove("now"); });
+    if (mode === "teacher"){
+      $("doneTitle").textContent = "Great work, class!";
+      $("doneStars").textContent = "⭐⭐⭐";
+      $("doneLine").textContent = "You spotted the bias — and fixed it.";
+      $("doneQuizLine").textContent = "Class quiz: " + quizRight + " / " + QUIZ.length + " right.";
+    } else {
+      $("doneTitle").textContent = "You trained a machine!";
+      $("doneStars").textContent = quizRight === 3 ? "⭐⭐⭐" : (quizRight === 2 ? "⭐⭐☆" : "⭐☆☆");
+      $("doneLine").textContent = "Balanced data wins.";
+      $("doneQuizLine").textContent = "Your quiz: " + quizRight + " / " + QUIZ.length + " right.";
+    }
+    currentSay = "All done. Balanced data wins.";
+    showScreen("done");
+  }
+  $("againBtn").addEventListener("click", function(){
+    if (mode) startTrain();
+    else showScreen("start");
+  });
+
+  /* ---------------- teacher bypass (additive) ---------------- */
+  var tbPanel = $("tbPanel"), tbBtn = $("tbBtn");
+  function tbClosePanel(){
+    tbPanel.classList.remove("open");
+    tbBtn.setAttribute("aria-expanded", "false");
+  }
+  function tbOpenPanel(){
+    tbPanel.classList.add("open");
+    tbBtn.setAttribute("aria-expanded", "true");
+  }
+  tbBtn.addEventListener("click", function(){
+    if (tbPanel.classList.contains("open")) tbClosePanel();
+    else tbOpenPanel();
+  });
+  $("tbClose").addEventListener("click", tbClosePanel);
+  function tbChrome(){
+    /* jumping in before a mode is picked: show the in-sim chrome;
+       pacing behaves like student mode until a mode is chosen */
+    if (!mode){
+      $("progress").style.display = "flex";
+      $("homeBtn").style.display = "inline-flex";
+    }
+  }
+  function tbEnterTest(phase){
+    startTest(phase);
+    /* startTest's screen switch clears the pending auto-reveal timer in
+       student pacing, so re-render the first item to re-arm it */
+    if (mode !== "teacher") renderTestItem();
+  }
+  function tbJump(key){
+    tbClosePanel();
+    tbChrome();
+    if (key === "train") startTrain();
+    else if (key === "test1") tbEnterTest(1);
+    else if (key === "bias") startBias();
+    else if (key === "fix") startFix();
+    else if (key === "quiz") startQuiz();
+    else if (key === "done"){ quizRight = QUIZ.length; finishAll(); }
+  }
+  document.querySelectorAll("[data-jump]").forEach(function(b){
+    b.addEventListener("click", function(){ tbJump(b.getAttribute("data-jump")); });
+  });
+  $("tbSkip").addEventListener("click", function(){
+    tbClosePanel();
+    var on = document.querySelector(".screen.on");
+    var cur = on ? on.id.replace("screen-", "") : "start";
+    if (cur === "start"){ tbChrome(); startTrain(); }
+    else if (cur === "train"){ tbEnterTest(1); }
+    else if (cur === "test"){
+      if (testPhase === 1) startBias();
+      else if (testPhase === 2) startFix();
+      else startQuiz();
+    }
+    else if (cur === "bias"){ tbEnterTest(2); }
+    else if (cur === "fix"){ tbEnterTest(3); }
+    else if (cur === "quiz"){ finishAll(); }
+    /* on the results screen there is no further step to skip to */
+  });
+  $("tbReset").addEventListener("click", function(){
+    tbClosePanel();
+    if ("speechSynthesis" in window) try{ speechSynthesis.cancel(); }catch(e){}
+    mode = null;
+    document.body.classList.remove("teacher");
+    $("modeChip").style.display = "none";
+    $("homeBtn").style.display = "none";
+    $("progress").style.display = "none";
+    document.querySelectorAll(".pstep").forEach(function(s){
+      s.classList.remove("done"); s.classList.remove("now");
+    });
+    trainIdx = 0; trainDogs = 0; trainCats = 0; trainLock = false;
+    fixIdx = 0; fixCats = 2; fixLock = false;
+    testPhase = 1; testIdx = 0; testRight = 0;
+    quizIdx = 0; quizRight = 0;
+    currentSay = "Pick Teacher-Led or Student-Led to start.";
+    showScreen("start");
+  });
+})();
+</script>
+</body>
+</html>

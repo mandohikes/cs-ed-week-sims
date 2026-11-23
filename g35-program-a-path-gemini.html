@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Program a Path: Graph Paper Programming Sim (Grades 3-5) (Gemini Version)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1e2a3d; --muted:#5b6b82; --paper:#ffffff; --card:#ffffff;
+    --line:#c9d8ee; --gridline:#b9cee9;
+    --blue:#2563eb; --blue-d:#1d4ed8; --teal:#0d9488; --orange:#f97316;
+    --fill:#1e40af; --fill2:#3b82f6; --gold:#f59e0b; --red:#dc2626; --green:#16a34a;
+    --soft:#eaf2ff; --soft2:#fff4e5; --shadow:0 10px 28px rgba(30,42,61,.14);
+    --bg:#f2f7ff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#eef3fb; --muted:#a7b6cc; --paper:#131c2c; --card:#1a2639;
+      --line:#33465f; --gridline:#2c405a;
+      --blue:#3b82f6; --blue-d:#2563eb; --soft:#1e2f4a; --soft2:#33270f;
+      --fill:#60a5fa; --fill2:#93c5fd; --bg:#0c1422;
+      --shadow:0 10px 28px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Nunito",system-ui,sans-serif; color:var(--ink); background:var(--bg);
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size:28px 28px; background-position:center top;
+    min-height:100vh;
+  }
+  button{font-family:inherit; cursor:pointer; min-height:48px}
+  .wrap{max-width:1060px;margin:0 auto;padding:14px 14px 34px}
+
+  /* ---------- START SCREEN ---------- */
+  .start{max-width:760px;margin:0 auto;padding-top:26px;text-align:center}
+  .start-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:2px solid var(--line);
+    border-radius:999px;padding:7px 16px;font-weight:900;font-size:.9rem;box-shadow:var(--shadow)}
+  .start h1{font-family:"Fredoka",sans-serif;font-size:clamp(2.2rem,7vw,3.6rem);line-height:1.02;margin:18px 0 6px;font-weight:700}
+  .start h1 .hl{color:var(--blue)}
+  .start .sub{font-size:clamp(1.05rem,3vw,1.3rem);font-weight:800;color:var(--muted);margin:0 0 8px}
+  .start-visual{font-size:3rem;letter-spacing:.15em;margin:10px 0 22px}
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+  @media(max-width:560px){.mode-grid{grid-template-columns:1fr}}
+  .mode-card{background:var(--card);border:3px solid var(--line);border-radius:20px;padding:22px 20px;
+    display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:100%;text-align:left;color:var(--ink);
+    box-shadow:var(--shadow);transition:transform .12s,border-color .12s}
+  .mode-card:hover,.mode-card:focus-visible{transform:translateY(-3px);border-color:var(--blue);outline:none}
+  .mode-card .ic{font-size:2.6rem;line-height:1}
+  .mode-card .t{font-family:"Fredoka",sans-serif;font-size:1.55rem;font-weight:600}
+  .mode-card .d{font-weight:800;color:var(--muted);font-size:1rem;line-height:1.35}
+  .mode-card .go{margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:999px;
+    padding:10px 22px;font-weight:900;font-size:1rem}
+  .mode-card.alt .go{background:var(--orange)}
+  .start-foot{margin-top:20px;font-weight:800;color:var(--muted);font-size:.95rem}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .logo{font-family:"Fredoka",sans-serif;font-weight:700;font-size:1.35rem;display:flex;align-items:center;gap:8px}
+  .logo .bot{font-size:1.6rem}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);background:var(--card);
+    border-radius:999px;padding:6px 14px;font-weight:900;font-size:.9rem}
+  .pill.mode{background:var(--soft);border-color:var(--blue);color:var(--blue-d)}
+  @media (prefers-color-scheme: dark){.pill.mode{color:#93c5fd}}
+  .spacer{flex:1}
+  .icon-btn{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;
+    padding:8px 16px;font-weight:900;font-size:.95rem;display:inline-flex;align-items:center;gap:7px}
+  .icon-btn:hover{border-color:var(--blue)}
+  .icon-btn.listen{color:var(--muted);font-size:.85rem;padding:6px 12px}
+  .stars{font-size:1.15rem;letter-spacing:.1em}
+
+  /* ---------- TARGET TABS ---------- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{flex:1;min-width:110px;border:3px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:16px;padding:10px 8px;font-weight:900;font-size:1rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .tab .e{font-size:1.5rem;line-height:1}
+  .tab.on{border-color:var(--blue);background:var(--soft)}
+  .tab .done{color:var(--gold)}
+
+  /* ---------- MAIN LAYOUT ---------- */
+  .layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:820px){.layout{grid-template-columns:1fr}}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:16px}
+  .card h2{font-family:"Fredoka",sans-serif;font-size:1.15rem;margin:0 0 10px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .card h2 .tag{margin-left:auto;font-family:"Nunito",sans-serif;font-size:.8rem;font-weight:900;background:var(--soft);
+    border-radius:999px;padding:3px 10px;color:var(--blue-d)}
+  @media (prefers-color-scheme: dark){.card h2 .tag{color:#93c5fd}}
+
+  /* grids */
+  .board{margin:0 auto;width:min(100%,440px)}
+  body.teacher .board{width:min(100%,540px)}
+  .grid{display:grid;grid-template-columns:repeat(8,1fr);gap:0;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--paper)}
+  .cell{aspect-ratio:1;border:1px solid var(--gridline);display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(1.2rem,5vw,1.9rem);line-height:1}
+  .cell.filled{background:var(--fill)}
+  .cell.filled::after{content:"";position:absolute;inset:14%;background:var(--fill2);border-radius:5px;opacity:.55}
+  .cell.start-cell{background:var(--soft2)}
+  .cell .bot{position:relative;z-index:2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+  .cell.bonk{animation:shake .35s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  @media (prefers-reduced-motion: reduce){.cell.bonk{animation:none}}
+  .mini-wrap{width:168px;margin:0 auto}
+  .mini .cell{font-size:.6rem}
+  .mini .cell.filled{background:var(--fill)}
+  .mini .cell.filled::after{display:none}
+  .free-note{text-align:center;font-size:2.4rem;padding:16px 0 6px}
+  .free-note + p{text-align:center;font-weight:900;color:var(--muted);margin:0 0 6px}
+
+  /* feedback */
+  .feedback{margin-top:14px;border-radius:14px;padding:12px 14px;font-weight:900;font-size:1.15rem;
+    display:flex;align-items:center;gap:10px;min-height:56px;background:var(--soft);border:2px solid var(--line)}
+  .feedback .fe{font-size:1.6rem}
+  .feedback.good{background:#dcfce7;border-color:var(--green);color:#14532d}
+  .feedback.bad{background:#fee2e2;border-color:var(--red);color:#7f1d1d}
+  @media (prefers-color-scheme: dark){
+    .feedback.good{background:#14532d;color:#bbf7d0}.feedback.bad{background:#450a0a;color:#fecaca}
+  }
+
+  /* commands */
+  .cmds{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .cmd{border:3px solid var(--line);background:var(--paper);color:var(--ink);border-radius:16px;
+    padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:1px;font-weight:900}
+  .cmd .a{font-size:1.7rem;line-height:1;color:var(--blue)}
+  .cmd .l{font-size:.82rem}
+  .cmd:active{transform:scale(.96)}
+  .cmd.fill .a{color:var(--orange)}
+  .cmd:hover{border-color:var(--blue)}
+
+  /* program strip */
+  .prog{min-height:58px;border:2px dashed var(--line);border-radius:14px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;background:var(--paper)}
+  .prog .empty{color:var(--muted);font-weight:800;padding:8px}
+  .chip{width:40px;height:40px;border-radius:10px;background:var(--soft);border:2px solid var(--blue);
+    display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:var(--blue-d)}
+  @media (prefers-color-scheme: dark){.chip{color:#93c5fd}}
+  .chip.f{background:#ffedd5;border-color:var(--orange);color:#9a3412}
+  .chip.now{background:var(--gold);border-color:var(--gold);color:#fff;transform:scale(1.12)}
+  .chip.done{opacity:.45}
+  .prog-tools{display:flex;gap:8px;margin-top:10px}
+  .small-btn{flex:1;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;font-weight:900;font-size:.95rem;padding:8px}
+  .small-btn:hover{border-color:var(--blue)}
+
+  /* run controls */
+  .run-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-top:12px}
+  .run-btn{border:none;border-radius:16px;font-weight:900;font-size:1.15rem;padding:12px 6px;color:#fff;background:var(--green)}
+  .run-btn:disabled{opacity:.5;cursor:default}
+  .step-btn{border:none;border-radius:16px;font-weight:900;font-size:1.15rem;padding:12px 6px;color:#fff;background:var(--blue)}
+  .reset-btn{border:3px solid var(--line);border-radius:16px;font-weight:900;font-size:1.15rem;padding:12px 6px;color:var(--ink);background:var(--card)}
+
+  /* side panels */
+  .side{display:flex;flex-direction:column;gap:16px}
+  .teacher-card{border-color:var(--orange);background:var(--soft2)}
+  .teacher-card ul{margin:0;padding-left:20px;font-weight:800;line-height:1.55;font-size:.98rem}
+  .teacher-card li{margin:3px 0}
+  .hint-txt{font-weight:900;font-size:1.05rem;background:var(--soft);border-radius:12px;padding:10px 12px;display:none}
+  .hint-txt.show{display:block}
+  .vocab{display:flex;flex-wrap:wrap;gap:8px}
+  .vocab button{border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;
+    padding:8px 16px;font-weight:900;font-size:.95rem}
+  .vocab button:hover{border-color:var(--teal);color:var(--teal)}
+  .how-row{display:flex;gap:10px;align-items:center;font-weight:800;color:var(--muted);font-size:.95rem;margin-top:4px}
+  .how-row .n{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem}
+  .hidden{display:none !important}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+  .confetti span{position:absolute;top:-40px;font-size:1.6rem;animation:fall 1.4s ease-in forwards}
+  @keyframes fall{to{transform:translateY(105vh) rotate(300deg);opacity:.9}}
+  @media (prefers-reduced-motion: reduce){.confetti span{animation:none;display:none}}
+
+  /* ---------- TEACHER BYPASS ---------- */
+  .bypass-btn{position:fixed;right:10px;bottom:10px;z-index:60;min-height:0;border:1px solid var(--line);
+    background:var(--card);color:var(--muted);border-radius:999px;padding:5px 12px;
+    font-size:.75rem;font-weight:800;opacity:.55}
+  .bypass-btn:hover,.bypass-btn:focus-visible{opacity:1;border-color:var(--muted);outline:none}
+  .bypass-panel{position:fixed;right:10px;bottom:52px;z-index:60;width:236px;background:var(--card);
+    border:2px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+  .bypass-panel h3{margin:0 0 4px;font-size:.9rem;font-weight:900;color:var(--muted);display:flex;align-items:center}
+  .bypass-panel h3 button{margin-left:auto;min-height:0;border:none;background:none;color:var(--muted);
+    font-size:1rem;font-weight:900;padding:2px 6px;line-height:1}
+  .bypass-panel .bp-label{font-size:.8rem;font-weight:900;color:var(--muted);margin:10px 0 6px}
+  .bp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .bp-btn{min-height:0;border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;
+    padding:8px 6px;font-weight:900;font-size:.85rem}
+  .bp-btn:hover{border-color:var(--blue)}
+  .bp-btn.wide{width:100%;margin-top:6px}
+</style>
+</head>
+<body>
+
+<!-- ============ START ============ -->
+<div class="wrap" id="startScreen">
+  <div class="start">
+    <span class="start-badge">✏️ Grades 3–5 · Graph Paper Programming</span>
+    <h1>Program <span class="hl">a Path</span></h1>
+    <p class="sub">Tell the robot. It draws the picture.</p>
+    <div class="start-visual" aria-hidden="true">🤖 ➡️ ⬇️ 🟦</div>
+    <div class="mode-grid">
+      <button class="mode-card" id="btnTeacher" type="button">
+        <span class="ic">👩‍🏫</span>
+        <span class="t">Teacher-Led</span>
+        <span class="d">Big screen. Whole class. One step at a time.</span>
+        <span class="go">Start →</span>
+      </button>
+      <button class="mode-card alt" id="btnStudent" type="button">
+        <span class="ic">🧒</span>
+        <span class="t">Student-Led</span>
+        <span class="d">My own device. My own pace.</span>
+        <span class="go">Start →</span>
+      </button>
+    </div>
+    <p class="start-foot">Tap arrows. Tap Fill. Press Run. 🎯</p>
+  </div>
+</div>
+
+<!-- ============ SIM ============ -->
+<div class="wrap hidden" id="simScreen">
+  <div class="topbar">
+    <div class="logo"><span class="bot">🤖</span> Program a Path</div>
+    <span class="pill mode" id="modePill">🧒 Student-Led</span>
+    <div class="spacer"></div>
+    <span class="pill stars" id="starPill" aria-label="Stars earned">☆☆☆</span>
+    <button class="icon-btn listen" id="btnListen" type="button" title="Optional: hear the directions read aloud">🔊 Listen (optional)</button>
+    <button class="icon-btn" id="btnSwitch" type="button">⇄ Switch</button>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Pictures">
+    <button class="tab on" data-target="0" type="button"><span class="e">🟦</span>Picture 1 <span class="done" data-star="0"></span></button>
+    <button class="tab" data-target="1" type="button"><span class="e">😊</span>Picture 2 <span class="done" data-star="1"></span></button>
+    <button class="tab" data-target="2" type="button"><span class="e">💎</span>Picture 3 <span class="done" data-star="2"></span></button>
+    <button class="tab" data-target="free" type="button"><span class="e">🎨</span>Free Draw</button>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <h2>🖍️ Your Picture <span class="tag" id="stepTag">Start: top-left corner</span></h2>
+        <div class="board"><div class="grid" id="mainGrid" aria-label="Your 8 by 8 grid"></div></div>
+        <div class="feedback" id="feedback"><span class="fe">👀</span><span id="feedbackText">Copy the picture!</span></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>👆 Tap to Build</h2>
+        <div class="cmds">
+          <button class="cmd" data-cmd="L" type="button" aria-label="Move left"><span class="a">←</span><span class="l">Left</span></button>
+          <button class="cmd" data-cmd="U" type="button" aria-label="Move up"><span class="a">↑</span><span class="l">Up</span></button>
+          <button class="cmd" data-cmd="D" type="button" aria-label="Move down"><span class="a">↓</span><span class="l">Down</span></button>
+          <button class="cmd" data-cmd="R" type="button" aria-label="Move right"><span class="a">→</span><span class="l">Right</span></button>
+          <button class="cmd fill" data-cmd="F" type="button" aria-label="Fill square"><span class="a">■</span><span class="l">Fill</span></button>
+        </div>
+        <div class="run-row">
+          <button class="run-btn" id="btnRun" type="button">▶ Run</button>
+          <button class="step-btn" id="btnStep" type="button">Step →</button>
+          <button class="reset-btn" id="btnReset" type="button">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>🎯 Target</h2>
+        <div id="targetWrap">
+          <div class="mini-wrap"><div class="grid mini" id="targetGrid" aria-label="Target picture"></div></div>
+        </div>
+        <div id="freeWrap" class="hidden">
+          <div class="free-note">🎨</div>
+          <p>No target. Draw anything!</p>
+        </div>
+      </div>
+
+      <div class="card teacher-card hidden" id="teacherCard">
+        <h2>👩‍🏫 Teacher</h2>
+        <ul>
+          <li>Show the target only.</li>
+          <li>Class votes: which arrow?</li>
+          <li>Add one step. Ask: why?</li>
+          <li>Press Step. Count out loud.</li>
+          <li>Wrong square = a bug. Fix it together.</li>
+        </ul>
+      </div>
+
+      <div class="card hidden" id="hintCard">
+        <h2>💡 Stuck?</h2>
+        <button class="small-btn" id="btnHint" type="button" style="width:100%">Show Hint</button>
+        <div class="hint-txt" id="hintText" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2>📜 Your Program <span class="tag" id="progCount">0 steps</span></h2>
+        <div class="prog" id="progStrip"><span class="empty">No steps yet. Tap an arrow!</span></div>
+        <div class="prog-tools">
+          <button class="small-btn" id="btnUndo" type="button">⌫ Undo</button>
+          <button class="small-btn" id="btnClear" type="button">🗑️ Clear All</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🗣️ Word Bank</h2>
+        <div class="vocab">
+          <button type="button" data-say="Algorithm. Steps to solve a problem.">Algorithm</button>
+          <button type="button" data-say="Program. Steps a computer follows.">Program</button>
+          <button type="button" data-say="Bug. A mistake in the steps.">Bug</button>
+          <button type="button" data-say="Debug. Find and fix the mistake.">Debug</button>
+        </div>
+        <div class="hint-txt" id="vocabDef" role="status" aria-live="polite"></div>
+        <div style="height:10px"></div>
+        <div class="how-row"><span class="n">1</span> Tap arrows + Fill.</div>
+        <div class="how-row"><span class="n">2</span> Press Run.</div>
+        <div class="how-row"><span class="n">3</span> Match the target? ⭐</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TEACHER BYPASS ============ -->
+<button class="bypass-btn" id="btnBypass" type="button" aria-haspopup="true" aria-expanded="false">Teacher</button>
+<div class="bypass-panel hidden" id="bypassPanel" role="dialog" aria-label="Teacher bypass">
+  <h3>Teacher Bypass <button id="btnBypassClose" type="button" aria-label="Close">✕</button></h3>
+  <div class="bp-label">Jump to</div>
+  <div class="bp-grid">
+    <button class="bp-btn" data-jump="0" type="button">🟦 Picture 1</button>
+    <button class="bp-btn" data-jump="1" type="button">😊 Picture 2</button>
+    <button class="bp-btn" data-jump="2" type="button">💎 Picture 3</button>
+    <button class="bp-btn" data-jump="free" type="button">🎨 Free Draw</button>
+  </div>
+  <button class="bp-btn wide" id="btnSkip" type="button">Skip this picture →</button>
+  <button class="bp-btn wide" id="btnBypassReset" type="button">↺ Reset all</button>
+</div>
+
+<div class="confetti hidden" id="confetti"></div>
+
+<script>
+(function(){
+  "use strict";
+  var TARGETS = [
+    { name:"Picture 1", filled:[[3,3],[4,3],[3,4],[4,4]], hint:"Right 3. Down 3. Then Fill!" },
+    { name:"Picture 2", filled:[[2,2],[5,2],[2,4],[3,5],[4,5],[5,4]], hint:"Fill the eyes first." },
+    { name:"Picture 3", filled:[[3,1],[2,2],[3,2],[4,2],[1,3],[2,3],[3,3],[4,3],[5,3],[2,4],[3,4],[4,4],[3,5]], hint:"Start at the top point." }
+  ];
+  var ARROWS = { L:"←", U:"↑", D:"↓", R:"→", F:"■" };
+  var DIRS = { L:[-1,0], U:[0,-1], D:[0,1], R:[1,0] };
+
+  var mode = "student";
+  var targetIdx = 0; // 0,1,2 or "free"
+  var program = [];
+  var pos = {x:0,y:0};
+  var filled = {}; // "x,y" -> true
+  var execIdx = 0;
+  var running = false;
+  var timer = null;
+  var done = {}; // target index -> true
+  var bonkCell = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var mainGrid = $("mainGrid"), targetGrid = $("targetGrid");
+
+  function key(x,y){ return x+","+y; }
+  function targetSet(){
+    if(targetIdx === "free") return null;
+    var s = {};
+    TARGETS[targetIdx].filled.forEach(function(p){ s[key(p[0],p[1])] = true; });
+    return s;
+  }
+
+  function speak(text){
+    try{
+      if(!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95; u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  /* ---------- render ---------- */
+  function renderGrid(){
+    var html = "";
+    for(var y=0;y<8;y++){
+      for(var x=0;x<8;x++){
+        var cls = "cell";
+        if(filled[key(x,y)]) cls += " filled";
+        if(x===0 && y===0) cls += " start-cell";
+        if(bonkCell && bonkCell.x===x && bonkCell.y===y) cls += " bonk";
+        var bot = (pos.x===x && pos.y===y) ? '<span class="bot">🤖</span>' : "";
+        html += '<div class="'+cls+'">'+bot+'</div>';
+      }
+    }
+    mainGrid.innerHTML = html;
+  }
+  function renderTarget(){
+    var s = targetSet();
+    var isFree = (targetIdx === "free");
+    $("targetWrap").classList.toggle("hidden", isFree);
+    $("freeWrap").classList.toggle("hidden", !isFree);
+    if(isFree) return;
+    var html = "";
+    for(var y=0;y<8;y++){
+      for(var x=0;x<8;x++){
+        html += '<div class="cell'+(s[key(x,y)]?" filled":"")+'"></div>';
+      }
+    }
+    targetGrid.innerHTML = html;
+  }
+  function renderProgram(){
+    var strip = $("progStrip");
+    if(program.length === 0){
+      strip.innerHTML = '<span class="empty">No steps yet. Tap an arrow!</span>';
+    } else {
+      var html = "";
+      program.forEach(function(c,i){
+        var cls = "chip" + (c==="F" ? " f" : "");
+        if(running || execIdx>0){
+          if(i === execIdx) cls += " now";
+          else if(i < execIdx) cls += " done";
+        }
+        html += '<div class="'+cls+'">'+ARROWS[c]+'</div>';
+      });
+      strip.innerHTML = html;
+    }
+    $("progCount").textContent = program.length + (program.length===1 ? " step" : " steps");
+  }
+  function renderStars(){
+    var n = [0,1,2].filter(function(i){ return done[i]; }).length;
+    $("starPill").textContent = "⭐".repeat(n) + "☆".repeat(3-n);
+    [0,1,2].forEach(function(i){
+      var el = document.querySelector('[data-star="'+i+'"]');
+      if(el) el.textContent = done[i] ? "⭐" : "";
+    });
+  }
+  function renderAll(){ renderGrid(); renderTarget(); renderProgram(); renderStars(); }
+
+  function setFeedback(emoji, text, kind){
+    $("feedbackText").textContent = text;
+    $("feedback").querySelector(".fe").textContent = emoji;
+    var f = $("feedback");
+    f.classList.remove("good","bad");
+    if(kind) f.classList.add(kind);
+  }
+
+  /* ---------- execution ---------- */
+  function resetRun(){
+    stopTimer();
+    running = false;
+    pos = {x:0,y:0}; filled = {}; execIdx = 0; bonkCell = null;
+    renderGrid(); renderProgram();
+  }
+  function stopTimer(){ if(timer){ clearInterval(timer); timer = null; } }
+
+  function stepOnce(){
+    if(execIdx >= program.length){ finishRun(); return true; }
+    var cmd = program[execIdx];
+    bonkCell = null;
+    if(cmd === "F"){
+      filled[key(pos.x,pos.y)] = true;
+      execIdx++;
+    } else {
+      var d = DIRS[cmd];
+      var nx = pos.x + d[0], ny = pos.y + d[1];
+      if(nx < 0 || nx > 7 || ny < 0 || ny > 7){
+        bonkCell = {x:pos.x, y:pos.y};
+        renderGrid(); renderProgram();
+        setFeedback("💥","Bonk! Off the edge. That's a bug!","bad");
+        stopTimer(); running = false;
+        return true;
+      }
+      pos = {x:nx, y:ny};
+      execIdx++;
+    }
+    renderGrid(); renderProgram();
+    if(execIdx >= program.length){ finishRun(); }
+    return false;
+  }
+
+  function finishRun(){
+    stopTimer(); running = false;
+    renderProgram();
+    if(targetIdx === "free"){
+      if(Object.keys(filled).length > 0) setFeedback("🎨","Nice picture!","good");
+      else setFeedback("👀","Add Fill to draw!","");
+      return;
+    }
+    var s = targetSet();
+    var tKeys = Object.keys(s), fKeys = Object.keys(filled);
+    var exact = tKeys.length === fKeys.length && tKeys.every(function(k){ return filled[k]; });
+    if(exact){
+      done[targetIdx] = true;
+      renderStars();
+      setFeedback("⭐","You did it! Picture matched!","good");
+      celebrate();
+      document.querySelectorAll(".tab").forEach(function(t){
+        if(t.getAttribute("data-target") === String(targetIdx)) t.classList.add("on");
+      });
+    } else {
+      var missing = tKeys.some(function(k){ return !filled[k]; });
+      var extra = fKeys.some(function(k){ return !s[k]; });
+      if(extra && missing) setFeedback("🔍","Close! Check the squares.","bad");
+      else if(extra) setFeedback("🔍","Oops! Extra squares.","bad");
+      else setFeedback("🔍","Close! More squares to fill.","bad");
+    }
+  }
+
+  function celebrate(){
+    var c = $("confetti");
+    c.innerHTML = "";
+    var em = ["⭐","🎉","🟦","✨"];
+    for(var i=0;i<22;i++){
+      var s = document.createElement("span");
+      s.textContent = em[i % em.length];
+      s.style.left = (Math.random()*96) + "vw";
+      s.style.animationDelay = (Math.random()*0.4) + "s";
+      c.appendChild(s);
+    }
+    c.classList.remove("hidden");
+    setTimeout(function(){ c.classList.add("hidden"); c.innerHTML=""; }, 2200);
+  }
+
+  /* ---------- actions ---------- */
+  function addCmd(c){
+    if(running) return;
+    if(execIdx > 0 || Object.keys(filled).length) resetRun();
+    program.push(c);
+    renderProgram();
+    setFeedback("👆", program.length + (program.length===1 ? " step. Keep going!" : " steps. Keep going!"), "");
+  }
+
+  document.querySelectorAll(".cmd").forEach(function(b){
+    b.addEventListener("click", function(){ addCmd(b.getAttribute("data-cmd")); });
+  });
+
+  $("btnUndo").addEventListener("click", function(){
+    if(running) return;
+    program.pop(); resetRun(); renderProgram();
+    setFeedback("⌫","Last step gone.","");
+  });
+  $("btnClear").addEventListener("click", function(){
+    if(running) return;
+    program = []; resetRun(); renderProgram();
+    setFeedback("🗑️","All clear. Start again!","");
+  });
+  $("btnReset").addEventListener("click", function(){
+    resetRun();
+    setFeedback("↺", targetIdx==="free" ? "Draw anything!" : "Copy the picture!", "");
+  });
+  $("btnRun").addEventListener("click", function(){
+    if(running) return;
+    if(program.length === 0){ setFeedback("👆","Tap an arrow first!",""); return; }
+    resetRun();
+    running = true;
+    renderProgram();
+    setFeedback("🤖","Watch the robot!","");
+    var speed = (mode === "teacher") ? 750 : 480;
+    timer = setInterval(function(){
+      var ended = stepOnce();
+      if(ended || !running){ stopTimer(); }
+    }, speed);
+  });
+  $("btnStep").addEventListener("click", function(){
+    if(running) return;
+    if(program.length === 0){ setFeedback("👆","Tap an arrow first!",""); return; }
+    if(execIdx >= program.length){ resetRun(); return; }
+    stepOnce();
+  });
+
+  /* tabs */
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.addEventListener("click", function(){
+      var v = t.getAttribute("data-target");
+      targetIdx = (v === "free") ? "free" : parseInt(v,10);
+      document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("on"); });
+      t.classList.add("on");
+      program = []; resetRun(); renderAll();
+      $("hintText").classList.remove("show");
+      $("btnHint").textContent = "Show Hint";
+      if(targetIdx === "free"){ setFeedback("🎨","Draw anything!",""); }
+      else { setFeedback("👀","Copy the picture!",""); }
+    });
+  });
+
+  /* hint (student only) */
+  $("btnHint").addEventListener("click", function(){
+    var h = $("hintText");
+    if(h.classList.contains("show")){ h.classList.remove("show"); $("btnHint").textContent = "Show Hint"; return; }
+    h.textContent = targetIdx === "free" ? "Fill makes a square. Move, then Fill!" : ("💡 " + TARGETS[targetIdx].hint);
+    h.classList.add("show");
+    $("btnHint").textContent = "Hide Hint";
+  });
+
+  /* listen */
+  $("btnListen").addEventListener("click", function(){
+    if(targetIdx === "free") speak("Free draw. Tap arrows. Tap Fill. Press Run. Draw anything!");
+    else speak("Make " + TARGETS[targetIdx].name + ". Copy the picture. Tap arrows and Fill. Then press Run.");
+  });
+  document.querySelectorAll(".vocab button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var def = $("vocabDef");
+      def.textContent = b.getAttribute("data-say");
+      def.classList.add("show");
+    });
+  });
+
+  /* mode */
+  function enterMode(m){
+    mode = m;
+    document.body.classList.toggle("teacher", m === "teacher");
+    $("modePill").textContent = (m === "teacher") ? "👩‍🏫 Teacher-Led" : "🧒 Student-Led";
+    $("teacherCard").classList.toggle("hidden", m !== "teacher");
+    $("hintCard").classList.toggle("hidden", m !== "student");
+    $("startScreen").classList.add("hidden");
+    $("simScreen").classList.remove("hidden");
+    resetRun(); renderAll();
+    setFeedback("👀", targetIdx==="free" ? "Draw anything!" : "Copy the picture!", "");
+    window.scrollTo(0,0);
+  }
+  $("btnTeacher").addEventListener("click", function(){ enterMode("teacher"); });
+  $("btnStudent").addEventListener("click", function(){ enterMode("student"); });
+  $("btnSwitch").addEventListener("click", function(){
+    stopTimer(); running = false;
+    $("simScreen").classList.add("hidden");
+    $("startScreen").classList.remove("hidden");
+    window.scrollTo(0,0);
+  });
+
+  /* ---------- teacher bypass ---------- */
+  var bypassPanel = $("bypassPanel");
+  function setBypass(open){
+    bypassPanel.classList.toggle("hidden", !open);
+    $("btnBypass").setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  function jumpTo(v){
+    if($("simScreen").classList.contains("hidden")) enterMode(mode);
+    var tab = document.querySelector('.tab[data-target="'+v+'"]');
+    if(tab) tab.click();
+    setBypass(false);
+  }
+  $("btnBypass").addEventListener("click", function(){
+    setBypass(bypassPanel.classList.contains("hidden"));
+  });
+  $("btnBypassClose").addEventListener("click", function(){ setBypass(false); });
+  document.querySelectorAll("[data-jump]").forEach(function(b){
+    b.addEventListener("click", function(){ jumpTo(b.getAttribute("data-jump")); });
+  });
+  $("btnSkip").addEventListener("click", function(){
+    if(targetIdx !== "free"){ done[targetIdx] = true; renderStars(); }
+    var next = (targetIdx === "free") ? "0" : (targetIdx >= 2 ? "free" : String(targetIdx + 1));
+    jumpTo(next);
+  });
+  $("btnBypassReset").addEventListener("click", function(){
+    stopTimer(); running = false;
+    done = {}; program = []; resetRun(); renderAll();
+    setFeedback("👀", targetIdx==="free" ? "Draw anything!" : "Copy the picture!", "");
+    setBypass(false);
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

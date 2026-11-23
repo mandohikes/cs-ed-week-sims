@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Real or AI?</title>
+<style>
+  :root{
+    --raspberry:#CD2653; --navy:#273791; --sky:#00ADEF; --teal:#13A89E;
+    --bg:#EEF2FA; --card:#FFFFFF; --ink:#1C2452; --muted:#5A648F; --line:#D8DEF2;
+    --soft:#E7EDFB; --good-bg:#E2F6F3; --bad-bg:#FDE8EE;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#10142E; --card:#1D2450; --ink:#EFF1FF; --muted:#AAB3DC; --line:#39437A; --soft:#272F63; --good-bg:#143D3A; --bad-bg:#4A1E33; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+  button{font:inherit;cursor:pointer}
+  button,[role="button"],input:not([type="checkbox"]){min-height:44px}
+  .wrap{max-width:780px;margin:0 auto;padding:16px 16px 40px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 14px;flex-wrap:wrap}
+  .brand{font-weight:800;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--navy)}
+  @media (prefers-color-scheme: dark){.brand{color:var(--sky)}}
+  .pill{font-size:.82rem;font-weight:800;padding:7px 12px;border-radius:999px;background:var(--navy);color:#fff}
+  .pill.teal{background:var(--teal)}
+  .steps{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}
+  .step{flex:1;text-align:center;font-size:.78rem;font-weight:800;padding:8px 4px;border-radius:999px;background:var(--soft);color:var(--muted);border:2px solid transparent;min-width:90px}
+  .step.on{background:#fff;color:var(--navy);border-color:var(--navy)}
+  @media (prefers-color-scheme: dark){.step.on{background:var(--card);color:#fff;border-color:var(--sky)}}
+  .step.done{background:var(--teal);color:#fff}
+  .bar{height:10px;background:var(--soft);border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sky),var(--teal));transition:width .3s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 6px 24px rgba(39,55,145,.08)}
+  h1{font-size:clamp(2.2rem,7vw,3.4rem);line-height:1.02;margin:0 0 6px;color:var(--navy);letter-spacing:-.02em}
+  @media (prefers-color-scheme: dark){h1{color:#fff}}
+  h1 .q{color:var(--raspberry)}
+  h2{font-size:1.45rem;margin:0 0 8px;line-height:1.15}
+  h3{margin:0 0 8px}
+  .sub{font-weight:700;color:var(--muted);margin:0 0 16px}
+  .goal{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:14px;padding:14px 16px;font-weight:700;margin:0 0 16px}
+  .goal span{font-size:1.3rem}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.modes{grid-template-columns:1fr}}
+  .mode{text-align:left;border:3px solid var(--line);background:var(--card);border-radius:16px;padding:18px;width:100%}
+  .mode strong{display:block;font-size:1.15rem;margin-bottom:4px}
+  .mode small{color:var(--muted);font-weight:600;line-height:1.35;display:block}
+  .mode.sel-t{border-color:var(--navy);background:#EDF0FF}
+  .mode.sel-s{border-color:var(--teal);background:var(--good-bg)}
+  @media (prefers-color-scheme: dark){.mode.sel-t{background:#272F63}.mode.sel-s{background:#143D3A}}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:14px 20px;font-weight:900;font-size:1.05rem;width:100%;text-decoration:none}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-rasp{background:var(--raspberry);color:#fff}
+  .btn-teal{background:var(--teal);color:#fff}
+  .btn-sky{background:var(--sky);color:#06263A}
+  .btn-ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media(max-width:480px){.btnrow{grid-template-columns:1fr}}
+  .hear{background:none;border:0;color:var(--navy);font-weight:700;font-size:.85rem;padding:8px 4px;min-height:36px;text-decoration:underline;text-underline-offset:3px}
+  @media (prefers-color-scheme: dark){.hear{color:var(--sky)}}
+  .rowline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .tag{display:inline-block;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;color:#fff}
+  .tag.photo{background:var(--sky);color:#06263A}.tag.head{background:var(--navy)}.tag.post{background:var(--raspberry)}.tag.verify{background:var(--teal)}
+  .scene{border-radius:16px;padding:22px 16px;text-align:center;margin:14px 0;background:linear-gradient(160deg,#FFF3F7,#EAF7FF);border:2px dashed #B9C6EE}
+  @media (prefers-color-scheme: dark){.scene{background:#272F63;border-color:#39437A}}
+  .scene .big{font-size:3.2rem;line-height:1.2;letter-spacing:.06em}
+  .scene p{margin:8px 0 0;font-weight:800;font-size:1.08rem}
+  .scene small{color:var(--muted);font-weight:600}
+  .news,.post{border:2px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;background:var(--card)}
+  .news h3{font-size:1.35rem;line-height:1.25;margin:0 0 6px}
+  .meta{font-size:.85rem;color:var(--muted);font-weight:600}
+  .posthead{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:1.3rem;color:#fff;font-weight:900;flex:none}
+  .post p{margin:0;font-size:1.08rem;font-weight:600}
+  .feedback{border-radius:14px;padding:14px 16px;font-weight:800;margin-top:14px}
+  .feedback.good{background:var(--good-bg);border:2px solid var(--teal)}
+  .feedback.bad{background:var(--bad-bg);border:2px solid var(--raspberry)}
+  .feedback.info{background:var(--soft);border:2px solid var(--navy)}
+  .feedback p{margin:4px 0 0;font-weight:600}
+  .opts{display:grid;gap:10px;margin-top:14px}
+  .opt{text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:14px 16px;font-weight:800;width:100%;font-size:1rem}
+  .opt small{display:block;font-weight:600;color:var(--muted);margin-top:2px}
+  .opt.picked{border-color:var(--navy);background:var(--soft)}
+  .opt.right{border-color:var(--teal);background:var(--good-bg)}
+  .opt.wrong{border-color:var(--raspberry);background:var(--bad-bg)}
+  .bullets{margin:10px 0 0;padding-left:20px;font-weight:600}
+  .bullets li{margin:4px 0}
+  .teacherbox{background:#FFF7E6;border:2px solid #E8B93E;border-radius:14px;padding:14px 16px;margin-top:14px;color:#4A3A05}
+  @media (prefers-color-scheme: dark){.teacherbox{background:#3A3312;color:#FFE9A8;border-color:#8A7320}}
+  .teacherbox strong{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+  .checklist{list-style:none;margin:14px 0;padding:0;display:grid;gap:10px}
+  .checklist li{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:12px;padding:13px 14px;font-weight:900;font-size:1.02rem}
+  .checklist .n{width:32px;height:32px;flex:none;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:900}
+  .cert{border:3px solid var(--navy);border-radius:18px;padding:22px;text-align:center;background:var(--card);margin-top:16px;position:relative;overflow:hidden}
+  .cert:before{content:"";position:absolute;inset:0 0 auto 0;height:10px;background:linear-gradient(90deg,var(--raspberry),var(--sky),var(--teal))}
+  .cert .seal{font-size:2.4rem}
+  .cert h3{font-size:1.5rem;color:var(--navy);margin:6px 0}
+  @media (prefers-color-scheme: dark){.cert h3{color:#fff}}
+  .certname{font-size:1.6rem;font-weight:900;border-bottom:2px solid var(--line);padding:6px;margin:8px auto;max-width:420px;min-height:44px}
+  input.namein{width:100%;padding:13px 14px;border:2px solid var(--line);border-radius:12px;font:inherit;font-weight:700;background:var(--card);color:var(--ink)}
+  .tiny{font-size:.85rem;color:var(--muted);font-weight:600}
+  .center{text-align:center}
+  .mt{margin-top:14px}.mb{margin-bottom:10px}
+  .scorebig{font-size:3rem;font-weight:900;color:var(--navy);line-height:1}
+  @media (prefers-color-scheme: dark){.scorebig{color:#fff}}
+  .rank{display:inline-block;background:var(--raspberry);color:#fff;font-weight:900;padding:9px 16px;border-radius:999px;font-size:1.05rem}
+  .fakeflag{display:inline-block;background:var(--raspberry);color:#fff;font-weight:900;font-size:.75rem;letter-spacing:.05em;padding:5px 10px;border-radius:999px;text-transform:uppercase}
+  .teacher-btn{position:fixed;right:10px;bottom:10px;z-index:60;min-height:36px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:.72rem;font-weight:700;letter-spacing:.03em;opacity:.6;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .teacher-btn:hover,.teacher-btn:focus{opacity:1}
+  .teacher-overlay{position:fixed;inset:0;z-index:70;background:rgba(10,14,40,.52);display:none;align-items:flex-end;justify-content:center;padding:12px}
+  .teacher-overlay.open{display:flex}
+  .teacher-panel{background:var(--card);color:var(--ink);border-radius:18px;padding:18px;width:100%;max-width:540px;max-height:88vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .teacher-panel h3{font-size:1rem;margin:0}
+  .teacher-panel h4{font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tbtn{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:10px 6px;font-weight:800;font-size:.9rem;min-height:44px;width:100%}
+  .tbtn:active{border-color:var(--navy)}
+  .tbtn.warn{border-color:var(--raspberry);color:var(--raspberry)}
+  .tbtn.go{border-color:var(--teal);color:var(--teal)}
+  @media(min-width:640px){.teacher-overlay{align-items:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">Center for Cyber Education</div>
+    <div id="scorePill"></div>
+  </div>
+  <div id="steps"></div>
+  <div class="bar" id="barWrap" style="display:none"><i id="barFill" style="width:0%"></i></div>
+  <main id="app" aria-live="polite"></main>
+</div>
+
+<button class="teacher-btn" id="teacherBtn" onclick="toggleTeacher(true)" aria-haspopup="dialog">Teacher</button>
+<div class="teacher-overlay" id="teacherOverlay" role="dialog" aria-modal="true" aria-label="Teacher controls">
+  <div class="teacher-panel">
+    <div class="rowline"><h3>Teacher controls</h3><button class="tbtn" style="width:auto;padding:8px 14px" onclick="toggleTeacher(false)">✕ Close</button></div>
+    <p class="tiny" style="margin:6px 0 0">Jump anywhere, skip a stuck item, or reset. Works in both modes. Scores already earned stay as they are when you jump.</p>
+    <h4>Jump to · Spot It</h4>
+    <div class="tgrid">
+      <button class="tbtn" onclick="jumpSpot(0)">1</button>
+      <button class="tbtn" onclick="jumpSpot(1)">2</button>
+      <button class="tbtn" onclick="jumpSpot(2)">3</button>
+      <button class="tbtn" onclick="jumpSpot(3)">4</button>
+      <button class="tbtn" onclick="jumpSpot(4)">5</button>
+      <button class="tbtn" onclick="jumpSpot(5)">6</button>
+      <button class="tbtn" onclick="jumpSpot(6)">7</button>
+      <button class="tbtn" onclick="jumpSpot(7)">8</button>
+    </div>
+    <h4>Jump to · Verify It</h4>
+    <div class="tgrid3">
+      <button class="tbtn" onclick="jumpVerify(0)">Verify 1</button>
+      <button class="tbtn" onclick="jumpVerify(1)">Verify 2</button>
+      <button class="tbtn" onclick="jumpVerify(2)">Verify 3</button>
+    </div>
+    <h4>Jump to</h4>
+    <div class="tgrid2">
+      <button class="tbtn" onclick="jumpShare()">The Share Test</button>
+      <button class="tbtn" onclick="jumpFinish()">Finish · Certificate</button>
+    </div>
+    <h4>This item</h4>
+    <div class="tgrid2">
+      <button class="tbtn go" onclick="teacherSkip()">⏭ Skip this item<br><span style="font-weight:600;font-size:.78rem">Counts as revealed · no point</span></button>
+      <button class="tbtn warn" onclick="teacherReset()">↺ Reset<br><span style="font-weight:600;font-size:.78rem">Back to start · score cleared</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+var SPOT = [
+  {type:"photo", tag:"Photo", emoji:"🎉 📣 ✋🏽", title:"Pep Rally Photo", desc:"A student holds a “Go Wildcats!” sign at a pep rally.", answer:"ai", tell:"The hand on the sign has six fingers.", discuss:["What looked off first?","Hands and text — where do AI images slip?"]},
+  {type:"photo", tag:"Photo", emoji:"🍕 🥛 🍎", title:"Lunch in the Cafeteria", desc:"A lunch tray with pizza, milk, and an apple on a table.", answer:"real", tell:"Uneven light and messy details — a real, ordinary photo.", discuss:["What makes this feel real?","Messy and ordinary can be a clue."]},
+  {type:"head", tag:"Headline", emoji:"", title:"Scientists Teach a Goldfish to Drive a Car in Town Square", desc:"Shared 400 times • No link to any article", answer:"ai", tell:"No matching article exists — the headline has no source.", discuss:["What is missing here?","Would you share a headline with no article?"]},
+  {type:"post", tag:"Social Post", emoji:"📚", title:"@CityLibrary", desc:"Book fair opens Monday at 9 AM in Room 12. See you there!", answer:"real", tell:"The account has a long history and the event checks out.", discuss:["How old is this account?","How could you confirm the event?"]},
+  {type:"photo", tag:"Photo", emoji:"🤳 🏈 ✨", title:"Selfie at the Game", desc:"A smiling student takes a selfie at the football game.", answer:"ai", tell:"Skin looks too smooth and waxy — no pores or shine.", discuss:["Zoom in — what looks too perfect?","Real skin has texture. AI skin often does not."]},
+  {type:"head", tag:"Headline", emoji:"", title:"School Board Votes Tuesday on New Start Time", desc:"District News • Full article linked • Other local sites report it too", answer:"real", tell:"The full article is linked and other local sites report it too.", discuss:["What proof comes with this one?","One source or many — which is stronger?"]},
+  {type:"photo", tag:"Photo", emoji:"🔬 🏆 📋", title:"Science Fair Winner", desc:"A student by a poster that reads “VOLCANOO EXPLOZION RESERCH.”", answer:"ai", tell:"The poster text is melted and misspelled — a classic AI slip.", discuss:["Read every word in the image.","Why does AI struggle with text?"]},
+  {type:"post", tag:"Social Post", emoji:"🏈", title:"@CoachLee", desc:"Practice moved to 4 PM Thursday — the field is flooded.", answer:"real", tell:"Posted by a known coach and the flooded field is easy to check.", discuss:["Do you know who posted this?","What is easy to check here?"]}
+];
+var VERIFY = [
+  {emoji:"🌊 🏫", handle:"@ViralClip_99", time:"New account • 12 min ago", text:"“Our gym is UNDER WATER right now!! 😱” — with a dramatic flood photo.", best:0,
+   options:["Reverse image search the photo","Share it fast before it is deleted","Ask friends if it looks real"],
+   good:"Yes — reverse search shows if the photo is old or from somewhere else.",
+   bad:"Not first. Reverse image search shows if that photo is old or from somewhere else."},
+  {emoji:"🍽️ 🎉", handle:"@FreeLunchAlert", time:"First post ever • 1 hr ago", text:"“School lunches will be FREE for a whole year starting Monday!”", best:0,
+   options:["Check the original source — is it the real district account?","Count the likes to see if it is true","Forward it to the class chat"],
+   good:"Yes — check first if the source is really the district.",
+   bad:"Not first. Check the original source — is it the real district account?"},
+  {emoji:"📚 🚫", handle:"@NewsFlashDaily", time:"Shared post • 3 hrs ago", text:"“New law bans homework statewide starting next week!”", best:1,
+   options:["Like it if you agree with it","Search the claim on a trusted news site","Ask the poster how they know"],
+   good:"Yes — search the claim on a trusted news site before believing it.",
+   bad:"Not first. Search the claim on a trusted news site to see if it is reported."}
+];
+var state = { mode:null, phase:"start", spotIdx:0, verifyIdx:0, spotScore:0, verifyScore:0, shareScore:0, spotPicked:null, spotRevealed:false, spotSkipped:false, verifyPicked:null, verifySkipped:false, sharePicked:null, name:"" };
+var app = document.getElementById("app");
+
+function speak(text){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text); u.rate = 1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function hearBtn(text){ return '<button class="hear" onclick="speak(\'' + text.replace(/'/g,"\\'").replace(/"/g,"") + '\')">🔊 Hear it · optional</button>'; }
+function isTeacher(){ return state.mode === "teacher"; }
+function totalScore(){ return state.spotScore + state.verifyScore + state.shareScore; }
+function rankFor(t){ if(t>=10) return "Verification Pro"; if(t>=7) return "Media Checker"; return "Sharp Spotter"; }
+
+function chrome(){
+  var pill = document.getElementById("scorePill");
+  var steps = document.getElementById("steps");
+  var barWrap = document.getElementById("barWrap");
+  if(!state.mode || state.phase==="start"){ pill.innerHTML=""; steps.innerHTML=""; barWrap.style.display="none"; return; }
+  barWrap.style.display="block";
+  var totalSteps = 12;
+  var done = 0;
+  if(state.phase==="spot") done = state.spotIdx;
+  else if(state.phase==="verify") done = 8 + state.verifyIdx;
+  else if(state.phase==="share") done = 11;
+  else if(state.phase==="finish") done = 12;
+  document.getElementById("barFill").style.width = Math.round(done/totalSteps*100) + "%";
+  if(isTeacher()){ pill.innerHTML = '<span class="pill">👩‍🏫 Teacher-Led · Class votes</span>'; }
+  else { pill.innerHTML = '<span class="pill teal">Score: ' + totalScore() + ' / 12</span>'; }
+  var order = ["spot","verify","share","finish"];
+  var labels = {spot:"1 · Spot It", verify:"2 · Verify It", share:"3 · Share Test", finish:"Finish"};
+  var cur = order.indexOf(state.phase);
+  steps.innerHTML = '<div class="steps">' + order.map(function(k,i){
+    var cls = i<cur ? "step done" : (i===cur ? "step on" : "step");
+    return '<div class="'+cls+'">'+labels[k]+'</div>';
+  }).join("") + '</div>';
+}
+function render(){ chrome(); window.scrollTo(0,0);
+  if(state.phase==="start") renderStart();
+  else if(state.phase==="spot") renderSpot();
+  else if(state.phase==="verify") renderVerify();
+  else if(state.phase==="share") renderShare();
+  else if(state.phase==="finish") renderFinish();
+}
+
+/* ---------- START ---------- */
+function renderStart(){
+  app.innerHTML =
+  '<section class="card">'
+  + '<div class="tag photo mb">Grades 9–12 · AI Literacy</div>'
+  + '<h1>Real or <span class="q">AI?</span></h1>'
+  + '<p class="sub">CS Education Week · Center for Cyber Education</p>'
+  + '<div class="goal"><span>🎯</span><div>Goal: Spot AI media.<br>Verify before you share.</div></div>'
+  + '<p class="tiny">✅ No sound needed. &nbsp; 🔊 Read-aloud is optional only.</p>'
+  + hearBtn("Real or AI. Goal: Spot A I media. Verify before you share.")
+  + '<h3 class="mt">Pick a mode</h3>'
+  + '<div class="modes">'
+  + '<button class="mode'+(state.mode==="teacher"?" sel-t":"")+'" onclick="pickMode(\'teacher\')"><strong>👩‍🏫 Teacher-Led</strong><small>For the projector. Class votes first. Talk it out. No individual score.</small></button>'
+  + '<button class="mode'+(state.mode==="student"?" sel-s":"")+'" onclick="pickMode(\'student\')"><strong>🎒 Student-Led</strong><small>Work at your own pace. Instant feedback. Earn a score and rank.</small></button>'
+  + '</div>'
+  + '<div class="mt"><button class="btn btn-navy" '+(state.mode?"":"disabled")+' onclick="startGame()">Start →</button></div>'
+  + '<p class="tiny center mt">3 parts: Spot It (8) · Verify It (3) · The Share Test (1)</p>'
+  + '</section>';
+}
+function pickMode(m){ state.mode=m; renderStart(); chrome(); }
+function startGame(){ state.phase="spot"; state.spotIdx=0; state.spotPicked=null; state.spotRevealed=false; state.spotSkipped=false; state.verifySkipped=false; render(); }
+
+/* ---------- SPOT IT ---------- */
+function itemHTML(it){
+  if(it.type==="photo"){
+    return '<div class="scene"><div class="big">'+it.emoji+'</div><p>'+it.desc+'</p><small>Illustrated scene — not a real photo</small></div>';
+  }
+  if(it.type==="head"){
+    return '<div class="news"><h3>'+it.title+'</h3><div class="meta">'+it.desc+'</div></div>';
+  }
+  return '<div class="post"><div class="posthead"><div class="avatar" style="background:var(--raspberry)">'+it.emoji+'</div><div><strong>'+it.title+'</strong><div class="meta">Social post</div></div></div><p>'+it.desc+'</p></div>';
+}
+function renderSpot(){
+  var it = SPOT[state.spotIdx];
+  var speakText = it.type==="head" ? it.title + ". " + it.desc : it.desc;
+  var html = '<section class="card">'
+    + '<div class="rowline"><span class="tag '+(it.type==="photo"?"photo":it.type==="head"?"head":"post")+'">'+it.tag+'</span><span class="tiny">Spot It · '+(state.spotIdx+1)+' of 8</span></div>'
+    + '<h2 class="mt">'+(it.type==="photo"?it.title:"Real or AI?")+'</h2>'
+    + itemHTML(it)
+    + hearBtn(speakText);
+  if(!state.spotRevealed){
+    html += '<p style="font-weight:900;font-size:1.1rem;margin:10px 0 0">'+(isTeacher()?"Class vote — hands up or shout it out:":"Your call:")+'</p>'
+      + '<div class="btnrow">'
+      + '<button class="btn btn-teal" onclick="spotPick(\'real\')">✅ REAL</button>'
+      + '<button class="btn btn-rasp" onclick="spotPick(\'ai\')">🤖 AI-GENERATED</button>'
+      + '</div>';
+    if(isTeacher()){
+      html += '<p class="tiny center mt">Take the class vote first, then reveal.</p>'
+        + '<button class="btn btn-navy mt" '+(state.spotPicked?"":"disabled")+' onclick="spotReveal()">Reveal answer →</button>';
+      if(state.spotPicked) html += '<div class="feedback info">Class picked: <strong>'+(state.spotPicked==="real"?"REAL":"AI-GENERATED")+'</strong></div>';
+    }
+  } else {
+    var correct = state.spotPicked === it.answer;
+    if(isTeacher()){
+      html += '<div class="feedback info">Answer: <strong>'+(it.answer==="real"?"✅ REAL":"🤖 AI-GENERATED")+'</strong><p>'+it.tell+'</p></div>'
+        + '<div class="teacherbox"><strong>Discuss · 30 seconds</strong><ul class="bullets">'+it.discuss.map(function(d){return "<li>"+d+"</li>";}).join("")+'</ul></div>';
+    } else if(state.spotSkipped){
+      html += '<div class="feedback info">Skipped by teacher — Answer: <strong>'+(it.answer==="real"?"✅ REAL":"🤖 AI-GENERATED")+'</strong><p>'+it.tell+'</p></div>';
+    } else {
+      html += '<div class="feedback '+(correct?"good":"bad")+'">'+(correct?"✅ Correct!":"❌ Not quite — it is "+(it.answer==="real"?"REAL.":"AI-GENERATED."))+'<p>'+it.tell+'</p></div>';
+    }
+    html += '<button class="btn btn-navy mt" onclick="spotNext()">'+(state.spotIdx===7?"Next: Verify It →":"Next →")+'</button>';
+  }
+  html += '</section>';
+  app.innerHTML = html;
+}
+function spotPick(v){
+  if(state.spotRevealed) return;
+  state.spotPicked = v;
+  if(isTeacher()){ renderSpot(); chrome(); return; }
+  if(v === SPOT[state.spotIdx].answer) state.spotScore++;
+  state.spotRevealed = true; render();
+}
+function spotReveal(){ state.spotRevealed = true; render(); }
+function spotNext(){
+  if(state.spotIdx < 7){ state.spotIdx++; state.spotPicked=null; state.spotRevealed=false; state.spotSkipped=false; render(); }
+  else { state.phase="verify"; state.verifyIdx=0; state.verifyPicked=null; state.verifySkipped=false; render(); }
+}
+
+/* ---------- VERIFY IT ---------- */
+function renderVerify(){
+  var v = VERIFY[state.verifyIdx];
+  var answered = state.verifyPicked !== null;
+  var html = '<section class="card">'
+    + '<div class="rowline"><span class="tag verify">Verify It</span><span class="tiny">'+(state.verifyIdx+1)+' of 3</span></div>'
+    + '<h2 class="mt">What is your FIRST check?</h2>'
+    + '<div class="post"><div class="posthead"><div class="avatar" style="background:var(--navy)">'+v.emoji.split(" ")[0]+'</div><div><strong>'+v.handle+'</strong><div class="meta">'+v.time+'</div></div></div><p>'+v.text+'</p><div class="scene" style="margin:12px 0 0"><div class="big">'+v.emoji+'</div></div></div>'
+    + hearBtn(v.text.replace(/“|”/g,""))
+    + '<div class="opts">'
+    + v.options.map(function(o,i){
+        var cls = "opt";
+        if(answered){
+          if(i===v.best) cls += " right";
+          else if(i===state.verifyPicked) cls += " wrong";
+        } else if(state.verifyPicked===i) cls += " picked";
+        return '<button class="'+cls+'" onclick="verifyPick('+i+')"><span style="color:var(--raspberry);font-weight:900">'+String.fromCharCode(65+i)+'.</span> '+o+'</button>';
+      }).join("")
+    + '</div>';
+  if(answered){
+    var correct = state.verifyPicked === v.best;
+    if(isTeacher()){
+      html += '<div class="feedback info">Best first step: <strong>'+v.options[v.best]+'</strong><p>'+v.good+'</p></div>'
+        + '<div class="teacherbox"><strong>Discuss</strong><ul class="bullets"><li>Why is this step first?</li><li>What would you check second?</li></ul></div>';
+    } else if(state.verifySkipped){
+      html += '<div class="feedback info">Skipped by teacher — Best first step: <strong>'+v.options[v.best]+'</strong><p>'+v.good+'</p></div>';
+    } else {
+      html += '<div class="feedback '+(correct?"good":"bad")+'">'+(correct?"✅ Best first step!":"❌ Not the best first step.")+'<p>'+(correct?v.good:v.bad)+'</p></div>';
+    }
+    html += '<button class="btn btn-navy mt" onclick="verifyNext()">'+(state.verifyIdx===2?"Next: The Share Test →":"Next →")+'</button>';
+  }
+  html += '</section>';
+  app.innerHTML = html;
+}
+function verifyPick(i){
+  if(state.verifyPicked !== null) return;
+  state.verifyPicked = i;
+  if(!isTeacher() && i === VERIFY[state.verifyIdx].best) state.verifyScore++;
+  render();
+}
+function verifyNext(){
+  if(state.verifyIdx < 2){ state.verifyIdx++; state.verifyPicked=null; state.verifySkipped=false; render(); }
+  else { state.phase="share"; state.sharePicked=null; render(); }
+}
+
+/* ---------- SHARE TEST ---------- */
+var SHARE_OUTCOMES = {
+  share:{cls:"bad", title:"❌ You shared a fake.", line:"Classmates panic and the office gets flooded with calls."},
+  skip:{cls:"info", title:"⏭️ Safe — but unchecked.", line:"You did not spread it. Next time, verify it so you know for sure."},
+  verify:{cls:"good", title:"✅ Best move!", line:"You checked the district site — no such news. You stopped a rumor."}
+};
+function renderShare(){
+  var picked = state.sharePicked;
+  var html = '<section class="card">'
+    + '<div class="rowline"><span class="tag post">The Share Test</span><span class="fakeflag">Fictional example</span></div>'
+    + '<h2 class="mt">It is about YOUR school. What do you do?</h2>'
+    + '<div class="post"><div class="posthead"><div class="avatar" style="background:var(--raspberry)">!</div><div><strong>@SchoolNews_Breaking</strong><div class="meta">Brand-new account • Just now</div></div></div>'
+    + '<p>“🚨 BREAKING: Lincoln High is CLOSING this Friday and giving every student $500!!! Share before they delete this!!!”</p></div>'
+    + hearBtn("Breaking. Lincoln High is closing this Friday and giving every student 500 dollars. Share before they delete this.")
+    + '<p class="tiny">This post is made up for practice. Lincoln High here is fictional.</p>'
+    + '<div class="btnrow" style="grid-template-columns:1fr 1fr 1fr">'
+    + '<button class="btn btn-rasp" onclick="sharePick(\'share\')">📤 Share</button>'
+    + '<button class="btn btn-ghost" onclick="sharePick(\'skip\')">⏭️ Skip</button>'
+    + '<button class="btn btn-teal" onclick="sharePick(\'verify\')">🔍 Verify first</button>'
+    + '</div>';
+  if(picked){
+    var o = SHARE_OUTCOMES[picked];
+    html += '<div class="feedback '+o.cls+'">'+o.title+'<p>'+o.line+'</p></div>';
+    if(isTeacher()){
+      html += '<div class="teacherbox"><strong>Discuss</strong><ul class="bullets"><li>What clues were in this post?</li><li>New account + big promise + “share fast” = stop.</li><li>Tap another choice to see what happens.</li></ul></div>'
+        + '<button class="btn btn-navy mt" onclick="goFinish()">See the checklist →</button>';
+    } else {
+      html += '<button class="btn btn-navy mt" onclick="goFinish()">Finish →</button>';
+    }
+  }
+  html += '</section>';
+  app.innerHTML = html;
+}
+function sharePick(v){
+  if(!isTeacher() && state.sharePicked !== null) return;
+  if(!isTeacher() && v==="verify") state.shareScore++;
+  state.sharePicked = v; render();
+}
+function goFinish(){ state.phase="finish"; render(); }
+
+/* ---------- FINISH ---------- */
+function renderFinish(){
+  var t = totalScore();
+  var checklist = ["Source? Search it.","Image check.","Date and context.","If unsure, do not share."];
+  var listHTML = '<ul class="checklist">' + checklist.map(function(c,i){ return '<li><span class="n">'+(i+1)+'</span>'+c+'</li>'; }).join("") + '</ul>';
+  var html = '<section class="card center">'
+    + '<div style="font-size:2.6rem">🏁</div><h2>You finished!</h2>';
+  if(isTeacher()){
+    html += '<p class="sub">Class complete — nice checking.</p>'
+      + '<div style="text-align:left"><h3>Keep this checklist</h3>'+listHTML+'</div>'
+      + '<div class="teacherbox" style="text-align:left"><strong>Wrap-up</strong><ul class="bullets"><li>Which tell was hardest to spot?</li><li>Name one check you will use this week.</li></ul></div>';
+  } else {
+    html += '<div class="scorebig">'+t+' <span style="font-size:1.4rem;color:var(--muted)">/ 12</span></div>'
+      + '<p class="tiny">Spot It: '+state.spotScore+'/8 · Verify It: '+state.verifyScore+'/3 · Share Test: '+state.shareScore+'/1</p>'
+      + '<p><span class="rank">🏅 '+rankFor(t)+'</span></p>'
+      + '<div style="text-align:left"><h3>Your 4-point checklist</h3>'+listHTML+'</div>';
+  }
+  html += '</section>'
+    + '<section class="card mt">'
+    + '<h3>🎓 Completion certificate</h3>'
+    + '<label class="tiny" for="nameIn">Type your name</label>'
+    + '<input class="namein mt" id="nameIn" type="text" maxlength="40" placeholder="Your name" value="'+state.name.replace(/"/g,"&quot;")+'" oninput="certName(this.value)">'
+    + '<div class="cert"><div class="seal">🎓</div><div class="tiny" style="letter-spacing:.08em;font-weight:900">CENTER FOR CYBER EDUCATION · CS EDUCATION WEEK</div>'
+    + '<h3>Certificate — Real or AI?</h3>'
+    + '<p class="tiny">This certifies that</p>'
+    + '<div class="certname" id="certName">'+(state.name?escapeHTML(state.name):"Your Name")+'</div>'
+    + '<p style="font-weight:700;margin:4px 0">spotted AI media and verified before sharing.</p>'
+    + (isTeacher() ? '<p class="tiny">Completed as a class · Teacher-Led</p>' : '<p class="tiny">Score: '+t+'/12 · Rank: '+rankFor(t)+'</p>')
+    + '<p class="tiny" id="certDate"></p></div>'
+    + '<div class="btnrow"><button class="btn btn-teal" onclick="downloadCert()">⬇ Download certificate</button><button class="btn btn-ghost" onclick="restart()">↺ Play again</button></div>'
+    + '</section>';
+  app.innerHTML = html;
+  document.getElementById("certDate").textContent = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+}
+function escapeHTML(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function certName(v){ state.name=v; var el=document.getElementById("certName"); if(el) el.textContent = v.trim()? v : "Your Name"; }
+function downloadCert(){
+  try{
+    var c=document.createElement("canvas"); c.width=1200; c.height=800; var x=c.getContext("2d");
+    x.fillStyle="#FFFFFF"; x.fillRect(0,0,1200,800);
+    var g=x.createLinearGradient(0,0,1200,0); g.addColorStop(0,"#CD2653"); g.addColorStop(.5,"#00ADEF"); g.addColorStop(1,"#13A89E");
+    x.fillStyle=g; x.fillRect(0,0,1200,28);
+    x.strokeStyle="#273791"; x.lineWidth=8; x.strokeRect(24,24,1152,752);
+    x.fillStyle="#273791"; x.textAlign="center";
+    x.font="700 26px sans-serif"; x.fillText("CENTER FOR CYBER EDUCATION  ·  CS EDUCATION WEEK",600,130);
+    x.font="900 64px sans-serif"; x.fillText("Real or AI?",600,215);
+    x.fillStyle="#5A648F"; x.font="600 26px sans-serif"; x.fillText("This certifies that",600,300);
+    x.fillStyle="#1C2452"; x.font="900 54px sans-serif"; x.fillText(state.name.trim()||"Your Name",600,385);
+    x.strokeStyle="#D8DEF2"; x.lineWidth=3; x.beginPath(); x.moveTo(300,415); x.lineTo(900,415); x.stroke();
+    x.fillStyle="#1C2452"; x.font="700 28px sans-serif"; x.fillText("spotted AI media and verified before sharing.",600,480);
+    if(!isTeacher()){ x.font="800 30px sans-serif"; x.fillStyle="#CD2653"; x.fillText("Score: "+totalScore()+"/12  ·  Rank: "+rankFor(totalScore()),600,545); }
+    x.fillStyle="#5A648F"; x.font="600 24px sans-serif";
+    x.fillText(new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),600,640);
+    x.font="48px sans-serif"; x.fillText("🎓",600,715);
+    var a=document.createElement("a"); a.download="real-or-ai-certificate.png"; a.href=c.toDataURL("image/png"); a.click();
+  }catch(e){}
+}
+function restart(){
+  state = { mode:state.mode, phase:"spot", spotIdx:0, verifyIdx:0, spotScore:0, verifyScore:0, shareScore:0, spotPicked:null, spotRevealed:false, spotSkipped:false, verifyPicked:null, verifySkipped:false, sharePicked:null, name:state.name };
+  render();
+}
+
+/* ---------- TEACHER BYPASS ---------- */
+function toggleTeacher(open){
+  var o = document.getElementById("teacherOverlay");
+  if(o) o.className = open ? "teacher-overlay open" : "teacher-overlay";
+}
+function ensureMode(){ if(!state.mode) state.mode = "teacher"; }
+function jumpSpot(i){
+  ensureMode(); toggleTeacher(false);
+  state.phase="spot"; state.spotIdx=i; state.spotPicked=null; state.spotRevealed=false; state.spotSkipped=false;
+  render();
+}
+function jumpVerify(i){
+  ensureMode(); toggleTeacher(false);
+  state.phase="verify"; state.verifyIdx=i; state.verifyPicked=null; state.verifySkipped=false;
+  render();
+}
+function jumpShare(){
+  ensureMode(); toggleTeacher(false);
+  state.phase="share"; state.sharePicked=null;
+  render();
+}
+function jumpFinish(){
+  ensureMode(); toggleTeacher(false);
+  state.phase="finish";
+  render();
+}
+function teacherSkip(){
+  toggleTeacher(false);
+  if(state.phase==="start"){ jumpSpot(0); return; }
+  if(state.phase==="spot"){
+    if(!state.spotRevealed){
+      state.spotSkipped = true;
+      if(!state.spotPicked) state.spotPicked = SPOT[state.spotIdx].answer;
+      state.spotRevealed = true; render();
+    } else { spotNext(); }
+    return;
+  }
+  if(state.phase==="verify"){
+    if(state.verifyPicked===null){
+      state.verifySkipped = true;
+      state.verifyPicked = VERIFY[state.verifyIdx].best; render();
+    } else { verifyNext(); }
+    return;
+  }
+  if(state.phase==="share"){ goFinish(); return; }
+  /* finish: nothing to skip */
+}
+function teacherReset(){
+  toggleTeacher(false);
+  var keepMode = state.mode, keepName = state.name;
+  state = { mode:keepMode, phase:"start", spotIdx:0, verifyIdx:0, spotScore:0, verifyScore:0, shareScore:0, spotPicked:null, spotRevealed:false, spotSkipped:false, verifyPicked:null, verifySkipped:false, sharePicked:null, name:keepName };
+  render();
+}
+document.getElementById("teacherOverlay").addEventListener("click", function(e){ if(e.target===this) toggleTeacher(false); });
+render();
+</script>
+</body>
+</html>

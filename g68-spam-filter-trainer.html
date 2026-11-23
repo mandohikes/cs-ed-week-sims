@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Spam Filter Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rasp:#CD2653; --navy:#273791; --sky:#00ADEF; --teal:#13A89E;
+  --bg:#F4F7FF; --card:#FFFFFF; --ink:#1B2350; --muted:#5A648C; --line:#DCE3F5;
+  --spam-bg:#FDE8EE; --real-bg:#E2F6F3; --good:#0E7C74; --bad:#B01E44;
+  --shadow:0 10px 30px rgba(39,55,145,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#12172E; --card:#1D2447; --ink:#EEF1FF; --muted:#AAB3D9; --line:#333D6E; --spam-bg:#3D1E2E; --real-bg:#143A37; --shadow:0 10px 30px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer;min-height:48px}
+.wrap{max-width:700px;margin:0 auto;padding:16px 16px 40px}
+.topbar{display:flex;align-items:center;gap:10px;padding:6px 2px 12px}
+.logo-badge{width:44px;height:44px;border-radius:12px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:24px;flex:none}
+.topbar h1{font-size:20px;line-height:1.1;margin:0;font-weight:900}
+.topbar p{margin:2px 0 0;font-size:13px;color:var(--muted);font-weight:700}
+.progress{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:4px 0 16px}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--sky),var(--teal));width:0%;transition:width .4s}
+.screen{display:none}
+.screen.active{display:block;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.screen.active{animation:none}.progress i{transition:none}}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:22px 20px}
+.kicker{display:inline-block;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:99px;color:#fff}
+.k-rasp{background:var(--rasp)} .k-navy{background:var(--navy)} .k-sky{background:#0288BE} .k-teal{background:#0E7C74}
+h2.big{font-size:30px;line-height:1.15;margin:12px 0 8px;font-weight:900}
+h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
+.sub{font-size:17px;color:var(--muted);font-weight:700;line-height:1.4;margin:0 0 14px}
+.goal{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:2px dashed var(--sky);border-radius:14px;padding:12px 14px;font-size:17px;font-weight:800;line-height:1.4}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+@media(max-width:520px){.mode-grid{grid-template-columns:1fr}}
+.mode-btn{text-align:left;border:3px solid var(--line);background:var(--card);border-radius:16px;padding:16px;min-height:110px}
+.mode-btn strong{display:block;font-size:19px;margin-bottom:4px}
+.mode-btn span{font-size:14px;color:var(--muted);font-weight:700;line-height:1.35;display:block}
+.mode-btn.t{border-color:var(--navy)} .mode-btn.s{border-color:var(--teal)}
+.mode-btn:active{transform:scale(.98)}
+.note-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.pill{font-size:13px;font-weight:800;background:var(--real-bg);color:var(--good);padding:7px 11px;border-radius:99px}
+.hear-btn{border:2px solid var(--line);background:var(--card);color:var(--navy);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:800;min-height:36px}
+@media(prefers-color-scheme:dark){.hear-btn{color:var(--sky)}}
+.mail-card{border:2px solid var(--line);border-radius:16px;padding:18px;background:var(--card)}
+.mail-from{font-size:13px;font-weight:900;color:var(--navy);text-transform:uppercase;letter-spacing:.04em}
+@media(prefers-color-scheme:dark){.mail-from{color:var(--sky)}}
+.mail-from span{color:var(--muted);text-transform:none;letter-spacing:0}
+.mail-body{font-size:23px;font-weight:900;line-height:1.3;margin:8px 0 4px}
+.mail-feats{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.feat{font-size:12px;font-weight:900;background:#FFF3D6;color:#7A5200;padding:4px 8px;border-radius:99px;border:1.5px solid #F0D488}
+@media(prefers-color-scheme:dark){.feat{background:#3A3013;color:#FFD97A;border-color:#6B5A1E}}
+.count-line{font-size:15px;font-weight:900;color:var(--muted);text-align:center;margin:0 0 10px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.btn{border:none;border-radius:14px;padding:14px 10px;font-size:19px;font-weight:900;color:#fff;min-height:60px}
+.btn:active{transform:scale(.97)}
+.btn-spam{background:var(--rasp)} .btn-real{background:var(--teal)} .btn-navy{background:var(--navy)} .btn-sky{background:#0288BE} .btn-ghost{background:var(--card);color:var(--ink);border:2.5px solid var(--line)}
+.btn-wide{width:100%;margin-top:14px}
+.feedback{border-radius:14px;padding:13px 15px;font-size:16px;font-weight:800;line-height:1.4;margin-top:14px;display:none}
+.feedback.show{display:block}
+.feedback.good{background:var(--real-bg);color:var(--good);border:2px solid var(--teal)}
+.feedback.bad{background:var(--spam-bg);color:var(--bad);border:2px solid var(--rasp)}
+.teacher-box{background:#FFF8E1;border:2px solid #F0D488;border-radius:14px;padding:12px 15px;margin-top:14px;color:#5C4700}
+@media(prefers-color-scheme:dark){.teacher-box{background:#2E2A12;color:#FFE9A3;border-color:#6B5A1E}}
+.teacher-box strong{font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.teacher-box ul{margin:6px 0 0;padding-left:18px;font-size:15px;font-weight:700;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{font-size:14px;font-weight:900;padding:8px 12px;border-radius:99px;border:2px solid}
+.chip-spam{background:var(--spam-bg);color:var(--bad);border-color:var(--rasp)}
+.chip-real{background:var(--real-bg);color:var(--good);border-color:var(--teal)}
+.chip-mix{background:var(--bg);color:var(--muted);border-color:var(--line)}
+.score-big{font-size:64px;font-weight:900;line-height:1;text-align:center;color:var(--navy)}
+@media(prefers-color-scheme:dark){.score-big{color:#fff}}
+.score-pct{font-size:26px;font-weight:900;text-align:center;color:var(--teal);margin-top:4px}
+.verdict{border-radius:14px;padding:14px;text-align:center;font-size:20px;font-weight:900;margin-top:14px;display:none}
+.verdict.show{display:block}
+.verdict.spam{background:var(--spam-bg);color:var(--bad);border:2.5px solid var(--rasp)}
+.verdict.real{background:var(--real-bg);color:var(--good);border:2.5px solid var(--teal)}
+.result-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.result-row{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;line-height:1.3}
+.result-row .st{font-size:20px;flex:none}
+.result-row small{display:block;color:var(--muted);font-weight:700}
+.result-row.fixed{border-color:var(--teal);background:var(--real-bg)}
+.quiz-opt{display:block;width:100%;text-align:left;border:2.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:14px 16px;font-size:17px;font-weight:800;margin-top:10px;min-height:56px}
+.quiz-opt.correct{border-color:var(--teal);background:var(--real-bg)}
+.quiz-opt.wrong{border-color:var(--rasp);background:var(--spam-bg)}
+.compare{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center;margin:16px 0}
+.compare .box{border:2px solid var(--line);border-radius:16px;padding:14px 8px}
+.compare .box b{font-size:34px;display:block;line-height:1.1}
+.compare .box span{font-size:13px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.compare .arrow{font-size:28px}
+.key-idea{background:var(--navy);color:#fff;border-radius:16px;padding:18px;font-size:20px;font-weight:900;line-height:1.4;text-align:center}
+.hint-line{font-size:14px;font-weight:800;color:var(--muted);margin-top:10px;display:none}
+.hint-line.show{display:block}
+.center{text-align:center}
+.small{font-size:13px;color:var(--muted);font-weight:700}
+/* Teacher bypass — deliberately quiet */
+.teacher-fab{position:fixed;right:10px;bottom:10px;z-index:60;min-height:36px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);background:var(--card);border:1.5px solid var(--line);border-radius:99px;opacity:.72;box-shadow:0 4px 14px rgba(39,55,145,.12)}
+.teacher-fab:hover,.teacher-fab:focus{opacity:1}
+.teacher-overlay{position:fixed;inset:0;z-index:70;background:rgba(20,26,60,.45);display:none;align-items:flex-end;justify-content:center;padding:12px}
+.teacher-overlay.open{display:flex}
+.teacher-panel{background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:18px;box-shadow:var(--shadow);width:100%;max-width:480px;padding:18px;max-height:88vh;overflow:auto}
+.teacher-panel h3{margin:0 0 4px;font-size:18px;font-weight:900}
+.teacher-panel p{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:700}
+.teacher-panel .tp-label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+.tp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tp-btn{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;text-align:left;min-height:48px}
+.tp-btn:active{transform:scale(.98)}
+.tp-btn.primary{border-color:var(--navy);background:var(--navy);color:#fff;text-align:center}
+.tp-btn.danger{border-color:var(--rasp);color:var(--bad);text-align:center}
+.tp-btn.close-btn{text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="logo-badge" aria-hidden="true">✉️</div>
+    <div>
+      <h1>Spam Filter Trainer</h1>
+      <p>CS Education Week · Center for Cyber Education</p>
+    </div>
+  </div>
+  <div class="progress" aria-hidden="true"><i id="progBar"></i></div>
+
+  <!-- START -->
+  <section class="screen active" id="s-start">
+    <div class="card">
+      <span class="kicker k-rasp">Grades 6–8 · Machine Learning</span>
+      <h2 class="big">Train a spam filter. Then fix it.</h2>
+      <div class="goal"><span aria-hidden="true">🎯</span><span><strong>Goal:</strong> Teach a filter to spot spam — and see how its training data shapes every call it makes.</span></div>
+      <div class="mode-grid">
+        <button class="mode-btn t" onclick="startMode('teacher')"><strong>👩‍🏫 Teacher-Led</strong><span>For the projector. Teacher reveals each step. Class talks it through.</span></button>
+        <button class="mode-btn s" onclick="startMode('student')"><strong>🧑‍💻 Student-Led</strong><span>On your own. Hints, instant feedback, and your score.</span></button>
+      </div>
+      <div class="note-row">
+        <span class="pill">🔇 No sound needed.</span>
+        <button class="hear-btn" onclick="hearIt('Train a spam filter. Then fix it. Pick Teacher Led or Student Led to start.')">🔊 Hear it · optional</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SORT -->
+  <section class="screen" id="s-sort">
+    <div class="card">
+      <span class="kicker k-navy">Step 1 · Sort the Mail</span>
+      <h2 class="med">Spam or Not Spam?</h2>
+      <p class="sub">Your taps become the filter's training data.</p>
+      <p class="count-line" id="sortCount"></p>
+      <div class="mail-card">
+        <div class="mail-from" id="sortFrom"></div>
+        <div class="mail-body" id="sortBody"></div>
+        <div class="mail-feats" id="sortFeats"></div>
+      </div>
+      <div class="btn-row" id="sortBtns">
+        <button class="btn btn-spam" onclick="sortTap(true)">🚫 Spam</button>
+        <button class="btn btn-real" onclick="sortTap(false)">✅ Not Spam</button>
+      </div>
+      <div class="feedback" id="sortFeedback"></div>
+      <button class="btn btn-navy btn-wide" id="sortNext" style="display:none" onclick="sortNextTap()">Next ➜</button>
+      <p class="hint-line" id="sortHint"></p>
+      <div class="note-row">
+        <button class="hear-btn" id="sortHintBtn" onclick="showSortHint()">💡 Hint</button>
+        <button class="hear-btn" onclick="hearSort()">🔊 Hear it · optional</button>
+      </div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Talk about it</strong>
+        <ul><li>What clues gave it away?</li><li>Spam words? Sender? ALL CAPS?</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEARNED -->
+  <section class="screen" id="s-learned">
+    <div class="card">
+      <span class="kicker k-sky">Your Filter Learned…</span>
+      <h2 class="med">Patterns from your training data</h2>
+      <div class="chips" id="learnedChips"></div>
+      <p class="sub" id="learnedLine">The filter only knows these patterns. Nothing else.</p>
+      <button class="btn btn-navy btn-wide" onclick="goTest()">Test the Filter ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearIt('Your filter learned patterns from your training data. Now test the filter.')">🔊 Hear it · optional</button></div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Talk about it</strong>
+        <ul><li>Which pattern looks strongest?</li><li>Could any pattern backfire?</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section class="screen" id="s-test">
+    <div class="card">
+      <span class="kicker k-teal">Step 2 · Test the Filter</span>
+      <h2 class="med" id="testHead">Will the filter catch it?</h2>
+      <p class="count-line" id="testCount"></p>
+      <div class="mail-card">
+        <div class="mail-from" id="testFrom"></div>
+        <div class="mail-body" id="testBody"></div>
+      </div>
+      <div id="predictBlock">
+        <p class="sub center" style="margin-top:14px">First — your prediction:</p>
+        <div class="btn-row">
+          <button class="btn btn-spam" onclick="predictTap(true)">Filter says Spam</button>
+          <button class="btn btn-real" onclick="predictTap(false)">Filter says Not Spam</button>
+        </div>
+      </div>
+      <button class="btn btn-navy btn-wide" id="revealBtn" style="display:none" onclick="revealTest()">Reveal the Filter's Call ➜</button>
+      <div class="verdict" id="testVerdict"></div>
+      <div class="feedback" id="testFeedback"></div>
+      <button class="btn btn-navy btn-wide" id="testNext" style="display:none" onclick="testNextTap()">Next ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearTest()">🔊 Hear it · optional</button></div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Talk about it</strong>
+        <ul><li>Hands up: who predicted Spam?</li><li>Which learned pattern fired?</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORE 1 -->
+  <section class="screen" id="s-score1">
+    <div class="card center">
+      <span class="kicker k-rasp">Filter Score · Round 1</span>
+      <h2 class="med">How did your filter do?</h2>
+      <div class="score-big" id="score1Frac"></div>
+      <div class="score-pct" id="score1Pct"></div>
+      <p class="sub" id="score1Line" style="margin-top:12px"></p>
+      <button class="btn btn-navy btn-wide" onclick="goMiss()">See the Big Miss ➜</button>
+    </div>
+  </section>
+
+  <!-- MISS -->
+  <section class="screen" id="s-miss">
+    <div class="card">
+      <span class="kicker k-rasp">Step 3 · The Miss</span>
+      <h2 class="med">A real message got flagged! 😲</h2>
+      <div class="mail-card">
+        <div class="mail-from">From: School Office <span>· School Newsletter</span></div>
+        <div class="mail-body">“Free books at the book fair!”</div>
+        <div class="mail-feats"><span class="feat">⚠️ word: FREE</span></div>
+      </div>
+      <div class="verdict spam show">🚫 Filter said: SPAM — wrong!</div>
+      <p class="sub" style="margin-top:14px">Your training data taught it “free = spam.” The filter only knows the patterns it was taught.</p>
+      <button class="btn btn-teal btn-wide" style="background:var(--teal)" onclick="goFix()">Fix It: Add Better Examples ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearIt('A real message got flagged. Your training data taught the filter that free means spam. The filter only knows the patterns it was taught.')">🔊 Hear it · optional</button></div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Talk about it</strong>
+        <ul><li>Was the filter “dumb” — or just taught narrowly?</li><li>What examples would fix it?</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FIX SORT -->
+  <section class="screen" id="s-fix">
+    <div class="card">
+      <span class="kicker k-teal">Step 3 · Add 4 Balanced Examples</span>
+      <h2 class="med">Teach it both sides of “free”</h2>
+      <p class="sub">Real mail can say “free.” Spam doesn't always.</p>
+      <p class="count-line" id="fixCount"></p>
+      <div class="mail-card">
+        <div class="mail-from" id="fixFrom"></div>
+        <div class="mail-body" id="fixBody"></div>
+        <div class="mail-feats" id="fixFeats"></div>
+      </div>
+      <div class="btn-row" id="fixBtns">
+        <button class="btn btn-spam" onclick="fixTap(true)">🚫 Spam</button>
+        <button class="btn btn-real" onclick="fixTap(false)">✅ Not Spam</button>
+      </div>
+      <div class="feedback" id="fixFeedback"></div>
+      <button class="btn btn-navy btn-wide" id="fixNext" style="display:none" onclick="fixNextTap()">Next ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearFix()">🔊 Hear it · optional</button></div>
+    </div>
+  </section>
+
+  <!-- RETEST -->
+  <section class="screen" id="s-retest">
+    <div class="card">
+      <span class="kicker k-sky">Re-Test · Same 8 Messages</span>
+      <h2 class="med">Same test. Smarter filter.</h2>
+      <div class="score-big" id="score2Frac"></div>
+      <div class="score-pct" id="score2Pct"></div>
+      <div class="result-list" id="retestList"></div>
+      <button class="btn btn-navy btn-wide" onclick="goQuiz()">Quick Check ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearRetest()">🔊 Hear it · optional</button></div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Talk about it</strong>
+        <ul><li>What changed — the test, or the training?</li><li>Which message flipped?</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="s-quiz">
+    <div class="card">
+      <span class="kicker k-navy">Step 4 · Quick Check</span>
+      <p class="count-line" id="quizCount"></p>
+      <h2 class="med" id="quizQ"></h2>
+      <div id="quizOpts"></div>
+      <div class="feedback" id="quizFeedback"></div>
+      <button class="btn btn-navy btn-wide" id="quizNext" style="display:none" onclick="quizNextTap()">Next ➜</button>
+      <div class="note-row"><button class="hear-btn" onclick="hearQuiz()">🔊 Hear it · optional</button></div>
+    </div>
+  </section>
+
+  <!-- FINISH -->
+  <section class="screen" id="s-finish">
+    <div class="card">
+      <span class="kicker k-teal">Done! 🎉</span>
+      <h2 class="med center">Before vs. After</h2>
+      <div class="compare">
+        <div class="box"><span>Round 1</span><b id="finBefore"></b><span id="finBeforePct"></span></div>
+        <div class="arrow" aria-hidden="true">➜</div>
+        <div class="box"><span>After Fix</span><b id="finAfter"></b><span id="finAfterPct"></span></div>
+      </div>
+      <p class="sub center" id="finQuizLine"></p>
+      <div class="key-idea">“A model learns the patterns in its training data, including the mistakes.”</div>
+      <button class="btn btn-navy btn-wide" onclick="location.reload()">↺ Play Again</button>
+      <div class="note-row" style="justify-content:center"><button class="hear-btn" onclick="hearIt('A model learns the patterns in its training data, including the mistakes.')">🔊 Hear it · optional</button></div>
+      <div class="teacher-box teacher-only" style="display:none">
+        <strong>Wrap up</strong>
+        <ul><li>Where else does training data shape an AI's calls?</li><li>Who should check a filter's mistakes?</li></ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- TEACHER BYPASS (quiet, corner) -->
+<button class="teacher-fab" id="teacherFab" aria-haspopup="dialog" onclick="toggleTeacherPanel(true)">Teacher</button>
+<div class="teacher-overlay" id="teacherOverlay" role="dialog" aria-modal="true" aria-label="Teacher controls">
+  <div class="teacher-panel">
+    <h3>Teacher controls</h3>
+    <p id="teacherWhere">Jump anywhere, skip a stuck step, or reset.</p>
+    <div class="tp-label">Jump to a stage</div>
+    <div class="tp-grid">
+      <button class="tp-btn" onclick="teacherJump('sort')">1 · Sort the Mail</button>
+      <button class="tp-btn" onclick="teacherJump('test')">2 · Test the Filter</button>
+      <button class="tp-btn" onclick="teacherJump('miss')">3 · The Miss</button>
+      <button class="tp-btn" onclick="teacherJump('quiz')">4 · Quick Check</button>
+    </div>
+    <div class="tp-label">This screen</div>
+    <div class="tp-grid">
+      <button class="tp-btn primary" id="teacherSkipBtn" onclick="teacherSkip()">Skip this step ➜</button>
+      <button class="tp-btn danger" onclick="teacherReset()">↺ Reset</button>
+    </div>
+    <button class="tp-btn close-btn" style="width:100%;margin-top:10px" onclick="toggleTeacherPanel(false)">Close</button>
+  </div>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+var TRAIN = [
+ {from:"LuckyDraw", body:"WIN a FREE prize! Click now!", spam:true},
+ {from:"Cafeteria", body:"Lunch today: pizza and salad.", spam:false},
+ {from:"MegaSale", body:"FREE phones! Click the link!", spam:true},
+ {from:"Library", body:"Library book due Friday. Please return it.", spam:false},
+ {from:"PrizeTeam", body:"You won $500! CLICK HERE NOW!!!", spam:true},
+ {from:"Coach Lee", body:"Practice moved to 4 PM today.", spam:false},
+ {from:"CheatHelp", body:"Homework answers FREE — click fast!", spam:true},
+ {from:"Ms. Rivera", body:"Math homework: pages 12–13 tonight.", spam:false},
+ {from:"ShopDeals", body:"SALE! 90% OFF — BUY NOW!!!", spam:true},
+ {from:"School Office", body:"School play is Friday at 6 PM.", spam:false},
+ {from:"GiftPromo", body:"FREE gift card! Enter to WIN!", spam:true},
+ {from:"Mr. Chen", body:"Field trip forms due tomorrow.", spam:false}
+];
+var TEST = [
+ {from:"GameCodes", body:"FREE game codes! Click here!", spam:true},
+ {from:"Science Club", body:"Science club meets Tuesday.", spam:false},
+ {from:"PrizeTeam", body:"WIN $100! CLICK NOW!!!", spam:true},
+ {from:"School Office", body:"Free books at the book fair!", spam:false, miss:true},
+ {from:"ShoeSale", body:"Cheap shoes SALE! Buy now!!!", spam:true},
+ {from:"School Office", body:"Report cards go home Friday.", spam:false},
+ {from:"StudyHelp Ads", body:"Homework answers — click for FREE help!", spam:true},
+ {from:"Band Room", body:"Band concert Thursday at 7 PM.", spam:false}
+];
+var FIX = [
+ {from:"Library", body:"Free tutoring after school Tuesday.", spam:false},
+ {from:"PrizeHub", body:"WIN a prize! Send $10 now!", spam:true},
+ {from:"Library", body:"Get a FREE bookmark at the library!", spam:false},
+ {from:"ClaimCenter", body:"Click to claim your $200 prize!", spam:true}
+];
+var QUIZ = [
+ {q:"Why did the filter flag “Free books at the book fair!”?",
+  opts:["It learned “free = spam” from training data","It does not like books","It guessed at random"], a:0,
+  why:"Every “free” it had seen was spam — so it learned that pattern."},
+ {q:"How do you fix a filter that learned a wrong pattern?",
+  opts:["Delete the filter","Add more balanced examples","Use more capital letters"], a:1,
+  why:"Balanced examples teach it both sides of a word like “free.”"},
+ {q:"What does a model learn?",
+  opts:["Only correct facts","Whatever it wants","Patterns in its training data — mistakes included"], a:2,
+  why:"A model learns the patterns in its training data, including the mistakes."}
+];
+
+/* ---------- FEATURES + REAL LEARNING ---------- */
+var FEATURES = [
+ {key:"free", label:"“free”", test:function(b){return /\bfree\b/i.test(b);}},
+ {key:"win", label:"win / prize", test:function(b){return /\b(win|won|prize|gift card)\b/i.test(b);}},
+ {key:"click", label:"“click”", test:function(b){return /\bclick\b/i.test(b);}},
+ {key:"caps", label:"ALL CAPS / !!!", test:function(b){return /[A-Z]{3,}/.test(b)||/!!/.test(b);}},
+ {key:"money", label:"$ / SALE / % OFF", test:function(b){return /\$\d/.test(b)||/\bSALE\b/.test(b)||/% OFF/.test(b);}}
+];
+function featsOf(body){
+  var out=[];
+  FEATURES.forEach(function(f){ if(f.test(body)) out.push(f); });
+  return out;
+}
+function computeWeights(labeled){
+  var w={};
+  FEATURES.forEach(function(f){
+    var s=0,r=0;
+    labeled.forEach(function(m){
+      if(f.test(m.body)){ if(m.label) s++; else r++; }
+    });
+    var tot=s+r;
+    w[f.key]= tot===0 ? 0 : (s-r)/tot;
+  });
+  return w;
+}
+function filterSays(body, w){
+  var score=0;
+  FEATURES.forEach(function(f){ if(f.test(body)) score+=w[f.key]; });
+  return score>=0.5;
+}
+
+/* ---------- STATE ---------- */
+var mode="student";
+var labeled=[];           /* {body, label} from student taps */
+var sortIdx=0, fixIdx=0, testIdx=0, quizIdx=0;
+var predicted=null, predictScore=0;
+var results1=[], acc1={n:0,d:8}, acc2={n:0,d:8}, quizScore=0;
+var weights=null, weights2=null;
+var started=false, currentScreen="s-start";
+
+/* ---------- HELPERS ---------- */
+function show(id){
+  currentScreen=id;
+  var screens=document.querySelectorAll(".screen");
+  for(var i=0;i<screens.length;i++) screens[i].classList.remove("active");
+  document.getElementById(id).classList.add("active");
+  var order=["s-start","s-sort","s-learned","s-test","s-score1","s-miss","s-fix","s-retest","s-quiz","s-finish"];
+  var idx=order.indexOf(id);
+  document.getElementById("progBar").style.width = (idx/(order.length-1)*100)+"%";
+  window.scrollTo(0,0);
+}
+function hearIt(text){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text); u.rate=0.95;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function featChipsHTML(body){
+  var fs=featsOf(body);
+  if(!fs.length) return '<span class="feat">no spammy clues</span>';
+  return fs.map(function(f){return '<span class="feat">clue: '+f.label+'</span>';}).join("");
+}
+function applyMode(){
+  var t = mode==="teacher";
+  var boxes=document.querySelectorAll(".teacher-only");
+  for(var i=0;i<boxes.length;i++) boxes[i].style.display = t?"block":"none";
+  document.getElementById("predictBlock").style.display = t?"none":"block";
+  document.getElementById("revealBtn").style.display = t?"block":"none";
+  document.getElementById("testHead").textContent = t ? "What will the filter say?" : "Will the filter catch it?";
+  document.getElementById("sortHintBtn").style.display = t?"none":"inline-block";
+}
+
+/* ---------- START ---------- */
+function startMode(m){
+  mode=m; started=true; applyMode();
+  labeled=[]; sortIdx=0; renderSort(); show("s-sort");
+}
+
+/* ---------- STEP 1: SORT ---------- */
+function renderSort(){
+  var m=TRAIN[sortIdx];
+  document.getElementById("sortCount").textContent="Message "+(sortIdx+1)+" of "+TRAIN.length+" · Training set so far: "+labeled.length;
+  document.getElementById("sortFrom").innerHTML="From: "+m.from;
+  document.getElementById("sortBody").textContent="“"+m.body+"”";
+  document.getElementById("sortFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("sortBtns").style.display="grid";
+  var fb=document.getElementById("sortFeedback"); fb.className="feedback"; fb.textContent="";
+  document.getElementById("sortNext").style.display="none";
+  document.getElementById("sortHint").className="hint-line";
+}
+function sortTap(isSpam){
+  var m=TRAIN[sortIdx];
+  labeled.push({body:m.body, label:isSpam});
+  document.getElementById("sortBtns").style.display="none";
+  var fb=document.getElementById("sortFeedback");
+  if(mode==="student"){
+    var ok = isSpam===m.spam;
+    fb.className="feedback show "+(ok?"good":"bad");
+    fb.textContent = ok ? "✅ Right! That label just trained your filter." :
+      (m.spam ? "Not quite — that one was spam. Sneaky! Your filter learned your label anyway." :
+               "Not quite — that one was real mail. Your filter learned your label anyway.");
+  } else {
+    fb.className="feedback show good";
+    fb.textContent = m.spam ? "🚫 It was SPAM. Label saved to training data." : "✅ It was NOT SPAM. Label saved to training data.";
+  }
+  var nx=document.getElementById("sortNext");
+  nx.textContent = sortIdx===TRAIN.length-1 ? "See What the Filter Learned ➜" : "Next ➜";
+  nx.style.display="block";
+}
+function sortNextTap(){
+  sortIdx++;
+  if(sortIdx<TRAIN.length){ renderSort(); }
+  else { weights=computeWeights(labeled); renderLearned(); show("s-learned"); }
+}
+function showSortHint(){
+  var m=TRAIN[sortIdx];
+  var fs=featsOf(m.body);
+  var h=document.getElementById("sortHint");
+  h.textContent = fs.length ? "💡 Hint: look at the clue words — "+fs.map(function(f){return f.label;}).join(", ")+". Spam leans on those." :
+    "💡 Hint: no clue words, plain words, school sender — that leans Not Spam.";
+  h.className="hint-line show";
+}
+function hearSort(){ hearIt(document.getElementById("sortBody").textContent); }
+
+/* ---------- LEARNED ---------- */
+function renderLearned(){
+  var chips="";
+  FEATURES.forEach(function(f){
+    var w=weights[f.key];
+    if(w>=0.5) chips+='<span class="chip chip-spam">'+f.label+' → mostly SPAM</span>';
+    else if(w<=-0.5) chips+='<span class="chip chip-real">'+f.label+' → mostly NOT SPAM</span>';
+    else if(w!==0) chips+='<span class="chip chip-mix">'+f.label+' → mixed</span>';
+  });
+  if(chips.indexOf("chip-spam")===-1 && chips.indexOf("chip-real")===-1)
+    chips='<span class="chip chip-mix">No strong patterns yet — labels were mixed.</span>'+chips;
+  document.getElementById("learnedChips").innerHTML=chips;
+}
+
+/* ---------- STEP 2: TEST ---------- */
+function goTest(){ testIdx=0; results1=[]; predictScore=0; renderTest(); show("s-test"); }
+function renderTest(){
+  var m=TEST[testIdx];
+  predicted=null;
+  document.getElementById("testCount").textContent="Test message "+(testIdx+1)+" of "+TEST.length;
+  document.getElementById("testFrom").innerHTML="From: "+m.from;
+  document.getElementById("testBody").textContent="“"+m.body+"”";
+  document.getElementById("predictBlock").style.display = mode==="teacher"?"none":"block";
+  document.getElementById("revealBtn").style.display = mode==="teacher"?"block":"none";
+  var v=document.getElementById("testVerdict"); v.className="verdict"; v.textContent="";
+  var fb=document.getElementById("testFeedback"); fb.className="feedback"; fb.textContent="";
+  document.getElementById("testNext").style.display="none";
+}
+function predictTap(isSpam){
+  predicted=isSpam;
+  document.getElementById("predictBlock").style.display="none";
+  document.getElementById("revealBtn").style.display="block";
+}
+function revealTest(){
+  var m=TEST[testIdx];
+  var says=filterSays(m.body, weights);
+  var correct = says===m.spam;
+  results1.push({msg:m, says:says, correct:correct});
+  var v=document.getElementById("testVerdict");
+  v.className="verdict show "+(says?"spam":"real");
+  v.textContent = says ? "🚫 Filter says: SPAM" : "✅ Filter says: NOT SPAM";
+  document.getElementById("revealBtn").style.display="none";
+  var fb=document.getElementById("testFeedback");
+  var lines=[];
+  if(mode==="student" && predicted!==null){
+    if(predicted===says){ predictScore++; lines.push("🎯 Your prediction matched the filter!"); }
+    else lines.push("Your prediction differed — watch which pattern the filter used.");
+  }
+  lines.push(correct ? "✔ The filter got this one right." : "✘ The filter got this one WRONG.");
+  if(m.miss) lines.push("⭐ Remember this one — it matters next.");
+  fb.className="feedback show "+(correct?"good":"bad");
+  fb.textContent=lines.join(" ");
+  var nx=document.getElementById("testNext");
+  nx.textContent = testIdx===TEST.length-1 ? "See the Score ➜" : "Next ➜";
+  nx.style.display="block";
+}
+function showScore1(){
+  var n=0; results1.forEach(function(r){ if(r.correct) n++; });
+  acc1={n:n, d:TEST.length};
+  document.getElementById("score1Frac").textContent=n+" / "+TEST.length;
+  document.getElementById("score1Pct").textContent=Math.round(n/TEST.length*100)+"% correct";
+  document.getElementById("score1Line").textContent =
+    (mode==="student" && predicted!==null) ? "Your predictions matched the filter "+predictScore+" of "+TEST.length+" times. One miss matters most…" :
+    "One miss matters most — a real message the filter threw away…";
+  show("s-score1");
+}
+function testNextTap(){
+  testIdx++;
+  if(testIdx<TEST.length){ renderTest(); }
+  else { showScore1(); }
+}
+function hearTest(){ hearIt(document.getElementById("testBody").textContent); }
+
+/* ---------- STEP 3: MISS + FIX ---------- */
+function goMiss(){ show("s-miss"); }
+function goFix(){ fixIdx=0; renderFix(); show("s-fix"); }
+function renderFix(){
+  var m=FIX[fixIdx];
+  document.getElementById("fixCount").textContent="New example "+(fixIdx+1)+" of "+FIX.length;
+  document.getElementById("fixFrom").innerHTML="From: "+m.from;
+  document.getElementById("fixBody").textContent="“"+m.body+"”";
+  document.getElementById("fixFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("fixBtns").style.display="grid";
+  var fb=document.getElementById("fixFeedback"); fb.className="feedback"; fb.textContent="";
+  document.getElementById("fixNext").style.display="none";
+}
+function fixTap(isSpam){
+  var m=FIX[fixIdx];
+  labeled.push({body:m.body, label:isSpam});
+  document.getElementById("fixBtns").style.display="none";
+  var fb=document.getElementById("fixFeedback");
+  var ok=isSpam===m.spam;
+  fb.className="feedback show "+(ok?"good":"bad");
+  fb.textContent = ok ? "✅ Right! That balances the training data." : "Careful — check the sender and the whole message, not just one word.";
+  var nx=document.getElementById("fixNext");
+  nx.textContent = fixIdx===FIX.length-1 ? "Re-Run the Test ➜" : "Next ➜";
+  nx.style.display="block";
+}
+function fixNextTap(){
+  fixIdx++;
+  if(fixIdx<FIX.length){ renderFix(); }
+  else { weights2=computeWeights(labeled); renderRetest(); show("s-retest"); }
+}
+function hearFix(){ hearIt(document.getElementById("fixBody").textContent); }
+
+/* ---------- RETEST ---------- */
+function renderRetest(){
+  var n=0, html="";
+  TEST.forEach(function(m,i){
+    var says=filterSays(m.body, weights2);
+    var correct=says===m.spam;
+    if(correct) n++;
+    var wasWrong = results1[i] && !results1[i].correct;
+    var nowRight = wasWrong && correct;
+    html+='<div class="result-row'+(nowRight?" fixed":"")+'"><span class="st">'+(correct?"✅":"❌")+'</span><span>“'+m.body+'”<small>Filter: '+(says?"SPAM":"Not Spam")+" · Really: "+(m.spam?"Spam":"Not Spam")+(nowRight?" · ⭐ FIXED!":"")+"</small></span></div>";
+  });
+  acc2={n:n, d:TEST.length};
+  document.getElementById("score2Frac").textContent=n+" / "+TEST.length;
+  document.getElementById("score2Pct").textContent=Math.round(n/TEST.length*100)+"% correct";
+  document.getElementById("retestList").innerHTML=html;
+}
+function hearRetest(){ hearIt("Re-test done. Your filter now got "+acc2.n+" of "+acc2.d+" right."); }
+function goQuiz(){ quizIdx=0; quizScore=0; renderQuiz(); show("s-quiz"); }
+
+/* ---------- QUIZ ---------- */
+function renderQuiz(){
+  var q=QUIZ[quizIdx];
+  document.getElementById("quizCount").textContent="Question "+(quizIdx+1)+" of "+QUIZ.length+(mode==="student"?" · Score: "+quizScore:"");
+  document.getElementById("quizQ").textContent=q.q;
+  var html="";
+  q.opts.forEach(function(o,i){ html+='<button class="quiz-opt" onclick="quizTap('+i+',this)">'+o+'</button>'; });
+  document.getElementById("quizOpts").innerHTML=html;
+  var fb=document.getElementById("quizFeedback"); fb.className="feedback"; fb.textContent="";
+  document.getElementById("quizNext").style.display="none";
+}
+function quizTap(i, el){
+  var q=QUIZ[quizIdx];
+  var opts=document.querySelectorAll(".quiz-opt");
+  for(var k=0;k<opts.length;k++){ opts[k].disabled=true; if(k===q.a) opts[k].classList.add("correct"); }
+  var fb=document.getElementById("quizFeedback");
+  if(mode==="teacher"){
+    fb.className="feedback show good"; fb.textContent="Answer: "+q.opts[q.a]+". "+q.why;
+  } else if(i===q.a){
+    quizScore++; el.classList.add("correct");
+    fb.className="feedback show good"; fb.textContent="✅ Correct! "+q.why;
+  } else {
+    el.classList.add("wrong");
+    fb.className="feedback show bad"; fb.textContent="Not quite. "+q.why;
+  }
+  document.getElementById("quizCount").textContent="Question "+(quizIdx+1)+" of "+QUIZ.length+(mode==="student"?" · Score: "+quizScore:"");
+  var nx=document.getElementById("quizNext");
+  nx.textContent = quizIdx===QUIZ.length-1 ? "See Final Results ➜" : "Next ➜";
+  nx.style.display="block";
+}
+function renderFinish(){
+  document.getElementById("finBefore").textContent=acc1.n+" / "+acc1.d;
+  document.getElementById("finBeforePct").textContent=Math.round(acc1.n/acc1.d*100)+"%";
+  document.getElementById("finAfter").textContent=acc2.n+" / "+acc2.d;
+  document.getElementById("finAfterPct").textContent=Math.round(acc2.n/acc2.d*100)+"%";
+  document.getElementById("finQuizLine").textContent = mode==="student" ?
+    "Quick check: "+quizScore+" of "+QUIZ.length+" correct."+(acc2.n>acc1.n?" Better training data made a better filter. 📈":"") :
+    "Better training data made a better filter. 📈";
+  show("s-finish");
+}
+function quizNextTap(){
+  quizIdx++;
+  if(quizIdx<QUIZ.length){ renderQuiz(); }
+  else { renderFinish(); }
+}
+function hearQuiz(){ var q=QUIZ[quizIdx]; hearIt(q.q+" "+q.opts.join(". ")); }
+
+/* ---------- TEACHER BYPASS ---------- */
+var STAGE_NAMES={"s-start":"Start screen","s-sort":"Sort the Mail","s-learned":"What the Filter Learned","s-test":"Test the Filter","s-score1":"Filter Score · Round 1","s-miss":"The Miss","s-fix":"Add Balanced Examples","s-retest":"Re-Test","s-quiz":"Quick Check","s-finish":"Final Results"};
+function toggleTeacherPanel(open){
+  document.getElementById("teacherOverlay").classList.toggle("open", !!open);
+  if(open){
+    document.getElementById("teacherWhere").textContent="You are on: "+(STAGE_NAMES[currentScreen]||currentScreen)+" · Mode: "+(started?(mode==="teacher"?"Teacher-Led":"Student-Led"):"not started")+". Jump anywhere, skip a stuck step, or reset.";
+    document.getElementById("teacherSkipBtn").textContent = currentScreen==="s-finish" ? "↺ Back to Start" : "Skip this step ➜";
+  }
+}
+function ensureStarted(){
+  if(!started){ started=true; applyMode(); }
+}
+function correctLabels(list){ return list.map(function(m){ return {body:m.body, label:m.spam}; }); }
+function simulateTest(w){
+  return TEST.map(function(m){
+    var s=filterSays(m.body, w);
+    return {msg:m, says:s, correct:s===m.spam};
+  });
+}
+function accOf(res){ var n=0; res.forEach(function(r){ if(r.correct) n++; }); return {n:n, d:res.length}; }
+/* Fill any not-yet-labeled TRAIN cards with correct labels, preserving student labels already given. */
+function completeTraining(){
+  for(var i=labeled.length;i<TRAIN.length;i++) labeled.push({body:TRAIN[i].body, label:TRAIN[i].spam});
+  weights=computeWeights(labeled.slice(0,TRAIN.length));
+}
+/* Fill any not-yet-added FIX cards with correct labels. Assumes TRAIN labels occupy the first TRAIN.length slots. */
+function completeFix(){
+  completeTraining();
+  var added=Math.max(0, labeled.length-TRAIN.length);
+  for(var i=added;i<FIX.length;i++) labeled.push({body:FIX[i].body, label:FIX[i].spam});
+  weights2=computeWeights(labeled);
+}
+function ensureRound1(){ completeTraining(); if(!results1.length){ results1=simulateTest(weights); } acc1=accOf(results1); }
+function ensureRound2(){ ensureRound1(); completeFix(); acc2=accOf(simulateTest(weights2)); }
+
+function teacherJump(target){
+  toggleTeacherPanel(false);
+  ensureStarted();
+  if(target==="sort"){
+    labeled=[]; sortIdx=0; fixIdx=0; testIdx=0; quizIdx=0; results1=[]; predictScore=0; quizScore=0;
+    acc1={n:0,d:8}; acc2={n:0,d:8}; weights=null; weights2=null;
+    renderSort(); show("s-sort");
+  } else if(target==="test"){
+    labeled=correctLabels(TRAIN); weights=computeWeights(labeled); weights2=null;
+    goTest();
+  } else if(target==="miss"){
+    labeled=correctLabels(TRAIN); weights=computeWeights(labeled);
+    results1=simulateTest(weights); acc1=accOf(results1);
+    show("s-miss");
+  } else if(target==="quiz"){
+    labeled=correctLabels(TRAIN).concat(correctLabels(FIX));
+    weights=computeWeights(correctLabels(TRAIN)); weights2=computeWeights(labeled);
+    results1=simulateTest(weights); acc1=accOf(results1); acc2=accOf(simulateTest(weights2));
+    goQuiz();
+  }
+}
+function teacherSkip(){
+  toggleTeacherPanel(false);
+  if(currentScreen==="s-finish"){ teacherReset(); return; }
+  ensureStarted();
+  if(currentScreen==="s-start"){
+    labeled=[]; sortIdx=0; renderSort(); show("s-sort");
+  } else if(currentScreen==="s-sort"){
+    completeTraining(); renderLearned(); show("s-learned");
+  } else if(currentScreen==="s-learned"){
+    goTest();
+  } else if(currentScreen==="s-test"){
+    if(!weights) completeTraining();
+    while(results1.length<TEST.length){
+      var m=TEST[results1.length];
+      var s=filterSays(m.body, weights);
+      results1.push({msg:m, says:s, correct:s===m.spam});
+    }
+    showScore1();
+  } else if(currentScreen==="s-score1"){
+    show("s-miss");
+  } else if(currentScreen==="s-miss"){
+    goFix();
+  } else if(currentScreen==="s-fix"){
+    completeFix(); renderRetest(); show("s-retest");
+  } else if(currentScreen==="s-retest"){
+    goQuiz();
+  } else if(currentScreen==="s-quiz"){
+    ensureRound2(); renderFinish();
+  }
+}
+function teacherReset(){ location.reload(); }
+document.getElementById("teacherOverlay").addEventListener("click", function(e){ if(e.target===this) toggleTeacherPanel(false); });
+</script>
+</body>
+</html>

@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Defend the School: Phishing Sim (Grades 9-12) (Gemini Version)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #eef1ec;
+        --surface: #ffffff;
+        --surface-2: #f4f6f1;
+        --ink: #16211b;
+        --ink-soft: #4c5a51;
+        --line: #d5dcd2;
+        --accent: #0d6e4f;
+        --accent-ink: #ffffff;
+        --accent-soft: #e0f0e7;
+        --danger: #b3372a;
+        --danger-soft: #fbe9e6;
+        --warn: #9a6206;
+        --warn-soft: #fdf0d5;
+        --link: #0b5fa5;
+        --shadow: 0 10px 28px rgba(18, 32, 24, .10);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1512;
+          --surface: #182019;
+          --surface-2: #1f2a21;
+          --ink: #eef3ee;
+          --ink-soft: #a9b8ad;
+          --line: #33413a;
+          --accent: #2fbf8f;
+          --accent-ink: #08130d;
+          --accent-soft: #173b2c;
+          --danger: #ff8a7a;
+          --danger-soft: #42231f;
+          --warn: #f2c14e;
+          --warn-soft: #3d3013;
+          --link: #7cc3ff;
+          --shadow: 0 10px 28px rgba(0,0,0,.45);
+        }
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.45;
+      }
+      body.big { font-size: 20px; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      button, [role="button"], input { min-height: 2.75rem; }
+      :focus-visible { outline: 3px solid var(--link); outline-offset: 2px; border-radius: 6px; }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 16px 56px; }
+
+      /* ---------- top bar ---------- */
+      .topbar {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        padding: 14px 0 10px;
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-family: "Archivo", sans-serif; font-weight: 800; font-size: 1.05rem; letter-spacing: .01em; }
+      .brand svg { flex: none; }
+      .topbar .spacer { flex: 1; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: var(--surface); border: 1.5px solid var(--line);
+        border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: .92rem;
+      }
+      .pill.score { border-color: var(--accent); color: var(--accent); }
+      .pill.mode { text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; }
+      .ghost-btn {
+        background: transparent; border: 1.5px solid var(--line); color: var(--ink);
+        border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: .9rem;
+      }
+      .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+      /* ---------- stepper ---------- */
+      .stepper { display: flex; gap: 8px; margin: 6px 0 20px; flex-wrap: wrap; }
+      .step {
+        flex: 1 1 140px; display: flex; align-items: center; gap: 10px;
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+        padding: 10px 14px; font-weight: 700; font-size: .95rem; color: var(--ink-soft);
+        text-align: left;
+      }
+      .step .n {
+        width: 28px; height: 28px; flex: none; border-radius: 50%;
+        display: grid; place-items: center; background: var(--surface-2);
+        border: 1.5px solid var(--line); font-size: .85rem; color: var(--ink-soft);
+      }
+      .step.active { border-color: var(--accent); color: var(--ink); box-shadow: var(--shadow); }
+      .step.active .n { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .step.done { color: var(--accent); }
+      .step.done .n { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .step:disabled { cursor: default; opacity: .75; }
+
+      h1, h2, h3 { font-family: "Archivo", sans-serif; line-height: 1.12; margin: 0; }
+      .view { display: none; }
+      .view.on { display: block; }
+
+      /* ---------- start screen ---------- */
+      .start-hero { text-align: center; padding: 26px 0 8px; }
+      .start-hero h1 { font-size: clamp(2rem, 6vw, 3.1rem); font-weight: 800; }
+      .start-hero p { color: var(--ink-soft); font-size: 1.12rem; margin: 10px 0 0; }
+      .shield-big { display: grid; place-items: center; margin-bottom: 14px; }
+      .rounds-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 20px 0 26px; }
+      .round-chip {
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px;
+        padding: 7px 16px; font-weight: 700; font-size: .92rem;
+      }
+      .round-chip b { color: var(--accent); }
+      .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 760px; margin: 0 auto; }
+      @media (max-width: 640px) { .mode-grid { grid-template-columns: 1fr; } }
+      .mode-card {
+        background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+        padding: 24px 22px; text-align: left; color: var(--ink); box-shadow: var(--shadow);
+      }
+      .mode-card:hover { border-color: var(--accent); }
+      .mode-card h2 { font-size: 1.35rem; margin: 10px 0 6px; }
+      .mode-card p { margin: 0; color: var(--ink-soft); font-size: 1rem; }
+      .mode-card .tag {
+        display: inline-block; font-size: .75rem; font-weight: 800; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--accent); background: var(--accent-soft);
+        border-radius: 999px; padding: 4px 11px;
+      }
+
+      /* ---------- round head ---------- */
+      .round-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+      .round-head h2 { font-size: 1.55rem; font-weight: 800; }
+      .round-head .dir { color: var(--ink-soft); font-weight: 600; }
+      .round-head .prog { margin-left: auto; font-weight: 700; color: var(--ink-soft); font-size: .95rem; }
+
+      /* ---------- inbox ---------- */
+      .inbox { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+      @media (max-width: 760px) { .inbox { grid-template-columns: 1fr; } }
+      .msg-list { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+      .msg-list .list-head { padding: 10px 14px; font-weight: 800; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); background: var(--surface-2); border-bottom: 1.5px solid var(--line); }
+      .msg-row {
+        display: flex; gap: 10px; width: 100%; text-align: left; align-items: flex-start;
+        background: var(--surface); border: 0; border-bottom: 1px solid var(--line);
+        padding: 12px 14px; color: var(--ink);
+      }
+      .msg-row:last-child { border-bottom: 0; }
+      .msg-row:hover { background: var(--surface-2); }
+      .msg-row.sel { background: var(--accent-soft); }
+      .msg-row .who { font-weight: 700; font-size: .95rem; display: block; }
+      .msg-row .subj { color: var(--ink-soft); font-size: .88rem; display: block; overflow-wrap: break-word; }
+      .msg-row .st { margin-left: auto; flex: none; font-size: .8rem; font-weight: 800; padding-top: 2px; }
+      .st.ok { color: var(--accent); } .st.bad { color: var(--danger); } .st.new { color: var(--warn); }
+
+      .mail {
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); overflow: hidden;
+      }
+      .mail-head { padding: 18px 20px 0; }
+      .mail-from { display: flex; gap: 12px; align-items: center; }
+      .avatar {
+        width: 46px; height: 46px; flex: none; border-radius: 50%;
+        display: grid; place-items: center; font-weight: 800; font-family: "Archivo", sans-serif;
+        background: var(--surface-2); border: 1.5px solid var(--line); color: var(--ink-soft);
+      }
+      .mail-from .nm { font-weight: 700; }
+      .mail-from .em { font-family: "IBM Plex Mono", monospace; font-size: .85rem; color: var(--ink-soft); word-break: break-all; }
+      .mail-from .when { margin-left: auto; color: var(--ink-soft); font-size: .85rem; flex: none; }
+      .mail-subj { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 1.28rem; margin: 14px 0 4px; }
+      .mail-body { padding: 6px 20px 18px; }
+      .mail-body p { margin: 0 0 10px; }
+      .sms-wrap { padding: 14px 20px 18px; }
+      .sms {
+        background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 18px 18px 18px 4px;
+        padding: 12px 14px; max-width: 420px;
+      }
+      .sms p { margin: 0 0 8px; }
+      .link-chip {
+        display: inline-flex; align-items: center; gap: 7px;
+        color: var(--link); font-weight: 700; text-decoration: underline; text-underline-offset: 3px;
+        background: none; border: 0; padding: 6px 4px; min-height: 2.25rem;
+      }
+      .attach {
+        display: inline-flex; align-items: center; gap: 8px; margin-top: 4px;
+        border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 12px;
+        font-family: "IBM Plex Mono", monospace; font-size: .88rem; background: var(--surface-2);
+      }
+
+      .inspect { border-top: 1.5px dashed var(--line); padding: 14px 20px 4px; }
+      .inspect .lbl { font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+      .inspect-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+      .insp-btn {
+        border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+        border-radius: 999px; padding: 7px 16px; font-weight: 700; font-size: .92rem;
+      }
+      .insp-btn:hover, .insp-btn.used { border-color: var(--link); color: var(--link); }
+      .fact {
+        display: none; margin: 12px 0 6px; background: var(--warn-soft); color: var(--ink);
+        border-radius: 10px; padding: 10px 14px; font-weight: 600; font-size: .97rem;
+      }
+      .fact.on { display: block; }
+      .fact code { font-family: "IBM Plex Mono", monospace; font-weight: 600; word-break: break-all; }
+
+      .decide { padding: 16px 20px 20px; }
+      .decide-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 480px) { .decide-btns { grid-template-columns: 1fr; } }
+      .btn {
+        border-radius: 12px; border: 2px solid transparent; padding: 13px 18px;
+        font-weight: 800; font-size: 1.05rem; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      }
+      .btn-legit { background: var(--accent); color: var(--accent-ink); }
+      .btn-phish { background: var(--danger); color: #fff; }
+      @media (prefers-color-scheme: dark) { .btn-phish { color: #1c0b08; } }
+      .btn-next { background: var(--ink); color: var(--bg); width: 100%; margin-top: 12px; }
+      .btn:disabled { opacity: .45; cursor: default; }
+      .hint-line { display: none; margin-top: 12px; font-weight: 600; color: var(--warn); }
+      .hint-line.on { display: block; }
+      .hint-btn { background: none; border: 0; color: var(--warn); font-weight: 700; padding: 8px 4px; margin-top: 6px; }
+
+      .feedback { display: none; margin: 0 20px 20px; border-radius: 12px; padding: 14px 16px; font-weight: 700; }
+      .feedback.on { display: block; }
+      .feedback.good { background: var(--accent-soft); color: var(--ink); }
+      .feedback.bad { background: var(--danger-soft); color: var(--ink); }
+      .feedback .verdict { font-family: "Archivo", sans-serif; font-size: 1.05rem; display: block; margin-bottom: 2px; }
+      .feedback.good .verdict { color: var(--accent); }
+      .feedback.bad .verdict { color: var(--danger); }
+
+      /* ---------- teacher panel ---------- */
+      .teacher-panel {
+        display: none; background: var(--surface); border: 1.5px solid var(--warn);
+        border-radius: var(--radius); padding: 14px 18px; margin-bottom: 16px;
+      }
+      .teacher-panel.on { display: block; }
+      .teacher-panel h3 { font-size: .85rem; letter-spacing: .07em; text-transform: uppercase; color: var(--warn); margin-bottom: 8px; }
+      .teacher-panel ul { margin: 0; padding-left: 20px; }
+      .teacher-panel li { margin: 3px 0; font-weight: 600; }
+      .vote-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+      .vote-btn { border: 1.5px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 7px 16px; font-weight: 800; }
+      .vote-btn span { color: var(--accent); }
+      .vote-btn.ph span { color: var(--danger); }
+
+      /* ---------- incident cards ---------- */
+      .card {
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+      }
+      .card h3 { font-size: 1.18rem; margin-bottom: 4px; }
+      .card .scene { color: var(--ink-soft); font-weight: 600; margin: 0 0 14px; }
+      .opts { display: grid; gap: 10px; }
+      .opt {
+        text-align: left; border: 2px solid var(--line); background: var(--surface);
+        border-radius: 12px; padding: 13px 16px; font-weight: 600; color: var(--ink);
+        display: flex; gap: 10px; align-items: flex-start;
+      }
+      .opt:hover:not(:disabled) { border-color: var(--accent); }
+      .opt .k { font-family: "Archivo", sans-serif; font-weight: 800; color: var(--ink-soft); flex: none; }
+      .opt.right { border-color: var(--accent); background: var(--accent-soft); }
+      .opt.wrong { border-color: var(--danger); background: var(--danger-soft); }
+      .opt:disabled { cursor: default; }
+      .card .feedback { margin: 14px 0 0; }
+
+      /* ---------- report ---------- */
+      .report-card {
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px;
+        box-shadow: var(--shadow); padding: 28px 24px; text-align: center; margin-bottom: 18px;
+      }
+      .report-card .big-score { font-family: "Archivo", sans-serif; font-size: clamp(2.6rem, 8vw, 4rem); font-weight: 800; color: var(--accent); line-height: 1; }
+      .report-card .rank { font-family: "Archivo", sans-serif; font-size: 1.4rem; font-weight: 800; margin-top: 8px; }
+      .report-card .one-line { color: var(--ink-soft); font-weight: 600; margin-top: 4px; }
+      .breakdown { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
+      .breakdown .bh { padding: 10px 16px; font-weight: 800; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); background: var(--surface-2); border-bottom: 1.5px solid var(--line); }
+      .b-row { display: flex; gap: 10px; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--line); font-weight: 600; }
+      .b-row:last-child { border-bottom: 0; }
+      .b-row .mark { flex: none; font-weight: 800; width: 22px; text-align: center; }
+      .b-row .mark.ok { color: var(--accent); } .b-row .mark.no { color: var(--danger); }
+      .b-row .clue { margin-left: auto; color: var(--ink-soft); font-size: .9rem; text-align: right; }
+      @media (max-width: 560px) { .b-row { flex-wrap: wrap; } .b-row .clue { margin-left: 32px; text-align: left; } }
+      .cert {
+        border: 2px dashed var(--accent); border-radius: 18px; padding: 22px;
+        text-align: center; background: var(--surface); margin-bottom: 18px;
+      }
+      .cert .c-title { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 1.25rem; }
+      .cert input {
+        margin-top: 12px; width: min(340px, 100%); text-align: center; font-weight: 700;
+        border: 0; border-bottom: 2px solid var(--line); background: transparent; color: var(--ink);
+        border-radius: 0; padding: 6px;
+      }
+      .cert .c-name { font-family: "Archivo", sans-serif; font-size: 1.5rem; font-weight: 800; min-height: 2rem; margin-top: 10px; }
+      .report-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+      .btn-plain { background: var(--accent); color: var(--accent-ink); border-radius: 12px; border: 0; padding: 13px 22px; font-weight: 800; }
+
+      /* ---------- read-first / optional listen ---------- */
+      .read-note {
+        max-width: 760px; margin: 0 auto 18px; background: var(--accent-soft);
+        border: 1.5px solid var(--accent); border-radius: var(--radius);
+        padding: 12px 16px; text-align: center; font-weight: 700;
+      }
+      .read-note span { display: block; font-weight: 600; color: var(--ink-soft); font-size: .95rem; margin-top: 2px; }
+      .listen-row {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        padding: 0 20px 14px;
+      }
+      .listen-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: transparent; border: 1.5px solid var(--line); color: var(--ink-soft);
+        border-radius: 999px; padding: 6px 13px; font-weight: 700; font-size: .88rem; min-height: 2.25rem;
+      }
+      .listen-btn:hover { border-color: var(--link); color: var(--link); }
+      .listen-btn.playing { border-color: var(--danger); color: var(--danger); }
+      .listen-note { font-size: .88rem; color: var(--ink-soft); font-weight: 600; }
+      .card .listen-row { padding: 0 0 12px; }
+
+      /* ---------- teacher bypass (quiet corner control) ---------- */
+      .bypass-btn {
+        position: fixed; right: 12px; bottom: 12px; z-index: 60;
+        background: var(--surface); color: var(--ink-soft); border: 1.5px solid var(--line);
+        border-radius: 999px; padding: 5px 12px; font-size: .78rem; font-weight: 600;
+        min-height: 2rem; opacity: .55;
+      }
+      .bypass-btn:hover, .bypass-btn:focus-visible { opacity: 1; }
+      .bypass-panel {
+        display: none; position: fixed; right: 12px; bottom: 56px; z-index: 60;
+        width: min(280px, calc(100vw - 24px));
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 12px;
+      }
+      .bypass-panel.on { display: block; }
+      .bypass-head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: .9rem; margin-bottom: 4px; }
+      .bypass-x { background: none; border: 0; color: var(--ink-soft); min-height: 2rem; padding: 2px 8px; font-size: .95rem; }
+      .bypass-lbl { font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin: 8px 2px 6px; }
+      .bypass-item {
+        display: block; width: 100%; text-align: left; margin-bottom: 6px;
+        background: var(--surface-2); border: 1.5px solid var(--line); color: var(--ink);
+        border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: .92rem; min-height: 2.5rem;
+      }
+      .bypass-item:hover:not(:disabled) { border-color: var(--accent); }
+      .bypass-item:disabled { opacity: .45; cursor: default; }
+      .bypass-item.danger { color: var(--danger); margin-bottom: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <!-- top bar -->
+      <div class="topbar">
+        <div class="brand">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11C7.4 20.4 4 16 4 11V5l8-3z" fill="var(--accent)"/><path d="M8.5 12l2.4 2.4L15.6 9.7" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Defend the School
+        </div>
+        <div class="spacer"></div>
+        <span class="pill mode" id="modePill" hidden></span>
+        <span class="pill score" id="scorePill" hidden>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11C7.4 20.4 4 16 4 11V5l8-3z" fill="currentColor"/></svg>
+          Score&nbsp;<b id="scoreVal">0 / 12</b>
+        </span>
+        <button class="ghost-btn" id="bigTextBtn" hidden>Bigger text</button>
+        <button class="ghost-btn" id="switchModeBtn" hidden>Switch mode</button>
+      </div>
+
+      <!-- stepper -->
+      <nav class="stepper" id="stepper" hidden aria-label="Progress">
+        <button class="step" id="step1" disabled><span class="n">1</span> Inbox — 8 messages</button>
+        <button class="step" id="step2" disabled><span class="n">2</span> Respond — 4 incidents</button>
+        <button class="step" id="step3" disabled><span class="n">3</span> Final report</button>
+      </nav>
+
+      <!-- ============ START ============ -->
+      <section class="view on" id="view-start">
+        <div class="start-hero">
+          <div class="shield-big">
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11C7.4 20.4 4 16 4 11V5l8-3z" fill="var(--accent)"/><path d="M8.5 12l2.4 2.4L15.6 9.7" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h1>Defend the School</h1>
+          <p>Spot the fakes. Keep the school safe.</p>
+          <div class="rounds-row">
+            <span class="round-chip"><b>Round 1</b> · 8 messages</span>
+            <span class="round-chip"><b>Round 2</b> · 4 incidents</span>
+            <span class="round-chip"><b>Finish</b> · Defender report</span>
+          </div>
+          <div class="read-note">
+            Read it on screen — no listening required.
+            <span>Every direction, message, and clue is written out. You can finish the whole activity silently, with sound off.</span>
+          </div>
+        </div>
+        <div class="mode-grid">
+          <button class="mode-card" id="startTeacher">
+            <span class="tag">For the projector</span>
+            <h2>Teacher-Led</h2>
+            <p>Teacher drives. Class reads on screen and votes on each call.</p>
+          </button>
+          <button class="mode-card" id="startStudent">
+            <span class="tag">For your own device</span>
+            <h2>Student-Led</h2>
+            <p>Read and work at your own pace. Hints included.</p>
+          </button>
+        </div>
+        <p style="text-align:center;color:var(--ink-soft);font-weight:600;font-size:.92rem;margin:16px auto 0;max-width:760px;">Optional extra: small <b>Listen</b> buttons inside each round will read a message aloud if you want them. You never need them to play.</p>
+      </section>
+
+      <!-- ============ ROUND 1: INBOX ============ -->
+      <section class="view" id="view-inbox">
+        <div class="round-head">
+          <h2>Round 1 · Inbox</h2>
+          <span class="dir">Read each message on screen. Inspect, then call it.</span>
+          <span class="prog" id="inboxProg">Message 1 of 8</span>
+        </div>
+
+        <div class="teacher-panel" id="teacherInbox">
+          <h3>Teacher notes — read first, voice optional</h3>
+          <ul>
+            <li>Students read the message on screen first — no need to read it aloud.</li>
+            <li>Point to the sender address on screen. Let students find it themselves.</li>
+            <li>Class votes before you reveal: thumbs up = Legit, thumbs down = Phishing.</li>
+            <li>Tap an Inspect button together — sender, link, tone. All clues are written on screen.</li>
+            <li>Optional: use the small Listen button only if the class wants to hear it.</li>
+          </ul>
+          <div class="vote-row">
+            <span style="font-weight:800;">Class vote:</span>
+            <button class="vote-btn" id="voteLegit">Legit <span id="voteLegitN">0</span></button>
+            <button class="vote-btn ph" id="votePhish">Phishing <span id="votePhishN">0</span></button>
+            <button class="ghost-btn" id="voteReset">Reset</button>
+          </div>
+        </div>
+
+        <div class="inbox">
+          <div class="msg-list" id="msgList">
+            <div class="list-head">School inbox</div>
+          </div>
+
+          <div class="mail" id="mailPane"><!-- filled by JS --></div>
+        </div>
+      </section>
+
+      <!-- ============ ROUND 2: RESPOND ============ -->
+      <section class="view" id="view-respond">
+        <div class="round-head">
+          <h2>Round 2 · Respond</h2>
+          <span class="dir">Read each incident on screen. Pick the best first move.</span>
+          <span class="prog" id="respProg">0 of 4 done</span>
+        </div>
+
+        <div class="teacher-panel" id="teacherRespond">
+          <h3>Teacher notes — read first, voice optional</h3>
+          <ul>
+            <li>Students read each incident on screen — no need to read it aloud.</li>
+            <li>Students hold up A, B, or C on fingers.</li>
+            <li>Reveal, then ask: “Why is that first?”</li>
+            <li>Optional: use the small Listen button only if the class wants to hear it.</li>
+          </ul>
+        </div>
+
+        <div id="incidentList"><!-- filled by JS --></div>
+
+        <button class="btn btn-next" id="toReport" disabled>See final report</button>
+      </section>
+
+      <!-- ============ REPORT ============ -->
+      <section class="view" id="view-report">
+        <div class="round-head">
+          <h2>Final Report</h2>
+          <span class="dir">Every call, reviewed.</span>
+        </div>
+
+        <div class="report-card">
+          <div class="big-score" id="finalScore">0 / 12</div>
+          <div class="rank" id="finalRank">Defender</div>
+          <div class="one-line" id="finalLine"></div>
+        </div>
+
+        <div class="breakdown">
+          <div class="bh">Round 1 · Inbox calls</div>
+          <div id="breakInbox"></div>
+        </div>
+        <div class="breakdown">
+          <div class="bh">Round 2 · First moves</div>
+          <div id="breakResp"></div>
+        </div>
+
+        <div class="cert" id="certBox">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11C7.4 20.4 4 16 4 11V5l8-3z" fill="var(--accent)"/><path d="M8.5 12l2.4 2.4L15.6 9.7" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="c-title" id="certTitle">School Defender Certificate</div>
+          <input id="certName" type="text" placeholder="Type a name or class…" autocomplete="off" />
+          <div class="c-name" id="certNameOut"></div>
+          <div class="one-line" id="certLine" style="color:var(--ink-soft);font-weight:600;"></div>
+        </div>
+
+        <div class="report-actions">
+          <button class="btn-plain" id="playAgain">Play again</button>
+          <button class="ghost-btn" id="backToStart">Back to start</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- teacher bypass: quiet corner button, present on every screen -->
+    <button class="bypass-btn" id="bypassBtn" type="button" aria-haspopup="true" aria-expanded="false">Teacher</button>
+    <div class="bypass-panel" id="bypassPanel" role="group" aria-label="Teacher bypass">
+      <div class="bypass-head"><span>Teacher bypass</span><button class="bypass-x" id="bypassClose" type="button" aria-label="Close teacher bypass">✕</button></div>
+      <div class="bypass-lbl">Jump to stage</div>
+      <button class="bypass-item" id="bypassInbox" type="button">Inbox messages</button>
+      <button class="bypass-item" id="bypassRespond" type="button">Incident cards</button>
+      <button class="bypass-item" id="bypassReport" type="button">Final report</button>
+      <div class="bypass-lbl">This item</div>
+      <button class="bypass-item" id="bypassSkip" type="button">Skip this item (counts as revealed)</button>
+      <button class="bypass-item danger" id="bypassReset" type="button">Reset</button>
+    </div>
+
+    <script>
+      /* ================= DATA ================= */
+      var MESSAGES = [
+        {
+          kind: "email", from: "IT Help Desk", email: "helpdesk@ms-district-support.com",
+          initials: "IT", when: "8:02 AM",
+          subject: "Password expires TODAY — reset now",
+          body: ["Your school password expires today.", "Reset it now or your account locks at noon."],
+          linkText: "Reset my password", linkTo: "login.ms-district-support.com",
+          phish: true,
+          clue: "The sender is a look-alike domain — real school mail ends in riverside.edu.",
+          hint: "Read the sender's domain slowly.",
+          facts: {
+            sender: "Sender: helpdesk@ms-district-support.com — not the school domain.",
+            link: "Link goes to: login.ms-district-support.com",
+            tone: "Tone: “TODAY” and “locks at noon” — pressure to rush."
+          }
+        },
+        {
+          kind: "email", from: "Riverside Library", email: "library@riverside.edu",
+          initials: "RL", when: "8:15 AM",
+          subject: "Your book is due Friday",
+          body: ["“The Midnight Library” is due back Friday.", "Renew it online or at the front desk."],
+          linkText: "Renew my book", linkTo: "catalog.riverside.edu",
+          phish: false,
+          clue: "Sender and link both match the real school domain.",
+          hint: "Check where the link really goes.",
+          facts: {
+            sender: "Sender: library@riverside.edu — the real school domain.",
+            link: "Link goes to: catalog.riverside.edu",
+            tone: "Tone: calm. A due date, no rush, no threat."
+          }
+        },
+        {
+          kind: "email", from: "Principal Carter", email: "principal.carter@gmail.com",
+          initials: "PC", when: "9:41 AM",
+          subject: "Quick favor — need your help today",
+          body: ["I am in meetings all day and cannot talk.", "Buy six $50 gift cards for a staff surprise. Send me the codes. Keep this between us."],
+          linkText: null, linkTo: null,
+          phish: true,
+          clue: "A real principal never asks a student to buy gift cards and send the codes.",
+          hint: "Would a principal ask you for this?",
+          facts: {
+            sender: "Sender: a personal Gmail address — not riverside.edu.",
+            link: "No link. The ask itself is the trap.",
+            tone: "Tone: secret and rushed — “keep this between us.”"
+          }
+        },
+        {
+          kind: "sms", from: "Text · (662) 555-0148", email: "SMS message",
+          initials: "TX", when: "10:07 AM",
+          subject: "Package delivery text",
+          body: ["USPS: Your package is held at the depot.", "Pay the $1.99 release fee here:"],
+          linkText: "usps-redelivery.net/pay", linkTo: "usps-redelivery.net",
+          phish: true,
+          clue: "USPS never charges a release fee through a text link.",
+          hint: "Real delivery notices don't ask for card payments.",
+          facts: {
+            sender: "Sender: an unknown number, not USPS.",
+            link: "Link goes to: usps-redelivery.net — not usps.com.",
+            tone: "Tone: a small fee and a held package — bait to get your card."
+          }
+        },
+        {
+          kind: "email", from: "Riverside Athletics", email: "athletics@riverside.edu",
+          initials: "RA", when: "11:20 AM",
+          subject: "Practice moved to 4:30 Thursday",
+          body: ["Field work moved practice to 4:30 PM Thursday.", "Full schedule is on the athletics page."],
+          linkText: "See the schedule", linkTo: "riverside.edu/athletics",
+          phish: false,
+          clue: "Sender and link match the school domain, and nothing private is requested.",
+          hint: "Who sent it, and what does it ask for?",
+          facts: {
+            sender: "Sender: athletics@riverside.edu — the real school domain.",
+            link: "Link goes to: riverside.edu/athletics",
+            tone: "Tone: plain information. No rush, no secrets."
+          }
+        },
+        {
+          kind: "email", from: "Prize Center", email: "rewards@prize-center-win.com",
+          initials: "PZ", when: "12:03 PM",
+          subject: "You WON a $500 gift card!!",
+          body: ["You were selected in today's student giveaway.", "Claim your $500 gift card in the next 10 minutes."],
+          linkText: "Claim my prize", linkTo: "prize-center-win.com/claim",
+          phish: true,
+          clue: "You cannot win a contest you never entered.",
+          hint: "Did you ever enter this giveaway?",
+          facts: {
+            sender: "Sender: prize-center-win.com — a stranger domain.",
+            link: "Link goes to: prize-center-win.com/claim",
+            tone: "Tone: “10 minutes” — a countdown to stop you thinking."
+          }
+        },
+        {
+          kind: "email", from: "District IT", email: "it@riverside.edu",
+          initials: "IT", when: "1:15 PM",
+          subject: "System update Sunday, 10 PM",
+          body: ["School systems update Sunday at 10 PM.", "No action is needed. Nothing to click or reply to."],
+          linkText: null, linkTo: null,
+          phish: false,
+          clue: "It asks for nothing — no click, no reply, no password.",
+          hint: "What is this message asking you to do?",
+          facts: {
+            sender: "Sender: it@riverside.edu — the real school domain.",
+            link: "No link at all.",
+            tone: "Tone: a heads-up only. No pressure."
+          }
+        },
+        {
+          kind: "email", from: "J. Miller (shared doc)", email: "drive-share@goog1e-docs.net",
+          initials: "JM", when: "2:48 PM",
+          subject: "Shared: “Grades Q3 — FINAL”",
+          body: ["J. Miller shared a document with you.", "Sign in to view “Grades Q3 — FINAL.”"],
+          linkText: "Open the document", linkTo: "goog1e-docs.net/login",
+          attach: "Grades Q3 — FINAL",
+          phish: true,
+          clue: "The link swaps a letter for a number — goog1e, not google.",
+          hint: "Read the link domain letter by letter.",
+          facts: {
+            sender: "Sender: goog1e-docs.net — a look-alike domain.",
+            link: "Link goes to: goog1e-docs.net/login — a fake sign-in page.",
+            tone: "Tone: uses your grades as bait to make you sign in fast."
+          }
+        }
+      ];
+
+      var INCIDENTS = [
+        {
+          title: "You clicked — and typed your password",
+          scene: "A fake login page just took your school password.",
+          options: [
+            "Delete the email and forget it.",
+            "Change your password now, then tell IT.",
+            "Forward the link to friends to warn them."
+          ],
+          answer: 1,
+          clue: "Speed beats shame — a fast password change can stop the attack."
+        },
+        {
+          title: "Text: “Your bank account is locked”",
+          scene: "The text has a link to “unlock” your account.",
+          options: [
+            "Tap the link and sign in.",
+            "Reply STOP to end the texts.",
+            "Skip the link — open the bank app yourself."
+          ],
+          answer: 2,
+          clue: "Go to the real app or site yourself — never through a text link."
+        },
+        {
+          title: "A caller says “This is IT — read me your code”",
+          scene: "They know your name and sound official.",
+          options: [
+            "Hang up and contact IT yourself.",
+            "Read the code — they already know your name.",
+            "Ask them to call back later."
+          ],
+          answer: 0,
+          clue: "Real IT never asks for your sign-in code. Ever."
+        },
+        {
+          title: "A friend sends: “is this you in this video?”",
+          scene: "The message has a link. It doesn't sound like them.",
+          options: [
+            "Tap it — it's from a friend.",
+            "Send it to the group chat to ask.",
+            "Don't tap — reach your friend another way."
+          ],
+          answer: 2,
+          clue: "Hacked accounts send these — check with your friend off that thread."
+        }
+      ];
+
+      /* ================= STATE ================= */
+      var state = {
+        mode: null,            // 'teacher' | 'student'
+        current: 0,            // inbox index
+        calls: {},             // msgIndex -> {picked, correct}
+        resp: {},              // incidentIndex -> pickedIndex
+        votes: { legit: 0, phish: 0 }
+      };
+
+      function score() {
+        var s = 0, k;
+        for (k in state.calls) if (state.calls[k].correct) s++;
+        for (k in state.resp) if (state.resp[k] === INCIDENTS[k].answer) s++;
+        return s;
+      }
+      function inboxDone() { return Object.keys(state.calls).length === MESSAGES.length; }
+      function respDone() { return Object.keys(state.resp).length === INCIDENTS.length; }
+
+      /* ================= HELPERS ================= */
+      function $(id) { return document.getElementById(id); }
+
+      /* Optional listen — secondary only. Nothing in the activity
+         requires sound; every word is on screen to read. */
+      var listenBtnActive = null;
+      function stopSpeaking() {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        if (listenBtnActive) {
+          listenBtnActive.classList.remove("playing");
+          var lbl = listenBtnActive.querySelector(".listen-label");
+          if (lbl) lbl.textContent = listenBtnActive.getAttribute("data-label") || "Listen (optional)";
+          listenBtnActive = null;
+        }
+      }
+      function speakText(text, btn) {
+        if (!("speechSynthesis" in window)) return;
+        if (listenBtnActive === btn) { stopSpeaking(); return; }
+        stopSpeaking();
+        var u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.98;
+        listenBtnActive = btn;
+        btn.classList.add("playing");
+        var lbl = btn.querySelector(".listen-label");
+        if (lbl) lbl.textContent = "Stop";
+        u.onend = u.onerror = function () {
+          if (listenBtnActive === btn) {
+            btn.classList.remove("playing");
+            if (lbl) lbl.textContent = btn.getAttribute("data-label") || "Listen (optional)";
+            listenBtnActive = null;
+          }
+        };
+        window.speechSynthesis.speak(u);
+      }
+      function listenButton(label) {
+        var svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+        return '<button class="listen-btn" type="button" data-label="' + label + '">' + svg + '<span class="listen-label">' + label + '</span></button>';
+      }
+      function show(view) {
+        stopSpeaking();
+        ["view-start", "view-inbox", "view-respond", "view-report"].forEach(function (v) {
+          $(v).classList.toggle("on", v === view);
+        });
+        window.scrollTo({ top: 0 });
+        updateChrome();
+      }
+      function updateChrome() {
+        var started = !!state.mode;
+        $("stepper").hidden = !started;
+        $("scorePill").hidden = !started;
+        $("switchModeBtn").hidden = !started;
+        $("modePill").hidden = !started;
+        $("bigTextBtn").hidden = !(started && state.mode === "teacher");
+        if (started) {
+          $("modePill").textContent = state.mode === "teacher" ? "Teacher-Led" : "Student-Led";
+          $("scoreVal").textContent = score() + " / 12";
+        }
+        var inInbox = $("view-inbox").classList.contains("on");
+        var inResp = $("view-respond").classList.contains("on");
+        var inRep = $("view-report").classList.contains("on");
+        setStep($("step1"), inInbox ? "active" : (inboxDone() ? "done" : ""), inboxDone() || inInbox);
+        setStep($("step2"), inResp ? "active" : (respDone() ? "done" : ""), respDone() || (inboxDone() && inResp) || inResp);
+        setStep($("step3"), inRep ? "active" : "", inRep);
+        $("step1").disabled = !(inboxDone() || inInbox);
+        $("step2").disabled = !inboxDone();
+        $("step3").disabled = !(inboxDone() && respDone());
+      }
+      function setStep(el, cls, enabled) {
+        el.classList.remove("active", "done");
+        if (cls) el.classList.add(cls);
+      }
+
+      /* ================= MODE ================= */
+      function startMode(mode) {
+        state.mode = mode;
+        $("teacherInbox").classList.toggle("on", mode === "teacher");
+        $("teacherRespond").classList.toggle("on", mode === "teacher");
+        $("certTitle").textContent = mode === "teacher" ? "Class Defender Certificate" : "School Defender Certificate";
+        show("view-inbox");
+        renderList(); openMessage(state.current);
+      }
+      $("startTeacher").addEventListener("click", function () { startMode("teacher"); });
+      $("startStudent").addEventListener("click", function () { startMode("student"); });
+      $("switchModeBtn").addEventListener("click", function () {
+        state.mode = state.mode === "teacher" ? "student" : "teacher";
+        $("teacherInbox").classList.toggle("on", state.mode === "teacher");
+        $("teacherRespond").classList.toggle("on", state.mode === "teacher");
+        $("certTitle").textContent = state.mode === "teacher" ? "Class Defender Certificate" : "School Defender Certificate";
+        if ($("view-inbox").classList.contains("on")) openMessage(state.current);
+        updateChrome();
+      });
+      $("bigTextBtn").addEventListener("click", function () {
+        document.body.classList.toggle("big");
+        this.textContent = document.body.classList.contains("big") ? "Normal text" : "Bigger text";
+      });
+      $("step1").addEventListener("click", function () { show("view-inbox"); });
+      $("step2").addEventListener("click", function () { if (inboxDone()) { show("view-respond"); } });
+      $("step3").addEventListener("click", function () { if (inboxDone() && respDone()) { renderReport(); show("view-report"); } });
+
+      /* votes (teacher) */
+      $("voteLegit").addEventListener("click", function () { state.votes.legit++; $("voteLegitN").textContent = state.votes.legit; });
+      $("votePhish").addEventListener("click", function () { state.votes.phish++; $("votePhishN").textContent = state.votes.phish; });
+      $("voteReset").addEventListener("click", function () {
+        state.votes = { legit: 0, phish: 0 };
+        $("voteLegitN").textContent = "0"; $("votePhishN").textContent = "0";
+      });
+
+      /* ================= INBOX ================= */
+      function renderList() {
+        var list = $("msgList");
+        list.querySelectorAll(".msg-row").forEach(function (r) { r.remove(); });
+        MESSAGES.forEach(function (m, i) {
+          var b = document.createElement("button");
+          b.className = "msg-row" + (i === state.current ? " sel" : "");
+          var st = '<span class="st new">●</span>';
+          if (state.calls[i]) st = state.calls[i].correct ? '<span class="st ok">✓</span>' : '<span class="st bad">✗</span>';
+          b.innerHTML = '<span><span class="who"></span><span class="subj"></span></span>' + st;
+          b.querySelector(".who").textContent = m.from;
+          b.querySelector(".subj").textContent = m.subject;
+          b.addEventListener("click", function () { openMessage(i); });
+          list.appendChild(b);
+        });
+      }
+
+      function openMessage(i) {
+        stopSpeaking();
+        state.current = i;
+        var m = MESSAGES[i];
+        var call = state.calls[i];
+        $("inboxProg").textContent = "Message " + (i + 1) + " of 8 · " + Object.keys(state.calls).length + " called";
+        renderList();
+
+        var bodyHtml = m.body.map(function (p) { return "<p></p>"; }).join("");
+        var inner = "";
+        if (m.kind === "sms") {
+          inner =
+            '<div class="mail-head"><div class="mail-from">' +
+              '<div class="avatar">' + m.initials + '</div>' +
+              '<div><div class="nm"></div><div class="em">SMS · unknown number</div></div>' +
+              '<div class="when">' + m.when + '</div></div>' +
+              '<div class="mail-subj"></div></div>' +
+            '<div class="sms-wrap"><div class="sms">' + bodyHtml +
+              (m.linkText ? '<br><button class="link-chip" type="button" data-insp="link">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M14 10a5 5 0 00-7.1 0L4.5 12.4a5 5 0 007.1 7.1L13 18.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>' +
+                '<span class="lt"></span></button>' : "") +
+              '</div></div>';
+        } else {
+          inner =
+            '<div class="mail-head"><div class="mail-from">' +
+              '<div class="avatar">' + m.initials + '</div>' +
+              '<div><div class="nm"></div><div class="em"></div></div>' +
+              '<div class="when">' + m.when + '</div></div>' +
+              '<div class="mail-subj"></div></div>' +
+            '<div class="mail-body">' + bodyHtml +
+              (m.linkText ? '<button class="link-chip" type="button" data-insp="link">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 14a5 5 0 007.1 0l2.4-2.4a5 5 0 00-7.1-7.1L11 5.9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M14 10a5 5 0 00-7.1 0L4.5 12.4a5 5 0 007.1 7.1L13 18.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>' +
+                '<span class="lt"></span></button>' : "") +
+              (m.attach ? '<div><span class="attach"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 12.5l-8.5 8.5a5.5 5.5 0 01-7.8-7.8L13 4.9a3.7 3.7 0 015.2 5.2l-8.2 8.2a1.85 1.85 0 01-2.6-2.6l7.4-7.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="at"></span></span></div>' : "") +
+              '</div>';
+        }
+
+        inner +=
+          '<div class="inspect"><div class="lbl">Inspect before you call it</div>' +
+            '<div class="inspect-btns">' +
+              '<button class="insp-btn" type="button" data-insp="sender">Sender</button>' +
+              '<button class="insp-btn" type="button" data-insp="link">Link</button>' +
+              '<button class="insp-btn" type="button" data-insp="tone">Tone</button>' +
+            '</div><div class="fact" id="factBox"></div></div>' +
+          '<div class="listen-row">' + listenButton("Listen (optional)") +
+            '<span class="listen-note">Reading is enough — you do not need sound to play.</span></div>' +
+          '<div class="decide"><div class="decide-btns">' +
+            '<button class="btn btn-legit" id="callLegit" type="button">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Legit</button>' +
+            '<button class="btn btn-phish" id="callPhish" type="button">' +
+              '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3L2.5 20h19L12 3z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.3" fill="currentColor"/></svg>Phishing</button>' +
+          '</div>' +
+          (state.mode === "student" ? '<button class="hint-btn" id="hintBtn" type="button">Need a hint?</button><div class="hint-line" id="hintLine"></div>' : "") +
+          '</div>' +
+          '<div class="feedback" id="feedBox"></div>';
+
+        var pane = $("mailPane");
+        pane.innerHTML = inner;
+        pane.querySelector(".nm").textContent = m.from;
+        var emEl = pane.querySelector(".em");
+        if (emEl && m.kind !== "sms") emEl.textContent = m.email;
+        pane.querySelector(".mail-subj").textContent = m.subject;
+        pane.querySelectorAll(".mail-body p, .sms p").forEach(function (p, pi) { p.textContent = m.body[pi]; });
+        var lt = pane.querySelector(".lt"); if (lt) lt.textContent = m.linkText;
+        var at = pane.querySelector(".at"); if (at) at.textContent = m.attach;
+
+        /* inspect */
+        var factBox = $("factBox");
+        pane.querySelectorAll("[data-insp]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var key = btn.getAttribute("data-insp");
+            factBox.innerHTML = "";
+            var span = document.createElement("span");
+            span.textContent = m.facts[key];
+            factBox.appendChild(span);
+            factBox.classList.add("on");
+            pane.querySelectorAll(".insp-btn").forEach(function (b) {
+              if (b.getAttribute("data-insp") === key) b.classList.add("used");
+            });
+          });
+        });
+
+        /* optional listen — never required, never auto-plays */
+        var listenBtn = pane.querySelector(".listen-btn");
+        if (listenBtn) {
+          if (!("speechSynthesis" in window)) {
+            listenBtn.style.display = "none";
+            var ln = pane.querySelector(".listen-note"); if (ln) ln.textContent = "Reading is enough — you do not need sound to play.";
+          } else {
+            listenBtn.addEventListener("click", function () {
+              var text = "From: " + m.from + ". Subject: " + m.subject + ". " + m.body.join(" ") + (m.linkText ? " Link: " + m.linkText : "");
+              speakText(text, listenBtn);
+            });
+          }
+        }
+
+        /* hint (student) */
+        var hintBtn = $("hintBtn");
+        if (hintBtn) hintBtn.addEventListener("click", function () {
+          var hl = $("hintLine"); hl.textContent = "Hint: " + m.hint; hl.classList.add("on"); hintBtn.style.display = "none";
+        });
+
+        /* decide */
+        var feed = $("feedBox");
+        function renderFeedback() {
+          var c = state.calls[i];
+          feed.className = "feedback on " + (c.correct ? "good" : "bad");
+          feed.innerHTML = "";
+          var v = document.createElement("span"); v.className = "verdict";
+          v.textContent = c.skipped
+            ? (m.phish ? "Revealed — this one is phishing." : "Revealed — this one is legit.")
+            : c.correct
+            ? (m.phish ? "Correct — it's phishing." : "Correct — it's legit.")
+            : (m.phish ? "Missed it — this one is phishing." : "Missed it — this one is legit.");
+          var cl = document.createElement("span"); cl.textContent = m.clue;
+          feed.appendChild(v); feed.appendChild(cl);
+          var nx = document.createElement("button");
+          nx.className = "btn btn-next"; nx.type = "button";
+          var nextIdx = nextUncalled(i);
+          nx.textContent = inboxDone() ? "Go to Round 2 →" : "Next message →";
+          nx.addEventListener("click", function () {
+            if (inboxDone()) { buildIncidents(); show("view-respond"); }
+            else openMessage(nextIdx !== -1 ? nextIdx : (i + 1) % MESSAGES.length);
+          });
+          feed.appendChild(nx);
+          $("callLegit").disabled = true; $("callPhish").disabled = true;
+        }
+        function decide(pickedPhish) {
+          if (state.calls[i]) return;
+          state.calls[i] = { picked: pickedPhish, correct: pickedPhish === m.phish };
+          renderFeedback(); renderList(); updateChrome();
+          $("inboxProg").textContent = "Message " + (i + 1) + " of 8 · " + Object.keys(state.calls).length + " called";
+        }
+        $("callLegit").addEventListener("click", function () { decide(false); });
+        $("callPhish").addEventListener("click", function () { decide(true); });
+        if (call) renderFeedback();
+      }
+      function nextUncalled(from) {
+        for (var k = 1; k <= MESSAGES.length; k++) {
+          var idx = (from + k) % MESSAGES.length;
+          if (!state.calls[idx]) return idx;
+        }
+        return -1;
+      }
+
+      /* ================= INCIDENTS ================= */
+      var incidentsBuilt = false;
+      function buildIncidents() {
+        if (incidentsBuilt) { updateRespProg(); return; }
+        incidentsBuilt = true;
+        var list = $("incidentList");
+        INCIDENTS.forEach(function (inc, ii) {
+          var card = document.createElement("div");
+          card.className = "card";
+          var h = document.createElement("h3"); h.textContent = (ii + 1) + ". " + inc.title;
+          var sc = document.createElement("p"); sc.className = "scene"; sc.textContent = inc.scene;
+          var opts = document.createElement("div"); opts.className = "opts";
+          var feed = document.createElement("div"); feed.className = "feedback";
+          var listenRow = document.createElement("div"); listenRow.className = "listen-row";
+          listenRow.innerHTML = listenButton("Listen (optional)") + '<span class="listen-note">Reading is enough.</span>';
+          (function (row, incident) {
+            var lb = row.querySelector(".listen-btn");
+            if (lb) {
+              if (!("speechSynthesis" in window)) { lb.style.display = "none"; }
+              else lb.addEventListener("click", function () {
+                speakText(incident.title + ". " + incident.scene + " Options: " + incident.options.join(" "), lb);
+              });
+            }
+          })(listenRow, inc);
+          inc.options.forEach(function (op, oi) {
+            var b = document.createElement("button");
+            b.className = "opt"; b.type = "button";
+            var k = document.createElement("span"); k.className = "k"; k.textContent = "ABC"[oi];
+            var t = document.createElement("span"); t.textContent = op;
+            b.appendChild(k); b.appendChild(t);
+            b.addEventListener("click", function () {
+              if (state.resp[ii] !== undefined) return;
+              state.resp[ii] = oi;
+              opts.querySelectorAll(".opt").forEach(function (o, oj) {
+                o.disabled = true;
+                if (oj === inc.answer) o.classList.add("right");
+                else if (oj === oi) o.classList.add("wrong");
+              });
+              var right = oi === inc.answer;
+              feed.className = "feedback on " + (right ? "good" : "bad");
+              feed.innerHTML = "";
+              var v = document.createElement("span"); v.className = "verdict";
+              v.textContent = right ? "Right first move." : "Not first — try the safer move.";
+              var cl = document.createElement("span"); cl.textContent = inc.clue;
+              feed.appendChild(v); feed.appendChild(cl);
+              updateRespProg(); updateChrome();
+            });
+            opts.appendChild(b);
+          });
+          card.appendChild(h); card.appendChild(sc); card.appendChild(listenRow); card.appendChild(opts); card.appendChild(feed);
+          list.appendChild(card);
+        });
+        updateRespProg();
+      }
+      function updateRespProg() {
+        var n = Object.keys(state.resp).length;
+        $("respProg").textContent = n + " of 4 done";
+        $("toReport").disabled = !respDone();
+      }
+      $("toReport").addEventListener("click", function () { renderReport(); show("view-report"); });
+
+      /* ================= REPORT ================= */
+      function rankFor(s) {
+        if (s === 12) return ["Master Defender", "Perfect score — every fake spotted, every first move right."];
+        if (s >= 10) return ["School Defender", "Strong eyes. The school is safer with you on watch."];
+        if (s >= 7) return ["Junior Defender", "Good instincts — the clues above are your next level."];
+        return ["Defender in Training", "Review the clues above, then run it again."];
+      }
+      function renderReport() {
+        var s = score();
+        $("finalScore").textContent = s + " / 12";
+        var r = rankFor(s);
+        $("finalRank").textContent = r[0];
+        $("finalLine").textContent = r[1];
+        $("certLine").textContent = "Defender score: " + s + " / 12 · " + r[0];
+
+        var bi = $("breakInbox"); bi.innerHTML = "";
+        MESSAGES.forEach(function (m, i) {
+          var c = state.calls[i];
+          var row = document.createElement("div"); row.className = "b-row";
+          var mk = document.createElement("span"); mk.className = "mark " + (c && c.correct ? "ok" : "no");
+          mk.textContent = c && c.correct ? "✓" : "✗";
+          var nm = document.createElement("span");
+          nm.textContent = m.subject + (m.phish ? " — phishing" : " — legit");
+          var cl = document.createElement("span"); cl.className = "clue"; cl.textContent = m.clue;
+          row.appendChild(mk); row.appendChild(nm); row.appendChild(cl);
+          bi.appendChild(row);
+        });
+        var br = $("breakResp"); br.innerHTML = "";
+        INCIDENTS.forEach(function (inc, i) {
+          var right = state.resp[i] === inc.answer;
+          var row = document.createElement("div"); row.className = "b-row";
+          var mk = document.createElement("span"); mk.className = "mark " + (right ? "ok" : "no");
+          mk.textContent = right ? "✓" : "✗";
+          var nm = document.createElement("span"); nm.textContent = inc.title;
+          var cl = document.createElement("span"); cl.className = "clue"; cl.textContent = inc.clue;
+          row.appendChild(mk); row.appendChild(nm); row.appendChild(cl);
+          br.appendChild(row);
+        });
+        updateChrome();
+      }
+      $("certName").addEventListener("input", function () {
+        $("certNameOut").textContent = this.value;
+      });
+      $("playAgain").addEventListener("click", function () { location.reload(); });
+      $("backToStart").addEventListener("click", function () { location.reload(); });
+
+      /* ================= TEACHER BYPASS ================= */
+      /* Quiet corner control. Works in both modes and from any screen.
+         Skipping marks the current item answered and revealed, with no
+         point earned — the normal score rules are untouched. */
+      var bypassPanel = $("bypassPanel");
+      function refreshBypassSkip() {
+        var can = false;
+        if ($("view-inbox").classList.contains("on")) can = !inboxDone();
+        else if ($("view-respond").classList.contains("on")) can = !respDone();
+        $("bypassSkip").disabled = !can;
+      }
+      function toggleBypass(open) {
+        var willOpen = typeof open === "boolean" ? open : !bypassPanel.classList.contains("on");
+        bypassPanel.classList.toggle("on", willOpen);
+        $("bypassBtn").setAttribute("aria-expanded", willOpen ? "true" : "false");
+        if (willOpen) refreshBypassSkip();
+      }
+      function ensureMode() { if (!state.mode) startMode("teacher"); }
+      $("bypassBtn").addEventListener("click", function () { toggleBypass(); });
+      $("bypassClose").addEventListener("click", function () { toggleBypass(false); });
+      $("bypassInbox").addEventListener("click", function () {
+        ensureMode();
+        show("view-inbox"); openMessage(state.current);
+        toggleBypass(false);
+      });
+      $("bypassRespond").addEventListener("click", function () {
+        ensureMode();
+        buildIncidents(); show("view-respond");
+        toggleBypass(false);
+      });
+      $("bypassReport").addEventListener("click", function () {
+        ensureMode();
+        renderReport(); show("view-report");
+        toggleBypass(false);
+      });
+      $("bypassSkip").addEventListener("click", function () {
+        if ($("view-inbox").classList.contains("on")) skipMessage();
+        else if ($("view-respond").classList.contains("on")) skipIncident();
+        refreshBypassSkip();
+      });
+      $("bypassReset").addEventListener("click", function () { location.reload(); });
+
+      function skipMessage() {
+        var i = state.current;
+        if (state.calls[i]) {
+          var n = nextUncalled(i);
+          if (n === -1) return;
+          i = n;
+        }
+        state.calls[i] = { picked: null, correct: false, skipped: true };
+        openMessage(i);
+        updateChrome();
+      }
+      function skipIncident() {
+        buildIncidents();
+        var ii = -1;
+        for (var k = 0; k < INCIDENTS.length; k++) {
+          if (state.resp[k] === undefined) { ii = k; break; }
+        }
+        if (ii === -1) return;
+        state.resp[ii] = -1; /* answered, revealed, no point */
+        var inc = INCIDENTS[ii];
+        var card = $("incidentList").children[ii];
+        if (card) {
+          card.querySelectorAll(".opt").forEach(function (o, oj) {
+            o.disabled = true;
+            if (oj === inc.answer) o.classList.add("right");
+          });
+          var feed = card.querySelector(".feedback");
+          feed.className = "feedback on bad";
+          feed.innerHTML = "";
+          var v = document.createElement("span"); v.className = "verdict";
+          v.textContent = "Revealed — the best first move is marked.";
+          var cl = document.createElement("span"); cl.textContent = inc.clue;
+          feed.appendChild(v); feed.appendChild(cl);
+          card.scrollIntoView({ block: "center" });
+        }
+        updateRespProg(); updateChrome();
+      }
+    </script>
+  </body>
+</html>

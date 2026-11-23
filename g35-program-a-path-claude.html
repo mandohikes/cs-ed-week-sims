@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Program a Path: Graph Paper Programming Sim (Grades 3-5)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eaf2ff; --bg2:#dbeafe;
+  --card:#ffffff; --card2:#f8fbff;
+  --ink:#16233f; --muted:#5b6b8a; --line:#cbd8ef;
+  --blue:#1d4ed8; --blue2:#2563eb; --teal:#0f766e; --teal-bg:#ccfbf1;
+  --orange:#ea580c; --orange-bg:#ffedd5; --yellow:#facc15; --red:#dc2626; --green:#15803d; --green-bg:#dcfce7;
+  --grid-line:#b8d0f5; --wall:#334155; --wall2:#1e293b;
+  --shadow:0 10px 30px rgba(22,35,63,.12);
+  --radius:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1220; --bg2:#0f1c33; --card:#16233f; --card2:#1a2c4f;
+    --ink:#eef4ff; --muted:#a9b8d6; --line:#2e4470;
+    --grid-line:#2e4a7a; --wall:#0f172a; --wall2:#020617;
+    --shadow:0 10px 30px rgba(0,0,0,.4);
+    --teal-bg:#134e4a; --orange-bg:#431407; --green-bg:#052e16;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Nunito",system-ui,sans-serif; color:var(--ink); background:
+  linear-gradient(var(--bg2) 1px, transparent 1px),
+  linear-gradient(90deg, var(--bg2) 1px, transparent 1px),
+  var(--bg);
+  background-size:28px 28px;
+  line-height:1.4;
+}
+button{font-family:inherit; cursor:pointer; min-height:44px}
+h1,h2,h3{font-family:"Fredoka",sans-serif; line-height:1.05; margin:0}
+.wrap{max-width:1120px; margin:0 auto; padding:18px 16px 36px}
+.top{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px}
+.eyebrow{letter-spacing:.14em; text-transform:uppercase; font-size:12px; font-weight:900; color:var(--teal)}
+.top h1{font-size:clamp(34px,6vw,54px); letter-spacing:-.02em}
+.top h1 span{color:var(--blue2)}
+.lede{color:var(--ink); font-weight:800; margin-top:6px; font-size:20px}
+.badge-box{background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:10px 14px; box-shadow:var(--shadow); min-width:190px}
+.badge-box b{font-family:"Fredoka"; font-size:15px}
+.stars{font-size:22px; letter-spacing:2px; margin:2px 0}
+.progress{height:10px; background:var(--line); border-radius:999px; overflow:hidden}
+.progress i{display:block; height:100%; background:var(--teal); width:0%; transition:width .4s}
+.small{font-size:13px; color:var(--muted); font-weight:700}
+
+/* ===== MODE PICKER (compact) ===== */
+.class-mode{background:var(--card); border:2px solid var(--ink); border-radius:18px; padding:12px; box-shadow:var(--shadow); margin-bottom:12px}
+.cm-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.cm-card{ border:2.5px solid var(--line); background:var(--card2); border-radius:14px; padding:12px 14px; color:var(--ink); display:flex; align-items:center; gap:12px; width:100%; text-align:left}
+.cm-card:hover{border-color:var(--ink)}
+.cm-card.active{border-color:var(--ink); background:var(--card)}
+.cm-card.teacher-card.active{box-shadow:0 5px 0 #7c2d12; border-color:#7c2d12}
+.cm-card.student-card.active{box-shadow:0 5px 0 var(--teal); border-color:var(--teal)}
+.cm-icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:25px;flex:0 0 46px}
+.teacher-card .cm-icon{background:#ffedd5}
+.student-card .cm-icon{background:var(--teal-bg)}
+.cm-card h3{font-size:19px}
+.cm-card .cm-sub{font-weight:800; font-size:13px; color:var(--muted); margin-top:1px}
+.cm-active-label{margin-left:auto; font-size:12px; font-weight:900; padding:5px 9px; border-radius:999px; background:var(--line); white-space:nowrap}
+.cm-card.active .cm-active-label{background:var(--ink); color:#fff}
+.teacher-card.active .cm-active-label{background:#7c2d12}
+.student-card.active .cm-active-label{background:var(--teal)}
+.cm-banner{margin-top:10px; border-radius:12px; padding:9px 12px; font-weight:800; font-size:15px; display:flex; gap:8px; align-items:center}
+.cm-banner.teacher{background:#fff7ed; border:1.5px solid #fdba74; color:#7c2d12}
+.cm-banner.student{background:var(--teal-bg); border:1.5px solid #5eead4; color:#134e4a}
+@media(prefers-color-scheme:dark){ .cm-banner.teacher{background:#431407;color:#fed7aa} .cm-banner.student{color:#ccfbf1} }
+
+/* Teacher dashboard — short bullets only */
+.dash{border-radius:20px; padding:14px; margin-bottom:12px; box-shadow:var(--shadow); border:1.5px solid var(--line); background:var(--card)}
+.dash-teacher{border-color:#fdba74; background:linear-gradient(180deg,#fff7ed 0%, var(--card) 110px)}
+@media(prefers-color-scheme:dark){ .dash-teacher{background:linear-gradient(180deg,#431407 0%, var(--card) 110px)} }
+.dash-head{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px}
+.dash-head h2{font-size:20px}
+.dash-grid{display:grid; grid-template-columns:1.05fr 1fr .95fr; gap:10px}
+.dash-box{background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:12px}
+.dash-box h3{font-size:15px; margin-bottom:6px}
+.dash-box p,.dash-box li{font-size:13.5px; font-weight:700; color:var(--muted); line-height:1.45}
+.dash-box ul{margin:4px 0 0; padding-left:18px}
+.dash-box li b,.dash-box p b{color:var(--ink)}
+.flow{list-style:none; padding:0 !important; margin:0 !important; display:grid; gap:6px}
+.flow li{display:flex; gap:8px; align-items:center; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:7px 8px; font-size:13.5px}
+.flow-time{font-size:11px; font-weight:900; background:var(--ink); color:#fff; padding:3px 7px; border-radius:999px; white-space:nowrap}
+.say{background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:8px 9px; margin-top:8px; font-size:13.5px; font-weight:800; color:#713f12; line-height:1.4}
+@media(prefers-color-scheme:dark){ .say{background:#422006;color:#fef08a} }
+.solution-tray{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; min-height:36px; align-items:center}
+.solution-tray .block{width:34px;height:34px;font-size:17px;border-radius:8px}
+.dash-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.dash-btn{border:2px solid var(--ink); background:var(--ink); color:#fff; border-radius:999px; padding:7px 12px; font-weight:900; font-size:13px}
+.dash-btn.secondary{background:var(--card); color:var(--ink)}
+.dash-btn.orange{background:var(--orange); border-color:var(--orange); color:#fff}
+.vote-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px}
+.vote-btn{border:2px solid var(--line); background:var(--card2); border-radius:12px; padding:8px; font-weight:900; color:var(--ink); display:flex; justify-content:space-between; align-items:center}
+.vote-btn b{background:var(--blue2); color:#fff; min-width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:13px}
+body.teacher-mode .board{max-width:640px}
+body.teacher-mode .cell.goal{font-size:clamp(28px,6vw,44px)}
+body.teacher-mode .message{font-size:18px}
+body.projector .wrap{max-width:1240px}
+body.projector .board{max-width:720px}
+body.projector .top h1{font-size:62px}
+@media(max-width:860px){ .cm-grid{grid-template-columns:1fr} .dash-grid{grid-template-columns:1fr} }
+
+/* Student hint row — one line */
+.hint-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:12px; box-shadow:var(--shadow)}
+.hint-btn{border:2px solid var(--teal); color:var(--teal); background:var(--card); border-radius:999px; padding:8px 16px; font-weight:900; font-size:15px}
+.hint-row .hint-status{font-weight:800; font-size:15px}
+
+/* Sound is OPTIONAL — everything is readable on screen */
+.sound-note{display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:var(--card2); border:1.5px dashed var(--line); border-radius:12px; padding:8px 12px; margin-bottom:12px; font-weight:800; font-size:14px; color:var(--muted)}
+.sound-note b{color:var(--ink)}
+.sound-note .sn-tag{margin-left:auto; font-size:12.5px; white-space:nowrap}
+.listen-btn{border:1.5px solid var(--line); background:transparent; color:var(--muted); border-radius:999px; padding:6px 12px; font-weight:800; font-size:13px; min-height:36px; flex:0 0 auto}
+.listen-btn:hover{border-color:var(--muted); color:var(--ink)}
+.listen-btn.speaking{background:var(--ink); color:#fff; border-color:var(--ink)}
+.message{flex-wrap:wrap}
+.message .msg-main{display:flex; gap:10px; align-items:center; flex:1; min-width:180px}
+
+/* tabs */
+.tabs{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+.tab{border:2px solid var(--line); background:var(--card); color:var(--ink); padding:10px 18px; border-radius:999px; font-weight:900; font-size:16px}
+.tab.active{background:var(--ink); color:white; border-color:var(--ink)}
+
+/* play strip — show, don't tell */
+.play-strip{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.play-strip span{flex:1; min-width:120px; background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:10px; text-align:center; font-family:"Fredoka"; font-size:17px; box-shadow:var(--shadow)}
+.play-strip span i{font-style:normal; font-size:24px; display:block}
+
+.layout{display:grid; grid-template-columns: 1.15fr .85fr; gap:16px; align-items:start}
+.panel{background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px}
+.panel-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px}
+.panel-head h2{font-size:22px}
+.level-pills{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.pill{border:2px solid var(--line); background:var(--card2); border-radius:999px; padding:8px 12px; font-weight:900; font-size:13px; color:var(--ink)}
+.pill.active{background:var(--blue2); color:#fff; border-color:var(--blue2)}
+.pill.done{border-color:var(--teal); background:var(--teal-bg)}
+
+/* GRID */
+.grid-wrap{
+  background:
+    linear-gradient(rgba(37,99,235,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,.06) 1px, transparent 1px),
+    var(--card2);
+  background-size:20px 20px;
+  border:2px solid var(--line); border-radius:16px; padding:14px;
+}
+.board{display:grid; gap:6px; width:100%; max-width:520px; margin:0 auto; aspect-ratio:1}
+.cell{position:relative; border:1.5px solid var(--grid-line); background:var(--card); border-radius:10px; display:grid; place-items:center; min-height:0; overflow:hidden}
+.cell.wall{background:var(--wall); border-color:var(--wall2); background-image:repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,.08) 6px, rgba(255,255,255,.08) 12px)}
+.cell.goal{background:#fff7ed; border-color:#fdba74; font-size:clamp(22px,5vw,34px)}
+@media (prefers-color-scheme: dark){ .cell.goal{background:#431407} }
+.cell.filled{background:#2563eb !important; border-color:#1d4ed8}
+.cell.start-cell{box-shadow:inset 0 0 0 3px var(--teal-bg)}
+.robot{width:78%; height:78%; transition:transform .2s; filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)); z-index:2}
+.robot.bump{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.legend span{font-size:13px; font-weight:800; background:var(--card2); border:1px solid var(--line); padding:6px 10px; border-radius:999px}
+.message{margin-top:12px; border-radius:14px; padding:12px 14px; font-weight:900; font-size:17px; border:1.5px solid var(--line); background:var(--card2); display:flex; gap:10px; align-items:center}
+.message.success{background:var(--green-bg); border-color:#86efac; color:var(--green)}
+.message.error{background:#fef2f2; border-color:#fecaca; color:#991b1b}
+@media (prefers-color-scheme: dark){ .message.error{background:#450a0a; color:#fca5a5} }
+.message .face{font-size:24px; line-height:1}
+
+/* program panel */
+.program-tray{min-height:104px; border:2px dashed var(--line); border-radius:14px; padding:10px; background:var(--card2); display:flex; flex-wrap:wrap; gap:7px; align-content:flex-start}
+.program-tray.empty{ align-items:center; justify-content:center; color:var(--muted); font-weight:900; text-align:center; font-size:16px}
+.block{width:46px; height:46px; border-radius:10px; border:none; display:grid; place-items:center; font-size:22px; font-weight:900; color:#fff; position:relative; box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.block.up,.block.down,.block.left,.block.right{background:var(--blue2)}
+.block.fill{background:#9333ea}
+.block.current{outline:4px solid var(--yellow); transform:scale(1.08)}
+.block small{position:absolute; bottom:2px; right:4px; font-size:9px; opacity:.9}
+.cmd-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px}
+.cmd{border:2px solid var(--line); background:var(--card); border-radius:14px; padding:10px; display:flex; align-items:center; gap:10px; font-weight:900; font-size:16px; text-align:left; color:var(--ink)}
+.cmd:hover{border-color:var(--blue2)}
+.cmd .arrow{width:44px;height:44px; border-radius:10px; background:var(--blue2); color:#fff; display:grid; place-items:center; font-size:24px; flex:0 0 44px}
+.cmd.fill-cmd{grid-column:1 / -1}
+.cmd.fill-cmd .arrow{background:#9333ea}
+.controls{display:grid; grid-template-columns:1.2fr .8fr .8fr; gap:10px; margin-top:12px}
+.btn{border-radius:12px; border:2px solid var(--line); background:var(--card); font-weight:900; padding:11px 10px; color:var(--ink); font-size:15px}
+.btn.primary{background:var(--teal); color:#fff; border-color:var(--teal); font-size:18px}
+.btn.warn{background:var(--orange-bg); border-color:#fdba74}
+.stats{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+.stat{flex:1; min-width:90px; background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:8px 10px; text-align:center}
+.stat b{display:block; font-size:20px; font-family:"Fredoka"}
+.stat span{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:900}
+
+.target-preview{display:flex; gap:12px; align-items:center; background:var(--orange-bg); border:1.5px solid #fdba74; border-radius:14px; padding:10px 12px; margin-bottom:12px}
+.target-preview b{font-family:"Fredoka"; font-size:16px}
+.mini{display:grid; gap:3px; width:86px; height:86px; flex:0 0 86px}
+.mini i{border:1px solid var(--line); background:var(--card); border-radius:4px}
+.mini i.on{background:#2563eb; border-color:#1d4ed8}
+
+.vocab{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px}
+.vocab div{background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:12px; text-align:center}
+.vocab b{font-family:"Fredoka"; display:block; font-size:16px}
+.vocab p{margin:2px 0 0; font-size:14px; color:var(--muted); font-weight:800}
+.teacher{margin-top:14px; background:var(--ink); color:white; border-radius:var(--radius); padding:16px}
+.teacher h2{font-size:19px}
+.teacher ul{margin:8px 0 0; padding-left:18px; color:#e2e8f0; font-weight:700; font-size:14px; line-height:1.6}
+.confetti{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50; display:none}
+.confetti.show{display:block}
+.confetti i{position:absolute; top:-12px; width:10px; height:16px; border-radius:3px; animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg); opacity:0}}
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .vocab{grid-template-columns:1fr 1fr}
+  .controls{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:520px){
+  .vocab{grid-template-columns:1fr 1fr}
+  .badge-box{width:100%}
+}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+
+/* ===== TEACHER BYPASS — discreet, fixed corner control ===== */
+.teacher-bypass-btn{position:fixed; right:10px; bottom:10px; z-index:80; min-height:32px; padding:5px 10px; font-size:12px; font-weight:700; line-height:1; color:var(--muted); background:var(--card); border:1px solid var(--line); border-radius:999px; opacity:.68; box-shadow:0 2px 8px rgba(22,35,63,.10)}
+.teacher-bypass-btn:hover,.teacher-bypass-btn:focus-visible{opacity:1; color:var(--ink); border-color:var(--muted)}
+.teacher-bypass-panel{position:fixed; right:10px; bottom:52px; z-index:81; width:min(330px,calc(100vw - 20px)); max-height:min(78vh,640px); overflow:auto; background:var(--card); color:var(--ink); border:1.5px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:14px}
+.teacher-bypass-panel[hidden]{display:none}
+.teacher-bypass-panel h2{font-size:17px; margin:0}
+.teacher-bypass-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
+.teacher-bypass-close{min-height:32px; padding:4px 10px; font-size:13px; font-weight:800; color:var(--muted); background:var(--card2); border:1px solid var(--line); border-radius:999px}
+.teacher-bypass-panel h3{font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:12px 0 6px}
+.teacher-bypass-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.teacher-bypass-grid button,.teacher-bypass-actions button{min-height:38px; padding:7px 9px; font-size:13.5px; font-weight:800; text-align:left; color:var(--ink); background:var(--card2); border:1.5px solid var(--line); border-radius:10px}
+.teacher-bypass-grid button:hover,.teacher-bypass-actions button:hover{border-color:var(--muted)}
+.teacher-bypass-grid button.current{border-color:var(--ink); background:var(--card); box-shadow:inset 0 0 0 1px var(--ink)}
+.teacher-bypass-actions{display:grid; gap:6px}
+.teacher-bypass-actions button{text-align:center}
+.teacher-bypass-solution{margin-top:8px; border:1.5px dashed var(--line); border-radius:10px; padding:9px; background:var(--card2); font-size:13.5px; font-weight:700; line-height:1.45; color:var(--muted)}
+.teacher-bypass-solution:empty{display:none}
+.teacher-bypass-solution .block{width:32px;height:32px;font-size:16px;border-radius:7px;display:inline-grid;vertical-align:middle;margin:0 3px 4px 0}
+.teacher-bypass-note{font-size:12.5px; font-weight:700; color:var(--muted); margin:10px 0 0}
+</style>
+</head>
+<body>
+<div class="confetti" id="confetti"></div>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Grades 3–5 • Coding</div>
+      <h1>Program a <span>Path</span></h1>
+      <p class="lede">🤖 Get Bit to the ⭐!</p>
+    </div>
+    <div class="badge-box" aria-label="Progress">
+      <b>🏆 Your Stars</b>
+      <div class="stars" id="stars">☆☆☆☆☆☆</div>
+      <div class="progress"><i id="progBar"></i></div>
+      <div class="small" id="progText" style="margin-top:6px">0 of 6 ⭐</div>
+    </div>
+  </header>
+
+  <!-- MODE PICKER — teacher taps once -->
+  <section class="class-mode" aria-label="Choose teacher-led or student-led version">
+    <div class="cm-grid">
+      <button class="cm-card teacher-card" id="cmTeacherBtn" onclick="setClassMode('teacher')" aria-pressed="false">
+        <div class="cm-icon">👩‍🏫</div><div><h3>Teacher-Led</h3><div class="cm-sub">Big screen</div></div><span class="cm-active-label" id="cmTeacherLabel">Tap</span>
+      </button>
+      <button class="cm-card student-card active" id="cmStudentBtn" onclick="setClassMode('student')" aria-pressed="true">
+        <div class="cm-icon">🧑‍💻</div><div><h3>Student-Led</h3><div class="cm-sub">My device</div></div><span class="cm-active-label" id="cmStudentLabel">● On</span>
+      </button>
+    </div>
+    <div class="cm-banner student" id="cmBanner" role="status"><span id="cmBannerIcon">🧑‍💻</span><span id="cmBannerText"><b>Your turn!</b> Read. Plan. Tap. Run.</span></div>
+  </section>
+
+  <div class="sound-note" role="note"><span aria-hidden="true">👀</span><span><b>Read &amp; play — no sound needed.</b> Every step is on screen.</span><span class="sn-tag">🔊 Listen = extra help only</span></div>
+
+  <!-- TEACHER DASHBOARD — short bullets -->
+  <section class="dash dash-teacher" id="teacherPanel" style="display:none" aria-label="Teacher-led dashboard">
+    <div class="dash-head">
+      <h2>👩‍🏫 <span id="teacherLevelName">Level 1: First Steps</span></h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="dash-btn secondary" id="bigBoardBtn" onclick="toggleProjector()">⛶ Big View: Off</button>
+        <button class="dash-btn secondary" id="slowBtn" onclick="toggleSlow()">🐢 Slow: Off</button>
+      </div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-box">
+        <h3>⏱️ Flow — 25 min</h3>
+        <ul class="flow">
+          <li><span class="flow-time">0–4</span><b>Launch</b> — Show grid.</li>
+          <li><span class="flow-time">4–10</span><b>Model</b> — Build L1 together.</li>
+          <li><span class="flow-time">10–20</span><b>Practice</b> — Vote. Add. Predict. Run.</li>
+          <li><span class="flow-time">20–25</span><b>Wrap</b> — Name the bug.</li>
+        </ul>
+        <p style="margin-top:8px">Jobs: <b>Counter • Checker • Bug Spotter</b>. Switch each level.</p>
+      </div>
+      <div class="dash-box">
+        <h3>💬 Ask — show it or say it</h3>
+        <p id="teacherPrompt"><b>Ask:</b> How many steps to the ⭐?</p>
+        <div class="say" id="teacherSay">👀 Show / say: “Count. Plan. Test. Fix.”</div>
+        <p style="margin-top:8px"><b>Before Run:</b> “Where will Bit stop? Point!”</p>
+        <p><b>After Bonk:</b> “What did we say? What did we want?”</p>
+        <p style="margin-top:8px">Class reads it on screen — no listening needed.</p>
+        <div class="dash-actions"><button class="dash-btn secondary" onclick="nextPrompt()">↻ Next question</button><button class="listen-btn" id="listenPromptBtn" onclick="speakPrompt()" aria-label="Optional: hear the question read aloud">🔊 Hear it · optional</button></div>
+      </div>
+      <div class="dash-box">
+        <h3>🔑 Answer — Teacher Only</h3>
+        <p id="solutionNote">Hide till ready.</p>
+        <div class="solution-tray" id="solutionTray"><span class="small">Hidden.</span></div>
+        <div class="dash-actions">
+          <button class="dash-btn" id="revealBtn" onclick="toggleSolution()">👁️ Show</button>
+          <button class="dash-btn orange" onclick="loadSolution()">▶ Demo</button>
+        </div>
+        <div style="margin-top:12px; border-top:1px solid var(--line); padding-top:10px">
+          <h3 style="margin:0">🗳️ Vote: Next move?</h3>
+          <div class="vote-grid">
+            <button class="vote-btn" onclick="castVote('up')">↑ Up <b id="vote-up">0</b></button>
+            <button class="vote-btn" onclick="castVote('down')">↓ Down <b id="vote-down">0</b></button>
+            <button class="vote-btn" onclick="castVote('left')">← Left <b id="vote-left">0</b></button>
+            <button class="vote-btn" onclick="castVote('right')">→ Right <b id="vote-right">0</b></button>
+          </div>
+          <div class="dash-actions"><button class="dash-btn secondary" onclick="resetVotes()">Clear</button><span class="small" id="voteTotal" style="align-self:center">0 votes</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENT HINT ROW — one line -->
+  <div class="hint-row" id="studentPanel" aria-label="Hint">
+    <span style="font-size:22px" aria-hidden="true">🤔</span>
+    <span style="font-weight:900;font-size:16px">Stuck?</span>
+    <button class="hint-btn" id="hintBtn" onclick="revealHint()">💡 Hint</button>
+    <span class="hint-status" id="hintStatus"></span>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Choose activity">
+    <button class="tab active" id="tabPath" onclick="setMode('path')">⭐ Get to Star</button>
+    <button class="tab" id="tabPixel" onclick="setMode('pixel')">🎨 Fill Picture</button>
+  </div>
+
+  <div class="play-strip" aria-label="How to play">
+    <span><i>👀</i>1. Count</span>
+    <span><i>👆</i>2. Tap arrows</span>
+    <span><i>▶️</i>3. Run!</span>
+  </div>
+
+  <div class="layout">
+    <!-- GRID PANEL -->
+    <section class="panel" aria-label="Graph paper grid">
+      <div class="panel-head">
+        <div>
+          <h2 id="levelTitle">Level 1: First Steps</h2>
+          <p class="small" id="levelHint" style="margin:4px 0 0; font-size:15px"></p>
+        </div>
+        <span style="background:var(--yellow); padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px; white-space:nowrap" id="levelBadge">5 × 5</span>
+      </div>
+
+      <div class="level-pills" id="levelPills"></div>
+
+      <div id="targetPreview" class="target-preview" style="display:none">
+        <div class="mini" id="miniGrid"></div>
+        <b>🎯 Copy this!</b>
+      </div>
+
+      <div class="grid-wrap">
+        <div class="board" id="board"></div>
+        <div class="legend" id="legend">
+          <span>🤖 Bit</span><span>⭐ Goal</span><span>⬛ Wall</span>
+        </div>
+      </div>
+
+      <div class="message" id="message" role="status" aria-live="polite">
+        <div class="msg-main"><span class="face">🤖</span><span id="messageText">Tap arrows. Press RUN!</span></div>
+        <button class="listen-btn" id="listenBtn" onclick="speakCurrent()" aria-label="Optional: hear this message read aloud. Not needed to play.">🔊 Hear it · optional</button>
+      </div>
+    </section>
+
+    <!-- PROGRAM PANEL -->
+    <section class="panel" aria-label="Your program">
+      <div class="panel-head">
+        <div><h2>Your Steps</h2></div>
+        <span class="small" id="stepCountLabel">0 steps</span>
+      </div>
+
+      <div class="program-tray empty" id="tray">👆 Tap arrows to start</div>
+
+      <div class="cmd-grid" id="cmdGrid">
+        <button class="cmd" onclick="addCmd('up')" aria-label="Add move up"><span class="arrow">↑</span><span>Up</span></button>
+        <button class="cmd" onclick="addCmd('down')" aria-label="Add move down"><span class="arrow">↓</span><span>Down</span></button>
+        <button class="cmd" onclick="addCmd('left')" aria-label="Add move left"><span class="arrow">←</span><span>Left</span></button>
+        <button class="cmd" onclick="addCmd('right')" aria-label="Add move right"><span class="arrow">→</span><span>Right</span></button>
+        <button class="cmd fill-cmd" id="fillBtn" onclick="addCmd('fill')" style="display:none" aria-label="Add fill square"><span class="arrow">■</span><span>Fill ■</span></button>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="runBtn" onclick="runProgram()">▶ RUN</button>
+        <button class="btn" onclick="stepProgram()">Step →</button>
+        <button class="btn warn" onclick="resetRun()">↺ Start Over</button>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr 1fr">
+        <button class="btn" onclick="undoCmd()">⌫ Undo</button>
+        <button class="btn" onclick="clearProgram()">Clear</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="statSteps">0</b><span>Steps</span></div>
+        <div class="stat"><b id="statBest">—</b><span>Best</span></div>
+        <div class="stat"><b id="statTries">0</b><span>Tries</span></div>
+      </div>
+
+      <button class="btn" id="nextBtn" style="width:100%; margin-top:12px; display:none; background:var(--green); color:#fff; border-color:var(--green); font-size:17px" onclick="nextLevel()">Next →</button>
+    </section>
+  </div>
+
+  <section class="vocab" aria-label="Words to know">
+    <div><b>🧭 Algorithm</b><p>Your plan.</p></div>
+    <div><b>💻 Program</b><p>Steps Bit follows.</p></div>
+    <div><b>🐛 Bug</b><p>A mistake.</p></div>
+    <div><b>🔧 Debug</b><p>Find it. Fix it.</p></div>
+  </section>
+
+  <section class="teacher">
+    <h2>👩‍🏫 Teacher Notes</h2>
+    <ul>
+      <li><b>Big screen / first time</b> → Teacher-Led</li>
+      <li><b>Own devices</b> → Student-Led</li>
+      <li><b>Day 1:</b> Teacher-Led, Levels 1–2. <b>Day 2:</b> Student-Led.</li>
+      <li><b>Paper first</b> (Sheet 3), then test here.</li>
+      <li><b>Sound off is fine.</b> All steps are written on screen. 🔊 buttons are extra help only — never needed.</li>
+    </ul>
+  </section>
+
+  <p class="small" style="text-align:center; margin-top:14px">One arrow = one square.</p>
+</div>
+
+<!-- TEACHER BYPASS — available in both Teacher-Led and Student-Led modes -->
+<button class="teacher-bypass-btn" id="teacherBypassBtn" onclick="toggleBypass()" aria-haspopup="true" aria-expanded="false" aria-controls="teacherBypassPanel">Teacher</button>
+<section class="teacher-bypass-panel" id="teacherBypassPanel" hidden aria-label="Teacher bypass">
+  <div class="teacher-bypass-head">
+    <h2>Teacher Bypass</h2>
+    <button class="teacher-bypass-close" onclick="toggleBypass(false)">Close</button>
+  </div>
+
+  <h3>Jump to — ⭐ Path Puzzles</h3>
+  <div class="teacher-bypass-grid" id="bypassPathGrid">
+    <button onclick="bypassJump('path',0)">1. First Steps</button>
+    <button onclick="bypassJump('path',1)">2. Turn the Corner</button>
+    <button onclick="bypassJump('path',2)">3. Over the Wall</button>
+    <button onclick="bypassJump('path',3)">4. Around the Barrier</button>
+    <button onclick="bypassJump('path',4)">5. The Zigzag</button>
+    <button onclick="bypassJump('path',5)">6. The Big Maze</button>
+  </div>
+
+  <h3>Jump to — 🎨 Pixel Pictures</h3>
+  <div class="teacher-bypass-grid" id="bypassPixelGrid">
+    <button onclick="bypassJump('pixel',0)">1. Plus Sign</button>
+    <button onclick="bypassJump('pixel',1)">2. Letter L</button>
+    <button onclick="bypassJump('pixel',2)">3. Little Heart</button>
+  </div>
+
+  <h3>This Puzzle</h3>
+  <div class="teacher-bypass-actions">
+    <button onclick="bypassSkip()">Skip this puzzle →</button>
+    <button onclick="bypassReveal()">Reveal the solution program</button>
+    <button onclick="bypassReset()">Reset — clear stars &amp; start over</button>
+  </div>
+  <div class="teacher-bypass-solution" id="bypassSolution" aria-live="polite"></div>
+  <p class="teacher-bypass-note">Works in Teacher-Led and Student-Led modes.</p>
+</section>
+
+<script>
+var robotSVG = '<svg class="robot" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Bit the robot"><rect x="22" y="28" width="56" height="48" rx="12" fill="#2563eb"/><rect x="30" y="38" width="40" height="24" rx="6" fill="#dbeafe"/><circle cx="41" cy="50" r="5" fill="#16233f"/><circle cx="59" cy="50" r="5" fill="#16233f"/><rect x="44" y="68" width="12" height="4" rx="2" fill="#fff"/><rect x="46" y="12" width="8" height="16" rx="4" fill="#64748b"/><circle cx="50" cy="10" r="6" fill="#facc15" stroke="#ca8a04" stroke-width="2"/><rect x="8" y="42" width="14" height="10" rx="5" fill="#1d4ed8"/><rect x="78" y="42" width="14" height="10" rx="5" fill="#1d4ed8"/><rect x="32" y="76" width="12" height="10" rx="4" fill="#334155"/><rect x="56" y="76" width="12" height="10" rx="4" fill="#334155"/></svg>';
+var cursorSVG = '<svg class="robot" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Paint cursor"><circle cx="50" cy="50" r="34" fill="#9333ea"/><circle cx="50" cy="50" r="26" fill="#fff"/><circle cx="50" cy="50" r="10" fill="#9333ea"/><rect x="46" y="6" width="8" height="18" rx="4" fill="#9333ea"/></svg>';
+
+var PATH_LEVELS = [
+  {title:"First Steps", cols:5, rows:5, start:{x:0,y:2}, goal:{x:4,y:2}, walls:[], best:4, hint:"Go right. → → → →"},
+  {title:"Turn the Corner", cols:5, rows:5, start:{x:0,y:4}, goal:{x:4,y:0}, walls:[], best:8, hint:"Right 4. Up 4."},
+  {title:"Over the Wall", cols:5, rows:5, start:{x:0,y:0}, goal:{x:4,y:0}, walls:[{x:1,y:0},{x:2,y:0},{x:3,y:0}], best:6, hint:"Go down. Go around."},
+  {title:"Around the Barrier", cols:5, rows:5, start:{x:0,y:2}, goal:{x:4,y:2}, walls:[{x:2,y:1},{x:2,y:2},{x:2,y:3}], best:8, hint:"Go over. Or go under."},
+  {title:"The Zigzag", cols:5, rows:5, start:{x:0,y:4}, goal:{x:4,y:0}, walls:[{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:3,y:2},{x:3,y:3},{x:3,y:4}], best:8, hint:"Find the gaps!"},
+  {title:"The Big Maze", cols:6, rows:6, start:{x:0,y:5}, goal:{x:5,y:0}, walls:[{x:2,y:0},{x:2,y:1},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:4,y:5}], best:10, hint:"Find 2 gaps!"}
+];
+var PIXEL_LEVELS = [
+  {title:"Plus Sign", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:2,y:0},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:2}], best:9, hint:"Fill the blue squares."},
+  {title:"Letter L", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:3},{x:1,y:3},{x:2,y:3}], best:11, hint:"Fill first! Then go down."},
+  {title:"Little Heart", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:1,y:0},{x:3,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:1,y:2},{x:2,y:2},{x:3,y:2},{x:2,y:3}], best:22, hint:"Go row by row."}
+];
+
+var mode = 'path';
+var levelIdx = 0;
+var program = [];
+var robot = {x:0,y:0};
+var filled = {};
+var running = false;
+var runTimer = null;
+var execIdx = 0;
+var tries = 0;
+var solvedPath = {};
+var solvedPixel = {};
+
+var classMode = 'student';
+var hintRevealed = false;
+var solutionRevealed = false;
+var runSpeed = 480;
+var isProjector = false;
+var isSlow = false;
+var votes = {up:0, down:0, left:0, right:0};
+var promptIdx = 0;
+
+var PATH_SOLUTIONS = [
+  ['right','right','right','right'],
+  ['right','right','right','right','up','up','up','up'],
+  ['down','right','right','right','right','up'],
+  ['up','up','right','right','right','right','down','down'],
+  ['right','right','up','up','up','up','right','right'],
+  ['right','up','up','up','right','right','up','up','right','right']
+];
+var PIXEL_STRATEGY = [
+  "Route: → → ■ ↓ ■ ← ■ → → ■ ↓ ← ■. Fill 5 only.",
+  "Fill start first! Then ↓ ■ ↓ ■ ↓ ■ → ■ → ■.",
+  "Row by row. Top row: skip the middle gap."
+];
+var TEACHER_PROMPTS = [
+  ["How many steps to the ⭐?","What comes first?","Why count first?"],
+  ["Two ways can both work. How?","Long or short — which is best?","Where does Bit turn?"],
+  ["Why not go straight?","Say the detour first.","Which step may be wrong?"],
+  ["Over or under? Vote!","Trace it. Hit a wall?","Prove it works."],
+  ["Point to the gaps.","Why does straight up fail?","Say your plan. Then code it."],
+  ["Point to both gaps.","Why is best = 10?","What helped you here?"]
+];
+var PIXEL_PROMPTS = [
+  ["When do you Fill?","How do you spot an extra?","Move or Fill first?"],
+  ["Why Fill first?","What if you skip it?","Trace the L. Where is the turn?"],
+  ["Picture or path — same or not?","Why go row by row?","Hardest row? Why?"]
+];
+var TEACHER_SAYS = [
+  "👀 Show / say: “Count. Plan. Test. Fix.”",
+  "👀 Show / say: “Count with me. Point to each square.”",
+  "👀 Show / say: “A wall means: find a new way.”",
+  "👀 Show / say: “Vote. Test. Let Bit show us.”",
+  "👀 Show / say: “Find the gaps first.”",
+  "👀 Show / say: “Count. Predict. Step. Fix one.”"
+];
+
+function levels(){ return mode==='path' ? PATH_LEVELS : PIXEL_LEVELS; }
+function lvl(){ return levels()[levelIdx]; }
+function isWall(x,y){ var L=lvl(); if(!L.walls) return false; for(var i=0;i<L.walls.length;i++){ if(L.walls[i].x===x && L.walls[i].y===y) return true; } return false; }
+function isFillTarget(x,y){ var L=lvl(); if(!L.fills) return false; for(var i=0;i<L.fills.length;i++){ if(L.fills[i].x===x && L.fills[i].y===y) return true; } return false; }
+
+function setMode(m){
+  mode=m; levelIdx=0; program=[]; tries=0; hintRevealed=false; solutionRevealed=false; promptIdx=0; votes={up:0,down:0,left:0,right:0}; resetState();
+  document.getElementById('tabPath').classList.toggle('active', m==='path');
+  document.getElementById('tabPixel').classList.toggle('active', m==='pixel');
+  document.getElementById('fillBtn').style.display = (m==='pixel') ? 'flex' : 'none';
+  document.getElementById('targetPreview').style.display = (m==='pixel') ? 'flex' : 'none';
+  document.getElementById('legend').innerHTML = (m==='path')
+    ? '<span>🤖 Bit</span><span>⭐ Goal</span><span>⬛ Wall</span>'
+    : '<span>🟣 You</span><span>■ Fill = paint</span>';
+  renderAll(); renderTeacherPanel(); renderVotes();
+  setMessage(m==='path' ? "Get Bit to the ⭐!" : "Fill the blue squares!", '');
+}
+
+function setClassMode(m){
+  classMode=m; hintRevealed = (m==='teacher'); solutionRevealed=false; promptIdx=0;
+  document.body.classList.toggle('teacher-mode', m==='teacher');
+  document.body.classList.toggle('student-mode', m==='student');
+  var tBtn=document.getElementById('cmTeacherBtn'), sBtn=document.getElementById('cmStudentBtn');
+  tBtn.classList.toggle('active', m==='teacher'); sBtn.classList.toggle('active', m==='student');
+  tBtn.setAttribute('aria-pressed', m==='teacher'); sBtn.setAttribute('aria-pressed', m==='student');
+  document.getElementById('cmTeacherLabel').textContent = m==='teacher' ? '● On' : 'Tap';
+  document.getElementById('cmStudentLabel').textContent = m==='student' ? '● On' : 'Tap';
+  document.getElementById('teacherPanel').style.display = m==='teacher' ? 'block' : 'none';
+  document.getElementById('studentPanel').style.display = m==='student' ? 'flex' : 'none';
+  var banner=document.getElementById('cmBanner');
+  banner.className='cm-banner '+m;
+  stopSpeech();
+  if(m==='teacher'){
+    document.getElementById('cmBannerIcon').textContent='👩‍🏫';
+    document.getElementById('cmBannerText').innerHTML='<b>Teacher-Led.</b> Read. Build together. Vote, then Run.';
+    setMessage('Build it together!','');
+  } else {
+    document.getElementById('cmBannerIcon').textContent='🧑‍💻';
+    document.getElementById('cmBannerText').innerHTML='<b>Your turn!</b> Read. Plan. Tap. Run.';
+    setMessage('Read. Plan. Tap. Run!','');
+  }
+  var hs=document.getElementById('hintStatus'); if(hs) hs.textContent='';
+  var hb=document.getElementById('hintBtn'); if(hb) hb.textContent='💡 Hint';
+  renderPills(); renderTeacherPanel();
+  var target = m==='teacher' ? document.getElementById('teacherPanel') : document.getElementById('studentPanel');
+  if(target && document.body.dataset.cmInit==='1'){ target.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  document.body.dataset.cmInit='1';
+}
+function renderTeacherPanel(){
+  var L=lvl(); if(!L) return;
+  var nameEl=document.getElementById('teacherLevelName'); if(nameEl) nameEl.textContent='Level '+(levelIdx+1)+': '+L.title+(mode==='pixel'?' 🎨':'');
+  var prompts = mode==='path' ? TEACHER_PROMPTS[levelIdx] : PIXEL_PROMPTS[levelIdx];
+  var pEl=document.getElementById('teacherPrompt'); if(pEl && prompts) pEl.innerHTML='<b>Ask:</b> '+prompts[promptIdx % prompts.length];
+  var sEl=document.getElementById('teacherSay'); if(sEl) sEl.textContent = mode==='path' ? TEACHER_SAYS[levelIdx] : "👀 Show / say: “Fill is a step too. In order!”";
+  var tray=document.getElementById('solutionTray'); var note=document.getElementById('solutionNote'); var rBtn=document.getElementById('revealBtn');
+  if(!tray) return;
+  if(!solutionRevealed){
+    tray.innerHTML='<span class="small">Hidden.</span>';
+    if(note) note.textContent = mode==='path' ? 'Best: '+L.best+' steps. Hide till ready.' : 'Hide till ready.';
+    if(rBtn) rBtn.textContent='👁️ Show';
+  } else {
+    if(mode==='path'){
+      var sol=PATH_SOLUTIONS[levelIdx]||[];
+      tray.innerHTML=sol.map(function(c){ return '<span class="block '+c+'">'+ARROWS[c]+'</span>'; }).join('')+'<span class="small" style="margin-left:6px">'+sol.map(function(c){return LABELS[c]}).join(' → ')+'</span>';
+      if(note) note.textContent='Best: '+sol.length+' steps. Other ways can work too.';
+    } else {
+      tray.innerHTML='<span style="font-size:13.5px;font-weight:700;color:var(--muted);line-height:1.45">'+(PIXEL_STRATEGY[levelIdx]||L.hint)+'</span>';
+      if(note) note.textContent='Many ways work. Check fills match.';
+    }
+    if(rBtn) rBtn.textContent='🙈 Hide';
+  }
+}
+function toggleSolution(){ solutionRevealed=!solutionRevealed; renderTeacherPanel(); }
+function loadSolution(){
+  if(mode!=='path'){ setMessage('See the tip above. Go row by row.',''); solutionRevealed=true; renderTeacherPanel(); return; }
+  var sol=PATH_SOLUTIONS[levelIdx]; if(!sol) return;
+  program=sol.slice(); solutionRevealed=true; resetState(); renderTray(); renderBoard(); renderTeacherPanel();
+  setMessage('Watch! 👀','');
+  setTimeout(function(){ if(!running) runProgram(); }, 350);
+}
+function toggleProjector(){
+  isProjector=!isProjector; document.body.classList.toggle('projector', isProjector);
+  document.getElementById('bigBoardBtn').textContent = isProjector ? '⛶ Big View: On' : '⛶ Big View: Off';
+}
+function toggleSlow(){
+  isSlow=!isSlow; runSpeed = isSlow ? 950 : 480;
+  document.getElementById('slowBtn').textContent = isSlow ? '🐢 Slow: On' : '🐢 Slow: Off';
+}
+function castVote(dir){ votes[dir]++; renderVotes(); }
+function resetVotes(){ votes={up:0,down:0,left:0,right:0}; renderVotes(); }
+function renderVotes(){
+  var tot=0; ['up','down','left','right'].forEach(function(d){ var el=document.getElementById('vote-'+d); if(el) el.textContent=votes[d]; tot+=votes[d]; });
+  var t=document.getElementById('voteTotal'); if(t) t.textContent=tot+(tot===1?' vote':' votes');
+}
+function nextPrompt(){ promptIdx++; renderTeacherPanel(); }
+function revealHint(){
+  hintRevealed=true; renderPills();
+  var hs=document.getElementById('hintStatus'); if(hs) hs.textContent='💡 '+lvl().hint;
+  var hb=document.getElementById('hintBtn'); if(hb) hb.textContent='💡 Hint ✓';
+}
+
+function resetState(){
+  var L=lvl(); robot={x:L.start.x, y:L.start.y}; filled={}; execIdx=0;
+  if(runTimer){ clearInterval(runTimer); runTimer=null; } running=false;
+  document.getElementById('runBtn').textContent='▶  RUN';
+}
+function renderAll(){ renderPills(); renderBoard(); renderTray(); renderStats(); renderProgress(); renderMini(); }
+function renderProgress(){
+  var done=0; for(var k in solvedPath) if(solvedPath[k]) done++;
+  document.getElementById('stars').textContent = '★'.repeat(done) + '☆'.repeat(6-done);
+  document.getElementById('progBar').style.width = (done/6*100)+'%';
+  var pix=Object.keys(solvedPixel).filter(function(k){return solvedPixel[k]}).length;
+  document.getElementById('progText').textContent = done+' of 6 ⭐' + (pix ? ' • '+pix+' 🎨' : '');
+}
+function renderPills(){
+  var html='';
+  levels().forEach(function(L,i){
+    var done = mode==='path' ? solvedPath[i] : solvedPixel[i];
+    html+='<button class="pill '+(i===levelIdx?'active':'')+' '+(done?'done':'')+'" onclick="goLevel('+i+')">'+(done?'✓ ':'')+(i+1)+'. '+L.title+'</button>';
+  });
+  document.getElementById('levelPills').innerHTML=html;
+  var L=lvl();
+  document.getElementById('levelTitle').textContent='Level '+(levelIdx+1)+': '+L.title;
+  var hintEl=document.getElementById('levelHint');
+  if(classMode==='student' && !hintRevealed){
+    hintEl.textContent='';
+  } else {
+    hintEl.textContent='💡 '+L.hint;
+  }
+  document.getElementById('levelBadge').textContent=L.cols+' × '+L.rows;
+  document.getElementById('statBest').textContent=L.best;
+  renderTeacherPanel();
+}
+function renderMini(){
+  if(mode!=='pixel') return;
+  var L=lvl(); var mini=document.getElementById('miniGrid');
+  mini.style.gridTemplateColumns='repeat('+L.cols+',1fr)';
+  var html='';
+  for(var y=0;y<L.rows;y++) for(var x=0;x<L.cols;x++){ html+='<i class="'+(isFillTarget(x,y)?'on':'')+'"></i>'; }
+  mini.innerHTML=html;
+}
+function renderBoard(){
+  var L=lvl(); var board=document.getElementById('board');
+  board.style.gridTemplateColumns='repeat('+L.cols+',1fr)';
+  var html='';
+  for(var y=0;y<L.rows;y++){
+    for(var x=0;x<L.cols;x++){
+      var cls='cell'; var inner='';
+      if(isWall(x,y)) cls+=' wall';
+      if(filled[x+','+y]) cls+=' filled';
+      if(mode==='path' && L.goal.x===x && L.goal.y===y){ cls+=' goal'; inner+='<span aria-label="star goal">⭐</span>'; }
+      if(L.start.x===x && L.start.y===y && !(robot.x===x&&robot.y===y)) cls+=' start-cell';
+      if(robot.x===x && robot.y===y){ inner += (mode==='path'? robotSVG : cursorSVG); }
+      html+='<div class="'+cls+'">'+inner+'</div>';
+    }
+  }
+  board.innerHTML=html;
+}
+var ARROWS={up:'↑',down:'↓',left:'←',right:'→',fill:'■'};
+var LABELS={up:'Up',down:'Down',left:'Left',right:'Right',fill:'Fill'};
+function renderTray(){
+  var tray=document.getElementById('tray');
+  document.getElementById('stepCountLabel').textContent=program.length+(program.length===1?' step':' steps');
+  document.getElementById('statSteps').textContent=program.length;
+  if(!program.length){ tray.className='program-tray empty'; tray.innerHTML='👆 Tap arrows to start'; return; }
+  tray.className='program-tray';
+  var html='';
+  program.forEach(function(c,i){ html+='<button class="block '+c+'" id="blk-'+i+'" onclick="removeCmd('+i+')" aria-label="Step '+(i+1)+' '+LABELS[c]+', tap to delete" title="Tap to delete">'+ARROWS[c]+'<small>'+(i+1)+'</small></button>'; });
+  tray.innerHTML=html;
+}
+function renderStats(){ document.getElementById('statTries').textContent=tries; }
+
+function setMessage(txt, kind){
+  var m=document.getElementById('message');
+  m.className='message'+(kind?' '+kind:'');
+  document.getElementById('messageText').textContent=txt;
+  m.querySelector('.face').textContent = kind==='success' ? '🎉' : kind==='error' ? '💥' : '🤖';
+}
+function addCmd(c){ if(running) return; resetState(); program.push(c); renderTray(); renderBoard(); }
+function removeCmd(i){ if(running) return; resetState(); program.splice(i,1); renderTray(); renderBoard(); }
+function undoCmd(){ if(running) return; resetState(); program.pop(); renderTray(); renderBoard(); }
+function clearProgram(){ if(running) return; resetState(); program=[]; renderTray(); renderBoard(); setMessage('Cleared!',''); }
+function goLevel(i){ stopSpeech(); levelIdx=i; program=[]; tries=0; hintRevealed=(classMode==='teacher'); solutionRevealed=false; promptIdx=0; votes={up:0,down:0,left:0,right:0}; resetState(); document.getElementById('nextBtn').style.display='none'; var hb=document.getElementById('hintBtn'); if(hb) hb.textContent='💡 Hint'; var hs=document.getElementById('hintStatus'); if(hs) hs.textContent=''; renderAll(); renderVotes(); renderTeacherPanel(); setMessage(mode==='path' ? 'Get Bit to the ⭐!' : 'Fill the blue squares!',''); }
+function nextLevel(){ if(levelIdx < levels().length-1) goLevel(levelIdx+1); }
+function resetRun(){ resetState(); renderBoard(); document.querySelectorAll('.block').forEach(function(b){b.classList.remove('current')}); setMessage('Back to start. Fix it. Run!',''); }
+
+function applyStep(cmd){
+  if(cmd==='fill'){ filled[robot.x+','+robot.y]=true; return 'fill'; }
+  var nx=robot.x, ny=robot.y;
+  if(cmd==='up') ny--; if(cmd==='down') ny++; if(cmd==='left') nx--; if(cmd==='right') nx++;
+  var L=lvl();
+  if(nx<0||ny<0||nx>=L.cols||ny>=L.rows||isWall(nx,ny)) return 'bump';
+  robot.x=nx; robot.y=ny; return 'ok';
+}
+function highlight(idx){
+  document.querySelectorAll('.block').forEach(function(b){b.classList.remove('current')});
+  var el=document.getElementById('blk-'+idx); if(el) el.classList.add('current');
+}
+function checkWin(){
+  var L=lvl();
+  if(mode==='path'){ return robot.x===L.goal.x && robot.y===L.goal.y; }
+  var target={}; L.fills.forEach(function(f){ target[f.x+','+f.y]=true; });
+  var fk=Object.keys(filled), tk=Object.keys(target);
+  if(fk.length!==tk.length) return false;
+  for(var i=0;i<tk.length;i++) if(!filled[tk[i]]) return false;
+  return true;
+}
+function finishRun(success, failMsg){
+  running=false; if(runTimer){clearInterval(runTimer); runTimer=null;}
+  document.getElementById('runBtn').textContent='▶  RUN';
+  highlight(-1);
+  if(success){
+    if(mode==='path') solvedPath[levelIdx]=true; else solvedPixel[levelIdx]=true;
+    renderPills(); renderProgress();
+    var best=lvl().best;
+    var extra = program.length===best ? ' Shortest way! 🏆' : '';
+    var last = (levelIdx===levels().length-1);
+    setMessage(last ? '🏆 You finished all!' : (mode==='path' ? '⭐ You did it!'+extra : '🎨 You did it!'), 'success');
+    document.getElementById('nextBtn').style.display = (levelIdx < levels().length-1) ? 'block' : 'none';
+    launchConfetti();
+  } else if(failMsg){
+    setMessage(failMsg,'error');
+  }
+}
+function runProgram(){
+  if(running){
+    clearInterval(runTimer); runTimer=null; running=false; document.getElementById('runBtn').textContent='▶  RUN'; return;
+  }
+  if(!program.length){ setMessage('Add arrows first!','error'); return; }
+  resetState(); renderBoard(); tries++; renderStats();
+  running=true; document.getElementById('runBtn').textContent='■  STOP';
+  var i=0;
+  runTimer=setInterval(function(){
+    if(i>=program.length){
+      var win=checkWin();
+      finishRun(win, win?null:(mode==='path' ? 'Not the ⭐ yet. Look. Fix. Run!' : 'Not quite. Check the picture.'));
+      return;
+    }
+    highlight(i);
+    var res=applyStep(program[i]);
+    renderBoard();
+    if(res==='bump'){
+      var el=document.querySelector('.robot'); if(el) el.classList.add('bump');
+      clearInterval(runTimer); runTimer=null;
+      finishRun(false, 'Bonk! Step '+(i+1)+'. Fix it!');
+      return;
+    }
+    i++; execIdx=i;
+  }, runSpeed);
+}
+function stepProgram(){
+  if(running) return;
+  if(!program.length){ setMessage('Add arrows first!','error'); return; }
+  if(execIdx===0){ filled={}; var L=lvl(); robot={x:L.start.x,y:L.start.y}; tries++; renderStats(); }
+  if(execIdx>=program.length){
+    var win=checkWin();
+    if(win) finishRun(true,null); else setMessage('Not yet. Add or fix steps.','error');
+    return;
+  }
+  highlight(execIdx);
+  var res=applyStep(program[execIdx]);
+  renderBoard();
+  if(res==='bump'){ setMessage('Bonk! Step '+(execIdx+1)+'. Fix it!','error'); execIdx=program.length; return; }
+  setMessage(ARROWS[program[execIdx]]+' '+LABELS[program[execIdx]],'');
+  execIdx++;
+  if(execIdx>=program.length){
+    var w=checkWin(); if(w) finishRun(true,null);
+  }
+}
+function launchConfetti(){
+  var c=document.getElementById('confetti'); c.innerHTML=''; c.classList.add('show');
+  var colors=['#2563eb','#0f766e','#ea580c','#facc15','#9333ea','#dc2626'];
+  for(var i=0;i<36;i++){ var s=document.createElement('i'); s.style.left=(Math.random()*100)+'%'; s.style.background=colors[i%colors.length]; s.style.animationDelay=(Math.random()*0.4)+'s'; s.style.transform='rotate('+(Math.random()*180)+'deg)'; c.appendChild(s); }
+  setTimeout(function(){ c.classList.remove('show'); },2200);
+}
+
+/* ===== OPTIONAL LISTEN — extra help only, never required, never auto-plays ===== */
+var speaking=false;
+function updateListenBtns(){
+  var btns=document.querySelectorAll('.listen-btn');
+  for(var i=0;i<btns.length;i++){
+    if(!btns[i].dataset.label) btns[i].dataset.label=btns[i].textContent;
+    btns[i].classList.toggle('speaking', speaking);
+    btns[i].textContent = speaking ? '⏹ Stop' : btns[i].dataset.label;
+  }
+}
+function stopSpeech(){
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  speaking=false; updateListenBtns();
+}
+function speakText(t){
+  if(!t) return;
+  if(!('speechSynthesis' in window)){ setMessage('No voice on this device. Read it here! 👀',''); return; }
+  if(speaking){ stopSpeech(); return; }
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(t);
+  u.rate=0.95;
+  u.onend=function(){ speaking=false; updateListenBtns(); };
+  u.onerror=function(){ speaking=false; updateListenBtns(); };
+  speaking=true; updateListenBtns();
+  window.speechSynthesis.speak(u);
+}
+function speakCurrent(){
+  var t=document.getElementById('messageText').textContent;
+  var h=document.getElementById('levelHint').textContent;
+  if(h) t+=' Hint: '+h.replace('💡 ','');
+  speakText(t);
+}
+function speakPrompt(){
+  var p=document.getElementById('teacherPrompt');
+  var s=document.getElementById('teacherSay');
+  var t='';
+  if(p) t+=p.textContent.replace('Ask:','Question:');
+  if(s) t+=' '+s.textContent.replace('👀 Show / say:','');
+  speakText(t);
+}
+
+/* ===== TEACHER BYPASS — works in both class modes, never speaks ===== */
+function toggleBypass(force){
+  var panel=document.getElementById('teacherBypassPanel');
+  var btn=document.getElementById('teacherBypassBtn');
+  var open = (typeof force==='boolean') ? force : panel.hidden;
+  panel.hidden=!open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if(open) renderBypassState();
+}
+function renderBypassState(){
+  var mark=function(gridId, activeMode){
+    var grid=document.getElementById(gridId); if(!grid) return;
+    var btns=grid.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){ btns[i].classList.toggle('current', mode===activeMode && i===levelIdx); }
+  };
+  mark('bypassPathGrid','path'); mark('bypassPixelGrid','pixel');
+}
+function bypassJump(targetMode, idx){
+  var sol=document.getElementById('bypassSolution'); if(sol) sol.innerHTML='';
+  if(targetMode!==mode){ setMode(targetMode); }
+  goLevel(idx);
+  toggleBypass(false);
+}
+function bypassSkip(){
+  var sol=document.getElementById('bypassSolution'); if(sol) sol.innerHTML='';
+  if(levelIdx < levels().length-1){ goLevel(levelIdx+1); }
+  else if(mode==='path'){ setMode('pixel'); }
+  else { setMode('path'); }
+  toggleBypass(false);
+}
+function bypassReveal(){
+  var box=document.getElementById('bypassSolution'); if(!box) return;
+  solutionRevealed=true; renderTeacherPanel();
+  if(mode==='path'){
+    var sol=PATH_SOLUTIONS[levelIdx]||[];
+    program=sol.slice(); resetState(); renderTray(); renderBoard();
+    box.innerHTML='<b style="color:var(--ink)">Solution — Level '+(levelIdx+1)+': '+lvl().title+'</b><br>'
+      + sol.map(function(c){ return '<span class="block '+c+'">'+ARROWS[c]+'</span>'; }).join('')
+      + '<br>'+sol.map(function(c){return LABELS[c]}).join(' → ')
+      + '<br>Loaded into Your Steps — press ▶ RUN to play it.';
+  } else {
+    box.innerHTML='<b style="color:var(--ink)">Solution — Level '+(levelIdx+1)+': '+lvl().title+'</b><br>'
+      + (PIXEL_STRATEGY[levelIdx]||lvl().hint)
+      + '<br>Target picture is shown above the grid — fills must match it exactly.';
+  }
+  renderBypassState();
+}
+function bypassReset(){
+  solvedPath={}; solvedPixel={}; program=[]; tries=0; promptIdx=0;
+  votes={up:0,down:0,left:0,right:0};
+  var sol=document.getElementById('bypassSolution'); if(sol) sol.innerHTML='';
+  document.getElementById('nextBtn').style.display='none';
+  if(mode!=='path'){ setMode('path'); } else { goLevel(0); }
+  renderProgress(); renderVotes();
+  toggleBypass(false);
+}
+
+resetState(); renderAll(); setClassMode('student');
+</script>
+</body>
+</html>
