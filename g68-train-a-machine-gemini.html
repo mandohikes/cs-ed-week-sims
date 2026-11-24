@@ -308,6 +308,12 @@
     border-radius:12px; padding:9px 12px; font-weight:800; font-size:.92rem; margin-bottom:8px;
   }
   .tb-item:active{transform:scale(.98);}
+  .tb-reveal{
+    display:none; margin:2px 0 8px; padding:10px 12px;
+    background:var(--card); border:2px dashed var(--amber); border-radius:12px;
+    font-weight:800; font-size:.92rem;
+  }
+  .tb-reveal.show{display:block;}
 </style>
 </head>
 <body>
@@ -489,16 +495,16 @@
       <p class="done-line" id="doneLine">Balanced data wins.</p>
       <div class="compare" style="margin-top:24px;">
         <div class="bias-row">
-          <div class="score-line"><span>🤖 Machine 1 · balanced training</span><span class="pct">88%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:88%"></div></div>
+          <div class="score-line"><span>🤖 Machine 1 · balanced training</span><span class="pct" id="donePct1">88%</span></div>
+          <div class="bar-track"><div class="bar-fill" id="doneBar1" style="width:88%"></div></div>
         </div>
         <div class="bias-row">
-          <div class="score-line"><span>🤖 Machine 2 · lopsided training</span><span class="pct">50%</span></div>
-          <div class="bar-track"><div class="bar-fill low" style="width:50%"></div></div>
+          <div class="score-line"><span>🤖 Machine 2 · lopsided training</span><span class="pct" id="donePct2">50%</span></div>
+          <div class="bar-track"><div class="bar-fill low" id="doneBar2" style="width:50%"></div></div>
         </div>
         <div class="bias-row">
-          <div class="score-line"><span>🤖 Machine 2 · after your fix</span><span class="pct">100%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <div class="score-line"><span>🤖 Machine 2 · after your fix</span><span class="pct" id="donePct3">100%</span></div>
+          <div class="bar-track"><div class="bar-fill" id="doneBar3" style="width:100%"></div></div>
         </div>
       </div>
       <p class="done-line" id="doneQuizLine" style="margin-top:14px;"></p>
@@ -526,6 +532,8 @@
   <button class="tb-item" type="button" data-jump="done">Results</button>
   <p class="tb-label">THIS STEP</p>
   <button class="tb-item" type="button" id="tbSkip">Skip this step</button>
+  <button class="tb-item" type="button" id="tbRevealBtn">Reveal answer</button>
+  <p class="tb-reveal" id="tbRevealText" aria-live="polite"></p>
   <button class="tb-item" type="button" id="tbReset">Reset</button>
   <button class="tb-item" type="button" id="tbClose">Close</button>
 </div>
@@ -567,13 +575,10 @@
   };
   var TEST_META = {
     1: {step:2, num:"2", line:"Watch the machine sort new pictures.",
-        result:"7 out of 8 right. Good training works.",
         nextLabel:"Meet Machine 2 →", nextScreen:"bias"},
     2: {step:3, num:"3", line:"Watch Machine 2 sort the same pictures.",
-        result:"4 out of 8 right. It guessed DOG every time.",
         nextLabel:"Fix Machine 2 →", nextScreen:"fix"},
     3: {step:4, num:"4", line:"Watch the fixed machine sort again.",
-        result:"8 out of 8 right. Balanced data fixed it.",
         nextLabel:"Take the quiz →", nextScreen:"quiz"}
   };
   var FIX = [
@@ -587,13 +592,13 @@
   var QUIZ = [
     {q:"What does the machine learn from?",
      opts:["Magic tricks","Labeled pictures","Its dreams"],
-     right:1, fb:"Right — it learns from labeled pictures."},
+     right:1, fb:"It learns from labeled pictures."},
     {q:"Why did Machine 2 miss the cats?",
      opts:["Cats are too fast","The screen was dark","Too few cat pictures"],
-     right:2, fb:"Right — its training was lopsided."},
+     right:2, fb:"Its training was lopsided."},
     {q:"How do you fix a biased machine?",
      opts:["Add the missing examples","Turn it off","Guess louder"],
-     right:0, fb:"Right — add the missing examples."}
+     right:0, fb:"Add the missing examples."}
   ];
   var TEACHER = {
     train: ["Ask: “How do you know?” before each tap.",
@@ -620,6 +625,8 @@
   var fixIdx = 0, fixCats = 2, fixLock = false;
   var testPhase = 1, testIdx = 0, testRight = 0;
   var quizIdx = 0, quizRight = 0;
+  var testRevealed = false;
+  var phaseResults = {1:null, 2:null, 3:null};
   var timers = [];
 
   /* ---------------- helpers ---------------- */
@@ -677,6 +684,15 @@
     if (pct < 85) return "bar-fill mid";
     return "bar-fill";
   }
+  function fillDoneRow(n, res){
+    var pctEl = $("donePct"+n), barEl = $("doneBar"+n);
+    if (!pctEl || !barEl) return;
+    if (!res){ pctEl.textContent = "—"; barEl.style.width = "0%"; barEl.className = "bar-fill"; return; }
+    var pct = Math.round(res.right/res.total*100);
+    pctEl.textContent = pct + "%";
+    barEl.style.width = pct + "%";
+    barEl.className = barClass(pct);
+  }
 
   /* ---------------- mode select ---------------- */
   var modeBtns = document.querySelectorAll(".mode-btn");
@@ -701,6 +717,7 @@
   /* ---------------- step 1: train ---------------- */
   function startTrain(){
     trainIdx = 0; trainDogs = 0; trainCats = 0; trainLock = false;
+    phaseResults = {1:null, 2:null, 3:null};
     $("trainDogCount").textContent = "0";
     $("trainCatCount").textContent = "0";
     $("trainNext").classList.remove("show");
@@ -731,11 +748,11 @@
         else { trainCats++; $("trainCatCount").textContent = trainCats; }
         trainIdx++;
         if (trainIdx >= TRAIN.length){
-          $("trainFeedback").textContent = "✓ Training done. 6 dogs, 6 cats — balanced!";
+          $("trainFeedback").textContent = "✓ Training done. " + trainDogs + " dogs, " + trainCats + " cats — balanced!";
           $("trainFeedback").className = "feedback good";
-          $("trainPrompt").textContent = "✓ Done! You labeled 6 dogs and 6 cats. That is balanced training data. Tap the button below to continue.";
+          $("trainPrompt").textContent = "✓ Done! You labeled " + trainDogs + " dogs and " + trainCats + " cats. That is balanced training data. Tap the button below to continue.";
           $("trainCount").textContent = "All 12 pictures sorted";
-          currentSay = "Training done. Six dogs and six cats. Balanced.";
+          currentSay = "Training done. " + trainDogs + " dogs and " + trainCats + " cats. Balanced.";
           if (mode === "teacher") $("trainNext").classList.add("show");
           else later(function(){ startTest(1); }, 1600);
         } else {
@@ -764,10 +781,11 @@
     $("testResult").textContent = "";
     $("testResult").classList.remove("show");
     $("testNextScreen").classList.remove("show");
-    renderTestItem();
     showScreen("test");
+    renderTestItem();
   }
   function renderTestItem(){
+    testRevealed = false;
     var item = TEST[testIdx];
     setPic($("testPhoto"), item);
     $("testName").textContent = item.n;
@@ -775,7 +793,9 @@
     $("testSays").classList.remove("show");
     $("testStamp").classList.remove("show");
     updateScore();
-    $("testPrompt").textContent = "Tap Reveal. The machine guesses — check the stamp: right or wrong?";
+    $("testPrompt").textContent = mode === "teacher"
+      ? "Tap Reveal. The machine guesses — check the stamp: right or wrong?"
+      : "The machine is thinking. Watch its guess — check the stamp: right or wrong?";
     currentSay = "New picture: " + item.n + ". What will the machine say?";
     if (mode === "teacher"){
       $("testThinking").classList.remove("show");
@@ -800,6 +820,8 @@
     }
   }
   function revealGuess(){
+    if (testRevealed) return;
+    testRevealed = true;
     var item = TEST[testIdx];
     var guess = GUESSES[testPhase][testIdx];
     var right = guess === item.t;
@@ -828,9 +850,18 @@
   }
   function finishTest(){
     var meta = TEST_META[testPhase];
-    $("testResult").textContent = meta.result;
+    phaseResults[testPhase] = {right:testRight, total:TEST.length};
+    var note = "";
+    if (testPhase === 1) note = testRight >= 7 ? " Good training works." : " Good training helps.";
+    else if (testPhase === 2){
+      var allSame = GUESSES[2].every(function(g){ return g === GUESSES[2][0]; });
+      note = allSame ? " It guessed " + GUESSES[2][0].toUpperCase() + " every time." : "";
+    }
+    else if (testPhase === 3) note = testRight === TEST.length ? " Balanced data fixed it." : " Balanced data helped.";
+    var resultText = testRight + " out of " + TEST.length + " right." + note;
+    $("testResult").textContent = resultText;
     $("testResult").classList.add("show");
-    currentSay = meta.result;
+    currentSay = resultText;
     var btn = $("testNextScreen");
     btn.textContent = meta.nextLabel;
     if (mode === "teacher") btn.classList.add("show");
@@ -885,9 +916,9 @@
         $("fixCatCount").textContent = fixCats;
         fixIdx++;
         if (fixIdx >= FIX.length){
-          $("fixFeedback").textContent = "✓ Balanced now — 8 dogs, 8 cats!";
+          $("fixFeedback").textContent = "✓ Balanced now — 8 dogs, " + fixCats + " cats!";
           $("fixFeedback").className = "feedback good";
-          $("fixPrompt").textContent = "✓ Done! The piles are balanced now — 8 dogs and 8 cats. Tap the button below to test the fixed machine.";
+          $("fixPrompt").textContent = "✓ Done! The piles are balanced now — 8 dogs and " + fixCats + " cats. Tap the button below to test the fixed machine.";
           $("fixCount").textContent = "All 6 pictures added";
           currentSay = "Balanced now. Eight dogs, eight cats.";
           $("fixNext").classList.add("show");
@@ -941,15 +972,15 @@
     if (i === q.right){
       quizRight++;
       btn.classList.add("picked-right");
-      $("quizFeedback").textContent = "✓ " + q.fb;
+      $("quizFeedback").textContent = "✓ Right — " + q.fb;
       $("quizFeedback").className = "feedback good";
     } else {
       btn.classList.add("picked-wrong");
       opts[q.right].classList.add("picked-right");
-      $("quizFeedback").textContent = q.fb;
-      $("quizFeedback").className = "feedback good";
+      $("quizFeedback").textContent = "✗ Not quite — " + q.fb;
+      $("quizFeedback").className = "feedback bad";
     }
-    currentSay = q.fb;
+    currentSay = $("quizFeedback").textContent;
     var nextBtn = $("quizNext");
     nextBtn.textContent = quizIdx >= QUIZ.length-1 ? "See my results →" : "Next question →";
     if (mode === "teacher") nextBtn.classList.add("show");
@@ -976,6 +1007,9 @@
       $("doneLine").textContent = "Balanced data wins.";
       $("doneQuizLine").textContent = "Your quiz: " + quizRight + " / " + QUIZ.length + " right.";
     }
+    fillDoneRow(1, phaseResults[1]);
+    fillDoneRow(2, phaseResults[2]);
+    fillDoneRow(3, phaseResults[3]);
     currentSay = "All done. Balanced data wins.";
     showScreen("done");
   }
@@ -994,6 +1028,51 @@
     tbPanel.classList.add("open");
     tbBtn.setAttribute("aria-expanded", "true");
   }
+  function tbRevealClear(){
+    var el = $("tbRevealText");
+    if (!el) return;
+    el.textContent = "";
+    el.classList.remove("show");
+  }
+  function tbReveal(){
+    var on = document.querySelector(".screen.on");
+    var cur = on ? on.id.replace("screen-", "") : "start";
+    var msg = "";
+    if (cur === "start"){
+      msg = "Pick Teacher-Led or Student-Led to start the lesson.";
+    } else if (cur === "train"){
+      if (trainIdx >= TRAIN.length) msg = "Training is done: " + trainDogs + " dogs and " + trainCats + " cats labeled.";
+      else { var ti = TRAIN[trainIdx]; msg = "Reveal: " + ti.n + " is a " + ti.t.toUpperCase() + ". Showing only — no points, nothing moves."; }
+    } else if (cur === "test"){
+      if (testIdx >= TEST.length){
+        msg = "This test is finished: " + testRight + " / " + TEST.length + " right.";
+      } else if (!testRevealed){
+        var xi = TEST[testIdx], xg = GUESSES[testPhase][testIdx];
+        msg = "Reveal: " + xi.n + " is a " + xi.t.toUpperCase() + ". The machine will say " + xg.toUpperCase() + " — that is " + (xg === xi.t ? "RIGHT." : "WRONG.");
+      } else {
+        var yi = TEST[testIdx-1], yg = GUESSES[testPhase][testIdx-1];
+        msg = "Reveal: " + yi.n + " is a " + yi.t.toUpperCase() + ". The machine said " + yg.toUpperCase() + " — " + (yg === yi.t ? "RIGHT." : "WRONG.");
+      }
+    } else if (cur === "bias"){
+      msg = "Reveal: 8 dog pictures and only 2 cat pictures — NOT balanced. Machine 2 will guess DOG too often.";
+    } else if (cur === "fix"){
+      if (fixIdx >= FIX.length) msg = "The fix is done: 8 dogs and " + fixCats + " cats — balanced.";
+      else { var fi = FIX[fixIdx]; msg = "Reveal: " + fi.n + " is a CAT. Tap CAT to add it."; }
+    } else if (cur === "quiz"){
+      var qq = QUIZ[quizIdx];
+      msg = qq ? "Reveal: the answer is \u201C" + qq.opts[qq.right] + ".\u201D" : "The quiz is finished.";
+    } else if (cur === "done"){
+      var p1 = phaseResults[1] ? Math.round(phaseResults[1].right/phaseResults[1].total*100) + "%" : "not run";
+      var p2 = phaseResults[2] ? Math.round(phaseResults[2].right/phaseResults[2].total*100) + "%" : "not run";
+      var p3 = phaseResults[3] ? Math.round(phaseResults[3].right/phaseResults[3].total*100) + "%" : "not run";
+      msg = "Results — Machine 1: " + p1 + ". Machine 2: " + p2 + ". After the fix: " + p3 + ".";
+    }
+    var el = $("tbRevealText");
+    el.textContent = msg;
+    el.classList.add("show");
+    currentSay = msg;
+  }
+  $("tbRevealBtn").addEventListener("click", tbReveal);
   tbBtn.addEventListener("click", function(){
     if (tbPanel.classList.contains("open")) tbClosePanel();
     else tbOpenPanel();
@@ -1008,26 +1087,27 @@
     }
   }
   function tbEnterTest(phase){
+    /* startTest shows the screen before rendering the first item, so the
+       student-pacing auto-reveal timer is armed after the screen switch */
     startTest(phase);
-    /* startTest's screen switch clears the pending auto-reveal timer in
-       student pacing, so re-render the first item to re-arm it */
-    if (mode !== "teacher") renderTestItem();
   }
   function tbJump(key){
     tbClosePanel();
+    tbRevealClear();
     tbChrome();
     if (key === "train") startTrain();
     else if (key === "test1") tbEnterTest(1);
     else if (key === "bias") startBias();
     else if (key === "fix") startFix();
     else if (key === "quiz") startQuiz();
-    else if (key === "done"){ quizRight = QUIZ.length; finishAll(); }
+    else if (key === "done"){ finishAll(); }
   }
   document.querySelectorAll("[data-jump]").forEach(function(b){
     b.addEventListener("click", function(){ tbJump(b.getAttribute("data-jump")); });
   });
   $("tbSkip").addEventListener("click", function(){
     tbClosePanel();
+    tbRevealClear();
     var on = document.querySelector(".screen.on");
     var cur = on ? on.id.replace("screen-", "") : "start";
     if (cur === "start"){ tbChrome(); startTrain(); }
@@ -1044,6 +1124,7 @@
   });
   $("tbReset").addEventListener("click", function(){
     tbClosePanel();
+    tbRevealClear();
     if ("speechSynthesis" in window) try{ speechSynthesis.cancel(); }catch(e){}
     mode = null;
     document.body.classList.remove("teacher");
@@ -1055,8 +1136,9 @@
     });
     trainIdx = 0; trainDogs = 0; trainCats = 0; trainLock = false;
     fixIdx = 0; fixCats = 2; fixLock = false;
-    testPhase = 1; testIdx = 0; testRight = 0;
+    testPhase = 1; testIdx = 0; testRight = 0; testRevealed = false;
     quizIdx = 0; quizRight = 0;
+    phaseResults = {1:null, 2:null, 3:null};
     currentSay = "Pick Teacher-Led or Student-Led to start.";
     showScreen("start");
   });
