@@ -161,6 +161,10 @@
     font-size:20px; font-weight:900; min-height:58px; display:none;}
   .next-btn.show{display:block;}
   .block-count{font-size:14px; font-weight:800; color:var(--muted); margin-top:8px;}
+  .run-hint{font-size:14.5px; font-weight:800; color:var(--raspberry); margin:8px 0 0; min-height:20px;}
+  .free-jump-btn{width:100%; margin-top:10px; background:var(--teal); color:#fff; border:none; border-radius:16px;
+    font-size:17px; font-weight:900; min-height:52px; display:none;}
+  .free-jump-btn.show{display:block;}
   .star-burst{position:relative; height:0;}
   .burst-star{position:absolute; font-size:26px; animation:burst 1s ease-out forwards; pointer-events:none;}
   @keyframes burst{0%{transform:translate(0,0) scale(.4); opacity:1;}100%{transform:translate(var(--dx),var(--dy)) scale(1.25); opacity:0;}}
@@ -339,7 +343,9 @@
           <button class="hint-btn" id="hintBtn">💡 Hint</button>
         </div>
         <p class="block-count" id="blockCount"></p>
+        <p class="run-hint" id="runHint" aria-live="polite"></p>
         <button class="next-btn" id="nextBtn">Next ▶</button>
+        <button class="free-jump-btn" id="freeJumpBtn">🗺️ Free Delivery — play your way!</button>
       </div>
     </div>
   </section>
@@ -519,6 +525,24 @@ function setFeedback(text,kind){
   $("feedbackText").textContent=text;
   $("feedback").className="feedback"+(kind?" "+kind:"");
 }
+function neutralFeedback(){
+  return route().id==="r4" ? "Tap a house first, then build steps." : "Build your steps, then press Run.";
+}
+function clearFeedback(){ setFeedback(neutralFeedback(),""); }
+function programHasDrop(){
+  for(var i=0;i<program.length;i++){ if(program[i].t==="drop") return true; }
+  return false;
+}
+function updateRunHint(){
+  var h=$("runHint"); if(!h) return;
+  var r=route(); var msg="";
+  if(running) msg="Watch it go! 👀";
+  else if(r.id==="r4"&&selectedFree<0) msg="👆 First tap a house on the map.";
+  else if(program.length===0) msg="Add steps first — tap the arrows. 👇";
+  else if(!programHasDrop()) msg="Add a 📦 Drop block to finish the delivery.";
+  else msg="Ready! Press ▶ Run.";
+  h.textContent=msg;
+}
 function updateNext(){
   var btn=$("nextBtn");
   var r=route();
@@ -527,8 +551,12 @@ function updateNext(){
   else if(delivered.length>0 && delivered.every(function(d){return d;})){ show=true; }
   if(r.id==="r4"){ label="Word Power ★ ▶"; if(mode==="teacher") show=true; }
   else if(routeIdx===ROUTES.length-1){ label="Finish ▶"; }
+  else if(routeIdx===ROUTES.length-2){ label="Free Delivery 🗺️ ▶"; }
   btn.textContent=label;
   btn.classList.toggle("show",show);
+  var fj=$("freeJumpBtn");
+  if(fj) fj.classList.toggle("show", r.id!=="r4");
+  updateRunHint();
 }
 
 /* ---------- town ---------- */
@@ -612,7 +640,7 @@ function pickFreeHouse(x,y){
       selectedFree=f; delivered=[false];
       robot={x:r.start.x,y:r.start.y}; stepQueue=null;
       setFeedback("House "+r.freeHouses[f].label+" picked! Build your route.","");
-      renderTown(); updateNext();
+      renderTown(); updateNext(); updateRunHint();
       return;
     }
   }
@@ -645,10 +673,12 @@ function renderProgram(runningIdx,badIdx){
         if(running) return;
         program.splice(parseInt(this.getAttribute("data-step"),10),1);
         stepQueue=null;
+        clearFeedback();
         renderProgram();
       });
     }
   }
+  updateRunHint();
   var bc=$("blockCount");
   if(route().id==="r3"){
     bc.textContent="Blocks used: "+program.length+(program.length<=3?" — Pro size! ⭐":" — can Repeat make it smaller?");
@@ -780,14 +810,16 @@ function runProgram(){
   renderTown();
   var steps=expandProgram();
   running=true; $("runBtn").disabled=true; $("stepBtn").disabled=true;
+  setFeedback("Watch it go! 👀",""); updateRunHint();
   var i=0;
   function tick(){
     if(i>=steps.length){
       running=false; $("runBtn").disabled=false; $("stepBtn").disabled=false;
       renderProgram(-1,-1);
       if(!(delivered.length>0&&delivered.every(function(d){return d;}))){
-        if(lastFeedback.indexOf("Delivered")===-1 && lastFeedback.indexOf("You did it")===-1)
-          setFeedback("Robot stopped. Add more steps.","warn");
+        if(!programHasDrop()) setFeedback("No 📦 Drop block — the package was not delivered. Add Drop at the end.","warn");
+        else if(delivered.some(function(d){return d;})) setFeedback("Part way there! Add more steps and Run again.","");
+        else setFeedback("Robot stopped. Add more steps.","warn");
       }
       updateNext();
       return;
@@ -812,16 +844,17 @@ function stepOnce(){
     robot={x:r.start.x,y:r.start.y};
     delivered=activeTargets().map(function(){return false;});
     stepQueue=expandProgram(); stepPos=0;
+    clearFeedback();
     renderTown();
   }
   if(stepPos>=stepQueue.length){
-    setFeedback("Program finished. Press ↺ or edit steps.","");
-    stepQueue=null; return;
+    setFeedback(programHasDrop() ? "Program finished. Press ↺ or edit steps." : "Program finished — no 📦 Drop block, so no delivery.","");
+    stepQueue=null; updateRunHint(); return;
   }
   var st=stepQueue[stepPos];
   execOneStep(st,function(ok){
     stepPos++;
-    if(!ok){ stepQueue=null; return; }
+    if(!ok){ stepQueue=null; updateRunHint(); return; }
     if(delivered.length>0&&delivered.every(function(d){return d;})){ stepQueue=null; }
     updateNext();
   });
@@ -893,6 +926,7 @@ for(var p=0;p<palBtns.length;p++){
     if(v==="DROP") program.push({t:"drop"});
     else program.push({t:"move",d:v});
     stepQueue=null;
+    clearFeedback();
     renderProgram();
   });
 }
@@ -902,17 +936,19 @@ for(var q2=0;q2<repBtns.length;q2++){
     if(running) return;
     program.push({t:"repeat",d:"R",n:parseInt(this.getAttribute("data-rep"),10)});
     stepQueue=null;
+    clearFeedback();
     renderProgram();
   });
 }
-$("undoBtn").addEventListener("click",function(){ if(running)return; program.pop(); stepQueue=null; renderProgram(); });
-$("clearBtn").addEventListener("click",function(){ if(running)return; program=[]; stepQueue=null; renderProgram(); });
+$("undoBtn").addEventListener("click",function(){ if(running)return; program.pop(); stepQueue=null; clearFeedback(); renderProgram(); });
+$("clearBtn").addEventListener("click",function(){ if(running)return; program=[]; stepQueue=null; clearFeedback(); renderProgram(); });
 $("runBtn").addEventListener("click",runProgram);
 $("stepBtn").addEventListener("click",stepOnce);
 $("hintBtn").addEventListener("click",function(){
   if(route().id==="r4"&&selectedFree<0){ setFeedback("Tap a house first! 🏠","warn"); return; }
   setFeedback("💡 "+bfsHint(),"");
 });
+$("freeJumpBtn").addEventListener("click",function(){ if(running) return; loadRoute(3); });
 $("nextBtn").addEventListener("click",function(){
   if(routeIdx<ROUTES.length-1) loadRoute(routeIdx+1);
   else showVocab();
