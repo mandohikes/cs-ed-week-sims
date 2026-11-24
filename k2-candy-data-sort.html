@@ -391,6 +391,9 @@
       .t-btn.skip{ background:#FFF6DC; border-color:var(--gold); color:#8a6100; }
       .t-btn.reset{ background:var(--soft-pink); border-color:var(--raspberry); color:var(--raspberry); }
       .t-btn.star{ background:var(--soft-teal); border-color:var(--teal); color:#0b6e66; }
+      .t-btn.reveal{ background:#EAF3FF; border-color:var(--sky); color:var(--navy); }
+      .t-reveal-out{ display:none; margin-top:12px; background:var(--soft-teal); border:2px solid var(--teal); color:var(--navy); border-radius:14px; padding:11px 13px; font-weight:800; font-size:.98rem; line-height:1.45; }
+      .t-reveal-out.show{ display:block; }
     </style>
 
     <div id="confettiLayer" aria-hidden="true"></div>
@@ -409,7 +412,9 @@
         </div>
         <p class="t-group-label">This screen</p>
         <button class="t-btn skip wide" id="tSkip" type="button">⏭️ Skip this step</button>
+        <button class="t-btn reveal wide" id="tReveal" type="button">👁 Reveal answer (no points)</button>
         <button class="t-btn reset wide" id="tReset" type="button">↺ Reset · Back to start</button>
+        <div class="t-reveal-out" id="tRevealOut" role="status" aria-live="polite"></div>
       </div>
     </div>
 
@@ -684,6 +689,7 @@
       }
       function showScreen(name){
         state.screen = name;
+        clearTeacherReveal();
         $$(".screen").forEach(function(s){ s.classList.remove("active"); });
         $("#scr-"+name).classList.add("active");
         var inGame = name !== "start";
@@ -743,7 +749,7 @@
       function resetSort(){
         var s = state.sort;
         clearTimeout(s.timer); clearTimeout(s.lockTimer);
-        state.sort = { idx:0, selected:false, picked:null, locked:false, attempts:0, counts:{}, timer:null, lockTimer:null };
+        state.sort = { idx:0, selected:false, picked:null, locked:false, attempts:0, revealed:false, counts:{}, timer:null, lockTimer:null };
         COLORS.forEach(function(c){ state.sort.counts[c.id] = 0; });
         buildBins();
         $("#sortIntro").hidden = false;
@@ -751,7 +757,7 @@
       }
       function renderSort(){
         var s = state.sort, c = sortCandy();
-        s.selected = false; s.picked = null; s.locked = false; s.attempts = 0;
+        s.selected = false; s.picked = null; s.locked = false; s.attempts = 0; s.revealed = false;
         $("#sortCount").textContent = "Candy " + (s.idx+1) + " of " + SORT_ORDER.length;
         $("#pileCandy").innerHTML = candySVG(c.hex);
         var card = $("#pileCard");
@@ -801,9 +807,11 @@
           $("#sortReveal").classList.add("show");
           return;
         }
-        if(id === c.id){ sortResolve(true, null); }
+        if(id === c.id){ sortResolve(!s.revealed, null); }
         else{
           s.attempts++;
+          s.selected = false;
+          $("#pileCard").classList.remove("selected");
           shake(binEl(id)); shake($("#pileCard"));
           setFeedback($("#sortFeedback"), s.attempts >= 2
             ? "Try again! 💡 Find " + c.name.toUpperCase() + "!"
@@ -864,11 +872,12 @@
       function resetChart(){
         var ch = state.chart;
         clearTimeout(ch.timer); clearTimeout(ch.lockTimer);
-        state.chart = { col:0, heights:{}, locked:{}, starred:{}, timer:null, lockTimer:null };
+        state.chart = { col:0, heights:{}, locked:{}, starred:{}, revealed:{}, timer:null, lockTimer:null };
         COLORS.forEach(function(c){
           state.chart.heights[c.id] = 0;
           state.chart.locked[c.id] = false;
           state.chart.starred[c.id] = false;
+          state.chart.revealed[c.id] = false;
         });
         buildChart();
         $("#chartIntro").hidden = false;
@@ -926,7 +935,7 @@
             setFeedback($("#chartFeedback"), "🗳️ Class count: " + c.count + "!", "");
           } else {
             clearTimeout(ch.lockTimer);
-            ch.lockTimer = setTimeout(function(){ lockChartCol(true, null); }, 550);
+            ch.lockTimer = setTimeout(function(){ lockChartCol(!ch.revealed[c.id], null); }, 550);
           }
         } else {
           setFeedback($("#chartFeedback"), "", "");
@@ -971,14 +980,14 @@
       }
       function resetQuiz(){
         clearTimeout(state.quiz.timer);
-        state.quiz = { idx:0, picked:null, locked:false, timer:null };
+        state.quiz = { idx:0, picked:null, locked:false, revealed:false, timer:null };
         buildMiniChart();
         $("#quizIntro").hidden = false;
         $("#quizPlay").hidden = true;
       }
       function renderQuiz(){
         var q = state.quiz, item = QUESTIONS[q.idx];
-        q.picked = null; q.locked = false;
+        q.picked = null; q.locked = false; q.revealed = false;
         $("#quizQ").textContent = item.text;
         $("#quizCount").textContent = "Question " + (q.idx+1) + " of " + QUESTIONS.length;
         var wrap = $("#quizChoices"); wrap.innerHTML = "";
@@ -1038,7 +1047,7 @@
           $("#quizReveal").classList.add("show");
           return;
         }
-        if(val === item.answer) quizResolve(true, null);
+        if(val === item.answer) quizResolve(!q.revealed, null);
         else{
           shake(btn);
           setFeedback($("#quizFeedback"), "Try again! 👀 Look at the bars.", "try");
@@ -1100,7 +1109,7 @@
 
       /* ================= TEACHER BYPASS ================= */
       var panel = $("#teacherPanel");
-      function openPanel(){ panel.classList.add("open"); }
+      function openPanel(){ clearTeacherReveal(); panel.classList.add("open"); }
       function closePanel(){ panel.classList.remove("open"); }
       $("#teacherBtn").addEventListener("click", openPanel);
       $("#tClose").addEventListener("click", closePanel);
@@ -1120,6 +1129,52 @@
         b.addEventListener("click", function(){ jumpTo(b.getAttribute("data-jump")); });
       });
       $("#tReset").addEventListener("click", function(){ closePanel(); resetAll(false); });
+
+      function clearTeacherReveal(){
+        var out = $("#tRevealOut");
+        if(out){ out.textContent = ""; out.classList.remove("show"); }
+      }
+      /* Standalone Reveal: shows the current answer in the panel only.
+         Never sorts, fills, scores, or advances; a revealed item earns no star. */
+      function teacherReveal(){
+        var out = $("#tRevealOut");
+        var scr = state.screen, txt = "";
+        if(scr === "sort"){
+          var sc = sortCandy();
+          if($("#sortPlay").hidden){
+            txt = "👁 Start Sort It first — Reveal shows each candy's bin here.";
+          } else if(state.sort.locked){
+            txt = "👁 That candy went in the " + sc.name.toUpperCase() + " bin. Reveal only — nothing changed.";
+          } else {
+            state.sort.revealed = true;
+            txt = "👁 The " + sc.name + " candy goes in the " + sc.name.toUpperCase() + " bin. Reveal only — not sorted, no star for this candy.";
+          }
+        } else if(scr === "chart"){
+          if($("#chartPlay").hidden){
+            txt = "👁 Start Count and Chart first — Reveal shows the true counts here.";
+          } else {
+            var cc = COLORS[state.chart.col];
+            if(!state.chart.locked[cc.id]) state.chart.revealed[cc.id] = true;
+            txt = "👁 True counts: " + COLORS.map(function(x){ return x.name + " " + x.count; }).join(" · ") + ". Reveal only — no bars filled, no star for this color.";
+          }
+        } else if(scr === "quiz"){
+          if($("#quizPlay").hidden){
+            txt = "👁 Start Which Has More? first — Reveal shows each answer here.";
+          } else {
+            var item = QUESTIONS[state.quiz.idx];
+            if(!state.quiz.locked) state.quiz.revealed = true;
+            var ans = item.type === "color" ? colorById(item.answer).name.toUpperCase() : String(item.answer);
+            txt = "👁 Answer: " + ans + ". Reveal only — the question stays live, no star for this one.";
+          }
+        } else if(scr === "done"){
+          txt = "👁 Final counts: " + COLORS.map(function(x){ return x.name + " " + x.count; }).join(" · ") + ".";
+        } else {
+          txt = "👁 Pick a mode to begin — Reveal shows each answer here.";
+        }
+        out.textContent = txt;
+        out.classList.add("show");
+      }
+      $("#tReveal").addEventListener("click", teacherReveal);
       $("#tSkip").addEventListener("click", function(){
         ensureMode();
         closePanel();
