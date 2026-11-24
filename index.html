@@ -12,10 +12,14 @@
   header p { margin: 0; font-size: 15px; opacity: .9; }
   main { max-width: 880px; margin: 0 auto; padding: 20px; }
   h2 { color: #CD2653; border-bottom: 3px solid #13A89E; padding-bottom: 6px; margin-top: 34px; font-size: 21px; }
-  .sim { display: block; border: 2px solid #E5E5E5; border-left: 8px solid #00ADEF; border-radius: 10px; padding: 14px 16px; margin: 12px 0; text-decoration: none; color: #222; }
+  .sim { display: block; border: 2px solid #E5E5E5; border-left: 8px solid #00ADEF; border-radius: 10px; padding: 14px 16px; margin: 12px 0; color: #222; }
   .sim:hover { border-color: #CD2653; }
   .sim b { font-size: 17px; color: #273791; }
+  .sim a { color: #273791; text-decoration: none; }
+  .sim a:hover { text-decoration: underline; }
   .sim span { display: block; margin-top: 4px; font-size: 14px; color: #555; }
+  .sim .links { margin-top: 8px; font-size: 13px; color: #555; }
+  .sim .links a { color: #CD2653; }
   footer { text-align: center; color: #6D6D6D; font-size: 13px; padding: 24px 16px 36px; }
 </style>
 </head>
@@ -28,24 +32,24 @@
   <p>Pick your grade band, then pick a simulation. Every simulation has two modes: <b>Teacher-Led</b> for the projector and <b>Student-Led</b> for individual devices. No sound is needed, and every sim has a small Teacher button in the corner to jump, skip, or reset.</p>
 
   <h2>K-2</h2>
-  <a class="sim" href="k2-what-is-a-computer-claude.html"><b>What Is a Computer? (Version 1)</b><span>Meet the parts, sort computers from non-computers, build a computer, superstar quiz.</span></a>
-  <a class="sim" href="k2-what-is-a-computer-gemini.html"><b>What Is a Computer? (Version 2)</b><span>Tap the parts, match each part to its job, input or output game.</span></a>
-  <a class="sim" href="k2-computer-parts-parade.html"><b>Computer Parts Parade</b><span>Parts march by: part or not a part, feed the computer, sticker scene.</span></a>
+  <div class="sim"><a href="k2-what-is-a-computer-claude.html"><b>What Is a Computer?</b></a><span>Bit the Robot: parts, input, output. 4 short activities.</span><div class="links"><a href="https://sites.google.com/view/what-is-a-computer-v1-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1eRQymkAI1hWKAWxjT27V3RsV6prxKsAx/view">Download</a></div></div>
+  <div class="sim"><a href="k2-candy-data-sort.html"><b>Candy Data Sort</b></a><span>Sort the candy, count it, build a chart. Earn a Data Star card.</span><div class="links"><a href="https://sites.google.com/view/candy-data-sort-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1KBWfpuPvCpHOtZcdmMNnM8p3gMW9lHOU/view">Download</a></div></div>
+  <div class="sim"><a href="k2-move-it-move-it.html"><b>Move It, Move It</b></a><span>Put the steps in order, fix the order, build a dance. Bit performs it.</span><div class="links"><a href="https://sites.google.com/view/move-it-move-it-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/12sXCmJKwcVf6C8ARchmtMvyGHcyADXQ7/view">Download</a></div></div>
 
   <h2>Grades 3-5</h2>
-  <a class="sim" href="g35-program-a-path-claude.html"><b>Program a Path (Version 1)</b><span>Arrow-block programming on a grid, debug, shortest program wins.</span></a>
-  <a class="sim" href="g35-program-a-path-gemini.html"><b>Program a Path (Version 2)</b><span>Draw target pictures with arrow and fill commands.</span></a>
-  <a class="sim" href="g35-robot-delivery.html"><b>Robot Delivery</b><span>Program a delivery robot through town, with a repeat (loop) block.</span></a>
+  <div class="sim"><a href="g35-program-a-path-claude.html"><b>Program a Path</b></a><span>Arrow-block coding: 6 path puzzles + Pixel Pictures.</span><div class="links"><a href="https://sites.google.com/view/program-a-path-v1-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1NyM7nfjoTSzGUyeqPjtkylYV-4D6I-UQ/view">Download</a></div></div>
+  <div class="sim"><a href="g35-robot-delivery.html"><b>Robot Delivery</b></a><span>Program a delivery robot: blocked street, REPEAT block, free play.</span><div class="links"><a href="https://sites.google.com/view/robot-delivery-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1bIcVn-DzkDqPgIDoLH5wAUzZysgOdZFc/view">Download</a></div></div>
+  <div class="sim"><a href="g35-function-factory.html"><b>Function Factory</b></a><span>Build a function once, call it again and again. Fix it once, fixed everywhere.</span><div class="links"><a href="https://sites.google.com/view/function-factory-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1p9AxezBlwJcXHx81Ho7x_YAA8FFPfUne/view">Download</a></div></div>
 
   <h2>Grades 6-8</h2>
-  <a class="sim" href="g68-train-a-machine-claude.html"><b>Train a Machine (Version 1)</b><span>Build a training set, test your model, catch the bias.</span></a>
-  <a class="sim" href="g68-train-a-machine-gemini.html"><b>Train a Machine (Version 2)</b><span>Sort pets to train, watch a lopsided dataset fail, fix it and re-run.</span></a>
-  <a class="sim" href="g68-spam-filter-trainer.html"><b>Spam Filter Trainer</b><span>Train a spam filter, catch the false positive, fix the training data.</span></a>
+  <div class="sim"><a href="g68-train-a-machine-gemini.html"><b>Train a Machine</b></a><span>Sort dog and cat photos to train, then fix a lopsided set.</span><div class="links"><a href="https://sites.google.com/view/train-a-machine-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1u8AxQMU8kgSlXcqGC773DiA8K-x9hrAf/view">Download</a></div></div>
+  <div class="sim"><a href="g68-spam-filter-trainer.html"><b>Spam Filter Trainer</b></a><span>Train a spam filter, watch real accuracy, catch its one mistake.</span><div class="links"><a href="https://sites.google.com/view/spam-filter-trainer-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1pIDf10t5QrQYePLTULP4iHhGfxxT8qB_/view">Download</a></div></div>
+  <div class="sim"><a href="g68-creative-machine.html"><b>Creative Machine</b></a><span>Set the rules, the machine makes the art. Who is the artist?</span><div class="links"><a href="https://sites.google.com/view/creative-machine-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1v3yjCHBYWPag-p966jc1Dw2GVA-aKYhJ/view">Download</a></div></div>
 
   <h2>Grades 9-12</h2>
-  <a class="sim" href="g912-defend-the-school-claude.html"><b>Defend the School (Version 1)</b><span>Inbox triage, red-flag hunt, phishing beyond email.</span></a>
-  <a class="sim" href="g912-defend-the-school-gemini.html"><b>Defend the School (Version 2)</b><span>Inspect sender, link, and tone; then work incident cards.</span></a>
-  <a class="sim" href="g912-real-or-ai.html"><b>Real or AI?</b><span>Spot AI-generated media, verify before you share.</span></a>
+  <div class="sim"><a href="g912-defend-the-school-gemini.html"><b>Defend the School</b></a><span>Inbox of 8 with inspect tools, 4 incident cards, final report.</span><div class="links"><a href="https://sites.google.com/view/defend-the-school-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1U5-e9mOwFaymdIxmy-RKboKzYCnoZEwR/view">Download</a></div></div>
+  <div class="sim"><a href="g912-real-or-ai.html"><b>Real or AI?</b></a><span>Spot AI-made media, verify before you share. Certificate.</span><div class="links"><a href="https://sites.google.com/view/real-or-ai-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1loCN9N5qEaHGSa19Tt0nQ0jOVGWbEkOs/view">Download</a></div></div>
+  <div class="sim"><a href="g912-train-it-then-break-it.html"><b>Train It, Then Break It</b></a><span>Train a classifier on lopsided photos, catch its mistake, fix the data.</span><div class="links"><a href="https://sites.google.com/view/train-it-then-break-it-csew">Google Sites</a> · <a href="https://drive.google.com/file/d/1AwvaEUr_a0FFd1U4lhQYVafrom-V8CXv/view">Download</a></div></div>
 </main>
 <footer>Built by the MSU Center for Cyber Education for Mississippi CS Education Week, December 7-11, 2026.</footer>
 </body>
