@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Definition Detective</title>
+    <style>
+      :root {
+        --paper: #f3e7cd;
+        --paper-deep: #ecd9ae;
+        --folder: #e3ba6d;
+        --folder-edge: #c99b45;
+        --card: #fffaf0;
+        --card-line: #d9c491;
+        --ink: #3a2b18;
+        --ink-soft: #6d573a;
+        --red: #b3352b;
+        --red-dark: #8f271e;
+        --green: #2e7d4f;
+        --blue: #2f5d8a;
+        --btn: #fffdf7;
+        --btn-line: #b99c5f;
+        --shadow: rgba(74, 52, 20, 0.25);
+        --hud-bg: #efe0ba;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #241a10;
+          --paper-deep: #2e2113;
+          --folder: #6d5227;
+          --folder-edge: #8a6a35;
+          --card: #37291a;
+          --card-line: #5f4a2c;
+          --ink: #f4e7c9;
+          --ink-soft: #c9ae7d;
+          --red: #e0685c;
+          --red-dark: #e0685c;
+          --green: #6fc48d;
+          --blue: #8ab4dd;
+          --btn: #42321e;
+          --btn-line: #7d6335;
+          --shadow: rgba(0, 0, 0, 0.5);
+          --hud-bg: #31240f;
+          color-scheme: dark;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+        background:
+          radial-gradient(ellipse at 20% 0%, var(--paper-deep), transparent 55%),
+          var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        padding: 56px 14px 96px;
+      }
+      h1, h2, .serif {
+        font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+      }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, input:focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 2px;
+      }
+      .wrap { max-width: 720px; margin: 0 auto; }
+
+      /* SAMPLE tag */
+      #sampleTag {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 300;
+        background: var(--red);
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        font-size: 0.8rem;
+        padding: 7px 12px;
+        border-radius: 6px;
+        box-shadow: 0 3px 8px var(--shadow);
+        transform: rotate(3deg);
+      }
+
+      /* Header */
+      .masthead { text-align: center; margin: 8px 0 4px; }
+      .masthead .glass { display: inline-block; vertical-align: -10px; margin-right: 8px; }
+      .masthead h1 { font-size: clamp(1.9rem, 6vw, 2.7rem); margin: 0; letter-spacing: 0.01em; }
+      .unit-line { color: var(--ink-soft); font-weight: 700; margin: 6px 0 0; font-size: 1rem; }
+      .rule { border: none; border-top: 3px double var(--folder-edge); margin: 14px auto; max-width: 520px; }
+
+      /* Mode cards */
+      .mode-grid { display: grid; gap: 14px; margin-top: 18px; }
+      @media (min-width: 640px) { .mode-grid { grid-template-columns: repeat(3, 1fr); } }
+      .mode-card {
+        background: var(--card);
+        border: 2px solid var(--card-line);
+        border-radius: 12px;
+        padding: 18px 16px;
+        text-align: left;
+        color: var(--ink);
+        box-shadow: 0 4px 10px var(--shadow);
+        min-height: 120px;
+      }
+      .mode-card:hover { border-color: var(--folder-edge); }
+      .mode-card h2 { margin: 0 0 6px; font-size: 1.25rem; }
+      .mode-card p { margin: 0; color: var(--ink-soft); line-height: 1.45; font-size: 0.98rem; }
+      .mode-tag {
+        display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em;
+        background: var(--hud-bg); border: 1px solid var(--card-line); border-radius: 999px;
+        padding: 3px 9px; margin-bottom: 10px; color: var(--ink-soft);
+      }
+      .start-note { text-align: center; color: var(--ink-soft); margin-top: 18px; line-height: 1.5; }
+      .mastery-line { text-align: center; font-weight: 700; margin-top: 10px; }
+
+      /* HUD: sticky so XP, streak, progress and bell score stay
+         visible on every case without scrolling. Its sticky top
+         offset clears the fixed SAMPLE tag in the top corner. */
+      .hud {
+        position: sticky; top: 50px; z-index: 90;
+        background: var(--hud-bg); border: 2px solid var(--card-line);
+        border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
+        box-shadow: 0 4px 10px var(--shadow);
+      }
+      .hud-row { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: flex-end; justify-content: space-between; }
+      .hud .hud-item { font-weight: 800; font-size: 1.15rem; white-space: nowrap; flex: 0 0 auto; }
+      .hud .hud-item small { display: block; font-weight: 700; color: var(--ink-soft); font-size: 0.7rem; letter-spacing: 0.09em; white-space: nowrap; }
+      .xp-track { width: 100%; margin-top: 9px; background: var(--card); border: 2px solid var(--card-line); border-radius: 999px; height: 20px; overflow: hidden; }
+      .xp-fill { height: 100%; width: 0%; background: repeating-linear-gradient(45deg, var(--green), var(--green) 10px, #35945e 10px, #35945e 20px); transition: width 0.5s ease; }
+      .timer-big { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+      .timer-low { color: var(--red); }
+      .dots { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+      .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--folder-edge); background: transparent; }
+      .dot.current { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--blue); }
+      .dot.solved { background: var(--green); border-color: var(--green); }
+      .dot.skipped { background: transparent; border-style: dashed; opacity: 0.55; }
+
+      /* Case file card */
+      .folder-tab {
+        display: inline-block; background: var(--folder); color: var(--ink);
+        border: 2px solid var(--folder-edge); border-bottom: none;
+        border-radius: 10px 14px 0 0; padding: 7px 18px; font-weight: 800;
+        letter-spacing: 0.06em; font-size: 0.9rem; margin-left: 14px;
+      }
+      .case-card {
+        position: relative;
+        background: linear-gradient(180deg, var(--folder), var(--folder) 0) top / 100% 10px no-repeat, var(--card);
+        border: 2px solid var(--folder-edge);
+        border-radius: 6px 14px 14px 14px;
+        padding: 26px 22px 22px;
+        box-shadow: 0 8px 18px var(--shadow);
+      }
+      .case-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .case-no { font-weight: 800; letter-spacing: 0.08em; color: var(--ink-soft); font-size: 0.85rem; }
+      .round-kind {
+        font-weight: 800; font-size: 0.78rem; letter-spacing: 0.1em;
+        border: 2px solid var(--blue); color: var(--blue); border-radius: 6px; padding: 3px 9px;
+      }
+      .instruction { font-size: 1.12rem; font-weight: 700; margin: 14px 0 8px; }
+      .case-text { font-size: clamp(1.2rem, 3.6vw, 1.45rem); line-height: 1.55; margin: 6px 0 4px; font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
+      .hear-btn {
+        margin-top: 12px; background: var(--btn); border: 2px solid var(--btn-line);
+        color: var(--ink); border-radius: 999px; padding: 9px 18px; font-weight: 700; min-height: 44px;
+      }
+      .discuss { margin-top: 16px; font-style: italic; color: var(--ink-soft); font-size: 1.05rem; }
+
+      /* Stamp */
+      .stamp {
+        position: absolute; top: 44%; left: 50%;
+        transform: translate(-50%, -50%) rotate(-13deg) scale(2.4);
+        border: 5px solid var(--red); color: var(--red);
+        font-weight: 900; letter-spacing: 0.18em; font-size: clamp(1.6rem, 7vw, 2.4rem);
+        padding: 6px 20px; border-radius: 8px; opacity: 0; pointer-events: none;
+        background: color-mix(in srgb, var(--card) 55%, transparent);
+      }
+      .stamp.on { animation: stampIn 0.45s ease-out forwards; }
+      @keyframes stampIn {
+        0% { opacity: 0; transform: translate(-50%, -50%) rotate(-13deg) scale(2.4); }
+        60% { opacity: 1; transform: translate(-50%, -50%) rotate(-13deg) scale(0.92); }
+        100% { opacity: 1; transform: translate(-50%, -50%) rotate(-13deg) scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .stamp.on { animation: none; opacity: 1; transform: translate(-50%, -50%) rotate(-13deg) scale(1); }
+        .xp-fill { transition: none; }
+      }
+
+      /* Options */
+      .options { display: grid; gap: 12px; margin-top: 18px; }
+      @media (min-width: 640px) { .options { grid-template-columns: 1fr 1fr; } }
+      .opt {
+        background: var(--btn); border: 2px solid var(--btn-line); border-radius: 12px;
+        padding: 16px; font-size: 1.2rem; font-weight: 800; color: var(--ink);
+        min-height: 60px; text-align: center; box-shadow: 0 3px 7px var(--shadow);
+      }
+      .opt:hover:not(:disabled) { border-color: var(--folder-edge); }
+      .opt:disabled { opacity: 0.38; cursor: default; text-decoration: line-through; box-shadow: none; }
+      .opt.right:disabled { opacity: 1; text-decoration: none; border-color: var(--green); background: var(--hud-bg); }
+      .feedback { min-height: 1.6em; font-size: 1.15rem; font-weight: 800; margin-top: 16px; text-align: center; }
+      .feedback.good { color: var(--green); }
+      .feedback.bad { color: var(--red); }
+      .next-btn, .big-btn {
+        display: block; width: 100%; margin-top: 12px;
+        background: var(--red); color: #fff; border: none; border-radius: 12px;
+        padding: 16px; font-size: 1.15rem; font-weight: 800; min-height: 58px;
+        box-shadow: 0 4px 10px var(--shadow);
+      }
+      .next-btn:hover, .big-btn:hover { background: var(--red-dark); }
+      .ghost-btn {
+        background: var(--btn); color: var(--ink); border: 2px solid var(--btn-line);
+        border-radius: 12px; padding: 13px 18px; font-weight: 800; min-height: 52px;
+      }
+
+      /* End screens */
+      .panel-card {
+        background: var(--card); border: 2px solid var(--card-line); border-radius: 14px;
+        padding: 24px 22px; box-shadow: 0 8px 18px var(--shadow);
+      }
+      .panel-card h2 { margin-top: 0; font-size: 1.7rem; }
+      .missed-list { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 12px; }
+      .missed-list li { border: 2px solid var(--card-line); border-radius: 10px; padding: 14px 16px; background: var(--btn); }
+      .missed-list .m-term { font-weight: 900; font-size: 1.2rem; }
+      .missed-list .m-count { float: right; font-weight: 800; color: var(--red); }
+      .missed-list .m-def { color: var(--ink-soft); margin-top: 4px; line-height: 1.45; }
+      .all-clear { font-size: 1.2rem; font-weight: 700; line-height: 1.5; }
+
+      /* Certificate */
+      .cert {
+        margin-top: 18px; text-align: center; border: 3px solid var(--folder-edge);
+        border-radius: 14px; padding: 26px 20px; background:
+          radial-gradient(ellipse at 50% 0%, var(--paper-deep), transparent 70%), var(--card);
+      }
+      .cert .cert-title { font-size: 0.8rem; letter-spacing: 0.22em; font-weight: 800; color: var(--ink-soft); }
+      .cert .cert-name { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; font-size: clamp(1.7rem, 6vw, 2.4rem); margin: 10px 0 4px; min-height: 1.2em; }
+      .cert .cert-sub { color: var(--ink-soft); line-height: 1.5; }
+      .cert .badge-wrap { margin: 6px 0 2px; }
+      .file-badge {
+        display: inline-block; margin-top: 14px; border: 3px solid var(--green); color: var(--green);
+        font-weight: 900; letter-spacing: 0.12em; border-radius: 8px; padding: 6px 16px;
+        transform: rotate(-2deg);
+      }
+      .name-row { margin-top: 20px; }
+      .name-row label { font-weight: 800; display: block; margin-bottom: 8px; }
+      .name-row input {
+        width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 10px;
+        border: 2px solid var(--btn-line); background: var(--btn); color: var(--ink); min-height: 52px;
+      }
+      .stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+      .stat { flex: 1 1 120px; background: var(--hud-bg); border: 2px solid var(--card-line); border-radius: 10px; padding: 10px; text-align: center; }
+      .stat b { display: block; font-size: 1.35rem; }
+      .stat span { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; color: var(--ink-soft); }
+
+      /* Teacher button and panel */
+      #teacherBtn {
+        position: fixed; right: 12px; bottom: 12px; z-index: 200;
+        background: var(--card); color: var(--ink-soft); border: 2px solid var(--card-line);
+        border-radius: 999px; padding: 10px 18px; font-weight: 700; font-size: 0.92rem;
+        min-height: 44px; box-shadow: 0 3px 8px var(--shadow); opacity: 0.92;
+      }
+      #teacherPanel {
+        position: fixed; inset: 0; z-index: 250; background: rgba(30, 20, 8, 0.55);
+        display: flex; align-items: flex-end; justify-content: center; padding: 0;
+      }
+      @media (min-width: 640px) { #teacherPanel { align-items: center; padding: 20px; } }
+      .tp-sheet {
+        background: var(--card); color: var(--ink); width: 100%; max-width: 560px;
+        max-height: 88vh; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 22px;
+        border: 2px solid var(--card-line);
+      }
+      @media (min-width: 640px) { .tp-sheet { border-radius: 16px; } }
+      .tp-sheet h2 { margin: 0 0 4px; font-size: 1.4rem; }
+      .tp-sheet h3 { margin: 20px 0 8px; font-size: 1rem; letter-spacing: 0.05em; }
+      .tp-sheet p { color: var(--ink-soft); line-height: 1.45; margin: 4px 0; }
+      .tp-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+      .tp-grid button, .tp-actions button {
+        background: var(--btn); border: 2px solid var(--btn-line); color: var(--ink);
+        border-radius: 10px; padding: 10px 14px; font-weight: 700; min-height: 44px;
+      }
+      .tp-actions { display: grid; gap: 8px; margin-top: 6px; }
+      .tp-actions button { text-align: left; }
+      .tp-actions button.danger { border-color: var(--red); color: var(--red); }
+      #revealBox {
+        margin-top: 10px; border: 2px dashed var(--blue); border-radius: 10px;
+        padding: 12px 14px; font-size: 1.1rem;
+      }
+      #revealBox b { color: var(--blue); }
+      .tp-close { width: 100%; margin-top: 20px; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div id="sampleTag" hidden>SAMPLE</div>
+
+    <div class="wrap">
+      <!-- START SCREEN -->
+      <section id="screen-start">
+        <div class="masthead">
+          <h1><span class="glass" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="20" cy="20" r="12" fill="none" stroke="#b3352b" stroke-width="5"/><line x1="29" y1="29" x2="43" y2="43" stroke="#b3352b" stroke-width="6" stroke-linecap="round"/><circle cx="20" cy="20" r="5" fill="#e3ba6d"/></svg></span>Definition Detective</h1>
+          <p class="unit-line" id="unitLineStart"></p>
+        </div>
+        <hr class="rule" />
+        <p class="instruction" style="text-align:center;">Pick how your class will play.</p>
+        <div class="mode-grid">
+          <button class="mode-card" id="modeStudent" type="button">
+            <span class="mode-tag">SOLO CASES</span>
+            <h2>Student-Led</h2>
+            <p>Work the cases on your own. Earn XP and build a streak for first try solves.</p>
+          </button>
+          <button class="mode-card" id="modeTeacher" type="button">
+            <span class="mode-tag">WHOLE CLASS</span>
+            <h2>Teacher-Led</h2>
+            <p>The class calls out the answer. The teacher taps it and leads the talk.</p>
+          </button>
+          <button class="mode-card" id="modeBell" type="button">
+            <span class="mode-tag">60 SECONDS</span>
+            <h2>Bell Ringer</h2>
+            <p>Beat the clock. Solve as many cases as you can in one minute.</p>
+          </button>
+        </div>
+        <p class="start-note">Every case is a word from this unit. Read it, think, and pick the word that fits.</p>
+        <p class="mastery-line" id="masteryLine" hidden></p>
+      </section>
+
+      <!-- GAME SCREEN -->
+      <section id="screen-game" hidden>
+        <div class="hud" id="hudStudent" hidden>
+          <div class="hud-row">
+            <div class="hud-item"><small>XP</small><span id="xpText">0</span></div>
+            <div class="hud-item"><small>CASES SOLVED</small><span id="solvedText">0 of 8</span></div>
+            <div class="hud-item"><small>STREAK</small><span id="streakText">0</span></div>
+          </div>
+          <div class="xp-track" role="progressbar" aria-label="XP progress" id="xpBar"><div class="xp-fill" id="xpFill"></div></div>
+        </div>
+        <div class="hud" id="hudBell" hidden>
+          <div class="hud-row">
+            <div class="hud-item"><small>TIME LEFT</small><span class="timer-big" id="timerText">60</span></div>
+            <div class="hud-item"><small>FIRST TRY SOLVES</small><span class="timer-big" id="bellScoreText">0</span></div>
+            <div class="hud-item"><small>ROUND</small><span class="timer-big" id="bellRoundText">1</span></div>
+          </div>
+        </div>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+
+        <div class="folder-tab" id="folderTab">CASE FILE</div>
+        <div class="case-card" id="caseCard">
+          <div class="case-meta">
+            <span class="case-no" id="caseNo">CASE 1 OF 8</span>
+            <span class="round-kind" id="roundKind">CASE</span>
+          </div>
+          <p class="instruction" id="instruction">Read the case. Pick the word that names it.</p>
+          <p class="case-text" id="caseText"></p>
+          <button class="hear-btn" id="hearBtn" type="button">Hear it</button>
+          <p class="discuss" id="discussLine" hidden>What in the case gave it away?</p>
+          <div class="stamp" id="stamp">SOLVED</div>
+        </div>
+
+        <div class="options" id="options"></div>
+        <p class="feedback" id="feedback" aria-live="polite"></p>
+        <button class="next-btn" id="nextBtn" type="button" hidden>Next Case</button>
+      </section>
+
+      <!-- MISSED WORDS SCREEN -->
+      <section id="screen-missed" hidden>
+        <div class="panel-card">
+          <h2>Missed Words</h2>
+          <p id="missedIntro">Words to review before you close the file.</p>
+          <ul class="missed-list" id="missedList"></ul>
+          <p class="all-clear" id="allClear" hidden>All clear. Every word was solved on the first try.</p>
+          <button class="big-btn" id="toFinishBtn" type="button">See Your Certificate</button>
+        </div>
+      </section>
+
+      <!-- FINISH SCREEN -->
+      <section id="screen-finish" hidden>
+        <div class="panel-card">
+          <h2>File Complete</h2>
+          <div class="stat-row" id="statRow"></div>
+          <p class="mastery-line" id="finishMastery" hidden></p>
+          <div class="name-row">
+            <label for="nameInput">Your detective name</label>
+            <input id="nameInput" type="text" maxlength="40" placeholder="Type your name" autocomplete="off" />
+          </div>
+          <div class="cert" id="certCard">
+            <div class="badge-wrap" aria-hidden="true">
+              <svg width="92" height="92" viewBox="0 0 100 100">
+                <polygon points="50,3 61,35 95,35 67,55 78,89 50,68 22,89 33,55 5,35 39,35" fill="#e3ba6d" stroke="#c99b45" stroke-width="3" stroke-linejoin="round"/>
+                <circle cx="50" cy="47" r="15" fill="#b3352b"/>
+                <circle cx="50" cy="47" r="8" fill="#fffaf0"/>
+              </svg>
+            </div>
+            <div class="cert-title">DEFINITION DETECTIVE</div>
+            <div class="cert-name" id="certName">Detective</div>
+            <p class="cert-sub" id="certSub"></p>
+            <div id="fileBadge" hidden><span class="file-badge">FILE CLOSED</span></div>
+          </div>
+          <button class="big-btn" id="playAgainBtn" type="button">Play Again</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- TEACHER -->
+    <button id="teacherBtn" type="button">Teacher</button>
+    <div id="teacherPanel" hidden>
+      <div class="tp-sheet" role="dialog" aria-label="Teacher panel">
+        <h2>Teacher Panel</h2>
+        <p id="tpStatus"></p>
+        <h3>JUMP TO A CASE</h3>
+        <div class="tp-grid" id="tpJumpCases"></div>
+        <h3>JUMP TO A SCREEN</h3>
+        <div class="tp-grid">
+          <button type="button" id="tpJumpMissed">Missed Words</button>
+          <button type="button" id="tpJumpFinish">Finish</button>
+        </div>
+        <h3>CURRENT CASE</h3>
+        <div class="tp-actions">
+          <button type="button" id="tpSkip">Skip current case (no points, no stamp)</button>
+          <button type="button" id="tpRevealBtn">Reveal the answer (display only)</button>
+        </div>
+        <div id="revealBox" hidden></div>
+        <h3>RESET</h3>
+        <div class="tp-actions">
+          <button type="button" id="tpReset" class="danger">Reset to start screen (clears all state)</button>
+        </div>
+        <button class="big-btn tp-close" id="tpClose" type="button">Close Panel</button>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // CONFIG: swap this one bank to rebuild the whole game.
+      // ============================================================
+      window.VOCAB_BANK = {
+        unitTitle: "Orientation, Digital Citizenship & Keyboarding",
+        terms: [
+          { term: "hazard", def: "anything that can hurt a person, break equipment, or expose someone's information", scenario: "A frayed charger cord and a wet floor by the water fountain are both things in the lab that could hurt someone or damage equipment." },
+          { term: "digital citizen", def: "a person who uses technology safely, respectfully, responsibly", scenario: "Online, Marcus is the kind of person who acts safely, respectfully, and responsibly in everything he posts and shares." },
+          { term: "digital footprint", def: "the trail you leave", scenario: "Every post, like, and comment Jonah makes online leaves a trail behind him that others can follow later." },
+          { term: "digital shadow", def: "what others post about you", scenario: "Alina rarely posts anything herself, but friends keep tagging her in photos, building a picture of her out of what others share." },
+          { term: "media balance", def: "choosing, not just consuming", scenario: "Instead of scrolling for hours, Tia chooses her screen time on purpose, picking what is worth her attention and putting the phone down when it is not." },
+          { term: "creative credit", def: "naming whose work you used", scenario: "In his slideshow, Ben adds a line under the photo naming the photographer whose work he used." },
+          { term: "rude", def: "once, thoughtless, not aimed to wound", scenario: "During the group chat, Sam blurts out a thoughtless comment one time; he did not aim it at anyone to wound them." },
+          { term: "mean", def: "aimed to hurt, but one-time", scenario: "One time, on purpose, Kayla sends a message aimed to hurt her classmate's feelings, then never does it again." },
+          { term: "cyberbullying", def: "repeated (or one act designed to spread/repeat), a power imbalance, and intent to harm, online, where screenshots make 'once' repeat forever", scenario: "For weeks, a group keeps posting hurtful things about one student online, and screenshots keep even a single post spreading again and again." },
+          { term: "baseline", def: "not a grade, it is a starting line", scenario: "The typing test on the first day is not graded; it simply marks the starting line that everyone measures their growth from." },
+          { term: "copyright", def: "automatic protection the moment work is created", scenario: "The moment Ana finishes her drawing, the law protects it as hers all by itself, before she registers or files anything at all." },
+          { term: "credit", def: "naming the creator/source, always required, never enough by itself", scenario: "Under the borrowed photo, the report names the photographer and where the picture came from, the way every borrowed work requires." },
+          { term: "permission/license", def: "the right to use it", scenario: "Before Sam puts a song in his video, he asks the singer and gets a written yes that gives him the right to use it." },
+          { term: "fair use", def: "in school is narrow (small part, for learning, transformed/commented) and is not 'education = anything goes.'", scenario: "In her school report, Maya quotes a few lines from a novel and adds her own comments about them, using only a small part, for learning." },
+          { term: "career cluster", def: "a family of jobs sharing skills/tools", scenario: "Nurses, surgeons, and lab techs all belong to one family of jobs that share similar skills and tools." },
+          { term: "pathway", def: "moves you can make NOW plus a credential LATER", scenario: "Luis lists moves he can make right now, like joining a club and taking a class, plus a credential he can earn later to reach his goal job." },
+          { term: "persona", def: "the version of you an audience sees", scenario: "On her gaming channel, viewers meet a bold, funny version of Zoe, the one she presents to her audience." }
+        ]
+      };
+
+      (function () {
+        "use strict";
+        var BANK = window.VOCAB_BANK;
+        var TERMS = (BANK.terms || []).slice();
+        var TOTAL = TERMS.length;
+        var XP_PER_SOLVE = 10;
+
+        // Session mastery: first clear only. Lives outside run state so
+        // Play Again and Reset never stack completion credit.
+        var sessionMastery = { fileClosed: false, filesClosedCount: 0 };
+
+        var S = null; // run state
+
+        function $(id) { return document.getElementById(id); }
+        function shuffle(arr) {
+          var a = arr.slice();
+          for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        }
+        function termIndex(name) {
+          for (var i = 0; i < TERMS.length; i++) { if (TERMS[i].term === name) return i; }
+          return -1;
+        }
+        function recordMiss(termName) {
+          if (!S) return;
+          S.misses[termName] = (S.misses[termName] || 0) + 1;
+        }
+        function missedRanked() {
+          if (!S) return [];
+          var rows = Object.keys(S.misses).map(function (name) {
+            var idx = termIndex(name);
+            return { term: name, def: idx >= 0 ? TERMS[idx].def : "", count: S.misses[name] };
+          });
+          rows.sort(function (a, b) { return b.count - a.count || a.term.localeCompare(b.term); });
+          return rows;
+        }
+
+        // ---------- Screens ----------
+        var screens = ["screen-start", "screen-game", "screen-missed", "screen-finish"];
+        function show(id) {
+          screens.forEach(function (s) { $(s).hidden = (s !== id); });
+          window.scrollTo(0, 0);
+        }
+
+        // ---------- SAMPLE tag ----------
+        function applySampleTag() {
+          var isSample = (BANK.unitTitle || "").indexOf("SAMPLE") !== -1;
+          $("sampleTag").hidden = !isSample;
+        }
+
+        // ---------- Run setup ----------
+        function newRun(mode) {
+          stopTimer();
+          var order = shuffle(TERMS.map(function (_, i) { return i; }));
+          S = {
+            mode: mode,
+            order: order,
+            idx: 0,
+            status: order.map(function () { return "pending"; }), // pending | solved | skipped
+            xp: 0,
+            streak: 0,
+            bestStreak: 0,
+            misses: {},
+            current: null,
+            bellScore: 0,
+            bellRound: 0,
+            timeLeft: 60,
+            timerId: null,
+            over: false,
+            closedFirstTime: false
+          };
+        }
+
+        function distractors(correctIdx) {
+          var pool = TERMS.map(function (_, i) { return i; }).filter(function (i) { return i !== correctIdx; });
+          return shuffle(pool).slice(0, 3);
+        }
+
+        function buildRound(termIdx, type) {
+          var t = TERMS[termIdx];
+          var hasScenario = !!(t.scenario && String(t.scenario).trim());
+          var text = (type === "CASE" && hasScenario) ? t.scenario : t.def;
+          var opts = shuffle([termIdx].concat(distractors(termIdx)));
+          return { termIdx: termIdx, type: type, text: text, options: opts, firstTry: true, solved: false };
+        }
+
+        // ---------- Rendering: game ----------
+        function renderHUD() {
+          $("hudStudent").hidden = !(S && S.mode === "student");
+          $("hudBell").hidden = !(S && S.mode === "bell");
+          $("dots").hidden = !(S && S.mode !== "bell");
+          if (!S) return;
+          if (S.mode === "student") {
+            $("xpText").textContent = S.xp;
+            $("streakText").textContent = S.streak;
+            $("solvedText").textContent = solvedCount() + " of " + TOTAL;
+            var pct = TOTAL > 0 ? Math.round((S.xp / (TOTAL * XP_PER_SOLVE)) * 100) : 0;
+            $("xpFill").style.width = pct + "%";
+            $("xpBar").setAttribute("aria-valuenow", String(pct));
+          }
+          if (S.mode === "bell") {
+            $("timerText").textContent = S.timeLeft;
+            $("timerText").classList.toggle("timer-low", S.timeLeft <= 10);
+            $("bellScoreText").textContent = S.bellScore;
+            $("bellRoundText").textContent = S.bellRound;
+          }
+          if (S.mode !== "bell") renderDots();
+        }
+
+        function renderDots() {
+          var box = $("dots");
+          box.innerHTML = "";
+          S.status.forEach(function (st, i) {
+            var d = document.createElement("span");
+            d.className = "dot" + (st === "solved" ? " solved" : st === "skipped" ? " skipped" : "") + (i === S.idx ? " current" : "");
+            box.appendChild(d);
+          });
+        }
+
+        function renderRound() {
+          // Every new case starts at the top so the HUD (XP, streak,
+          // progress, or the bell timer and score) is in view.
+          window.scrollTo(0, 0);
+          var r = S.current;
+          var t = TERMS[r.termIdx];
+          if (S.mode === "bell") {
+            $("caseNo").textContent = "BELL RINGER - ROUND " + S.bellRound;
+            $("folderTab").textContent = "RAPID CASE FILE";
+          } else {
+            $("caseNo").textContent = "CASE " + (S.idx + 1) + " OF " + TOTAL;
+            $("folderTab").textContent = "CASE FILE " + (S.idx + 1);
+          }
+          $("roundKind").textContent = r.type === "CASE" ? "CASE" : "CLUE";
+          $("instruction").textContent = r.type === "CASE"
+            ? "Read the case. Pick the word that names it."
+            : "Read the clue. Pick the word it defines.";
+          $("caseText").textContent = r.text;
+          $("discussLine").hidden = S.mode !== "teacher";
+          $("stamp").classList.remove("on");
+          $("feedback").textContent = "";
+          $("feedback").className = "feedback";
+          $("nextBtn").hidden = true;
+
+          var box = $("options");
+          box.innerHTML = "";
+          r.options.forEach(function (oi) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "opt";
+            b.textContent = TERMS[oi].term;
+            b.setAttribute("data-term-idx", String(oi));
+            b.addEventListener("click", function () { pick(oi, b); });
+            box.appendChild(b);
+          });
+          renderHUD();
+        }
+
+        function loadSequenceRound() {
+          var type = (S.idx % 2 === 0) ? "CASE" : "CLUE";
+          S.current = buildRound(S.order[S.idx], type);
+          renderRound();
+        }
+
+        function loadBellRound() {
+          S.bellRound += 1;
+          var termIdx = Math.floor(Math.random() * TOTAL);
+          var type = Math.random() < 0.5 ? "CASE" : "CLUE";
+          S.current = buildRound(termIdx, type);
+          renderRound();
+        }
+
+        // ---------- Play ----------
+        function pick(termIdx, btn) {
+          if (!S || !S.current || S.current.solved || S.over) return;
+          var r = S.current;
+          if (termIdx === r.termIdx) {
+            r.solved = true;
+            btn.classList.add("right");
+            Array.prototype.forEach.call($("options").children, function (c) { c.disabled = true; });
+            $("stamp").classList.add("on");
+            var firstTry = r.firstTry;
+            if (S.mode === "student") {
+              if (firstTry) {
+                // Award only on the transition to solved: re-solving a
+                // case already solved (e.g. after a teacher jump back)
+                // shows the stamp and feedback but pays nothing.
+                if (S.status[S.idx] !== "solved") {
+                  S.xp += XP_PER_SOLVE;
+                  S.streak += 1;
+                  if (S.streak > S.bestStreak) S.bestStreak = S.streak;
+                }
+                $("feedback").textContent = "Solved it. First try.";
+              } else {
+                $("feedback").textContent = "Solved it.";
+              }
+            } else if (S.mode === "bell") {
+              if (firstTry) S.bellScore += 1;
+              $("feedback").textContent = firstTry ? "Solved it. First try." : "Solved it.";
+            } else {
+              $("feedback").textContent = firstTry ? "Solved it. First try." : "Solved it.";
+            }
+            $("feedback").className = "feedback good";
+            if (S.mode !== "bell" && S.status[S.idx] !== "solved") {
+              S.status[S.idx] = "solved";
+            }
+            renderHUD();
+            if (S.mode === "bell") {
+              setTimeout(function () { if (S && !S.over && S.mode === "bell") loadBellRound(); }, 700);
+            } else {
+              $("nextBtn").textContent = (S.idx >= TOTAL - 1) ? "Finish the File" : "Next Case";
+              $("nextBtn").hidden = false;
+            }
+          } else {
+            btn.disabled = true;
+            r.firstTry = false;
+            recordMiss(TERMS[r.termIdx].term);
+            if (S.mode === "student") S.streak = 0;
+            $("feedback").textContent = "Not that one. Try again.";
+            $("feedback").className = "feedback bad";
+            renderHUD();
+          }
+        }
+
+        function advance() {
+          if (!S || S.mode === "bell") return;
+          if (S.idx < TOTAL - 1) {
+            S.idx += 1;
+            loadSequenceRound();
+          } else {
+            endRun();
+          }
+        }
+
+        // First clear only: completion credit is awarded once per
+        // session, at the moment the file is closed. Replays play
+        // normally and show their own score but never stack credit.
+        function awardFirstClear() {
+          if (fileIsClosed() && !sessionMastery.fileClosed) {
+            sessionMastery.fileClosed = true;
+            sessionMastery.filesClosedCount = 1;
+          }
+        }
+
+        function endRun() {
+          stopTimer();
+          if (S) S.over = true;
+          // Capture the first-clear fact BEFORE the award below sets
+          // sessionMastery.fileClosed, or renderFinish can never see it.
+          if (S) S.closedFirstTime = fileIsClosed() && !sessionMastery.fileClosed;
+          awardFirstClear();
+          renderMissed();
+          show("screen-missed");
+        }
+
+        // ---------- Bell timer ----------
+        function startTimer() {
+          stopTimer();
+          var endAt = Date.now() + 60000;
+          S.timerId = setInterval(function () {
+            if (!S || S.mode !== "bell") { stopTimer(); return; }
+            var left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+            S.timeLeft = left;
+            renderHUD();
+            if (left <= 0) { endRun(); }
+          }, 250);
+        }
+        function stopTimer() {
+          if (S && S.timerId) { clearInterval(S.timerId); S.timerId = null; }
+        }
+
+        // ---------- End screens ----------
+        function renderMissed() {
+          var rows = missedRanked();
+          var list = $("missedList");
+          list.innerHTML = "";
+          rows.forEach(function (row) {
+            var li = document.createElement("li");
+            var head = document.createElement("div");
+            var term = document.createElement("span");
+            term.className = "m-term";
+            term.textContent = row.term;
+            var count = document.createElement("span");
+            count.className = "m-count";
+            count.textContent = "missed " + row.count + (row.count === 1 ? " time" : " times");
+            head.appendChild(term);
+            head.appendChild(count);
+            var def = document.createElement("div");
+            def.className = "m-def";
+            def.textContent = row.def;
+            li.appendChild(head);
+            li.appendChild(def);
+            list.appendChild(li);
+          });
+          $("allClear").hidden = rows.length > 0;
+          $("missedList").hidden = rows.length === 0;
+          $("missedIntro").hidden = rows.length === 0;
+        }
+
+        function solvedCount() {
+          if (!S) return 0;
+          return S.status.filter(function (s) { return s === "solved"; }).length;
+        }
+        function fileIsClosed() {
+          if (!S || S.mode === "bell") return false;
+          return TOTAL > 0 && S.status.every(function (s) { return s === "solved"; });
+        }
+
+        function renderFinish() {
+          // Earned score for this run plus first-clear tracking.
+          var hadCredit = sessionMastery.fileClosed;
+          var closedNow = fileIsClosed();
+          // endRun captured the first-clear fact before awarding; the
+          // pre-award credit state covers direct teacher-panel jumps.
+          var firstClear = !!(S && S.closedFirstTime) || (closedNow && !hadCredit);
+          awardFirstClear();
+          var stats = [];
+          if (S) {
+            if (S.mode === "student") {
+              stats.push({ v: S.xp, l: "XP EARNED" });
+              stats.push({ v: solvedCount() + " of " + TOTAL, l: "CASES SOLVED" });
+              stats.push({ v: S.bestStreak, l: "BEST STREAK" });
+              stats.push({ v: sessionMastery.filesClosedCount, l: "FILES CLOSED" });
+            } else if (S.mode === "teacher") {
+              stats.push({ v: solvedCount() + " of " + TOTAL, l: "CASES SOLVED" });
+              stats.push({ v: Object.keys(S.misses).length, l: "WORDS TO REVIEW" });
+              stats.push({ v: sessionMastery.filesClosedCount, l: "FILES CLOSED" });
+            } else {
+              stats.push({ v: S.bellScore, l: "FIRST TRY SOLVES" });
+              stats.push({ v: S.bellRound, l: "ROUNDS PLAYED" });
+            }
+          }
+          var row = $("statRow");
+          row.innerHTML = "";
+          stats.forEach(function (st) {
+            var d = document.createElement("div");
+            d.className = "stat";
+            var b = document.createElement("b");
+            b.textContent = st.v;
+            var s = document.createElement("span");
+            s.textContent = st.l;
+            d.appendChild(b);
+            d.appendChild(s);
+            row.appendChild(d);
+          });
+
+          $("fileBadge").hidden = !sessionMastery.fileClosed;
+          var fm = $("finishMastery");
+          fm.hidden = false;
+          if (S && S.mode === "bell") {
+            fm.textContent = "Bell Ringer score: " + S.bellScore + " first try solves in 60 seconds.";
+          } else if (closedNow && firstClear) {
+            fm.textContent = "File closed. Completion credit earned on this first clear.";
+          } else if (closedNow) {
+            fm.textContent = "File closed again. Completion credit counts once, from the first clear.";
+          } else if (sessionMastery.fileClosed) {
+            fm.textContent = "This run did not close the file. Completion credit was earned on the first clear this session.";
+          } else {
+            fm.textContent = "File not closed yet. Solve every case in one run to close the file.";
+          }
+          updateCertSub(closedNow);
+          updateMasteryLine();
+        }
+
+        function updateCertSub(closedNow) {
+          var modeName = S ? (S.mode === "student" ? "Student-Led" : S.mode === "teacher" ? "Teacher-Led" : "Bell Ringer") : "";
+          var txt = "For closing the case file on " + BANK.unitTitle + " in " + modeName + " mode.";
+          if (sessionMastery.fileClosed && !closedNow) {
+            txt += " File Closed credit was earned on the first clear this session.";
+          }
+          $("certSub").textContent = txt;
+        }
+
+        function updateMasteryLine() {
+          var el = $("masteryLine");
+          if (sessionMastery.fileClosed) {
+            el.hidden = false;
+            el.textContent = "Files closed this session: " + sessionMastery.filesClosedCount;
+          } else {
+            el.hidden = true;
+          }
+        }
+
+        // ---------- Start / reset ----------
+        function startGame(mode) {
+          newRun(mode);
+          show("screen-game");
+          if (mode === "bell") {
+            loadBellRound();
+            startTimer();
+          } else {
+            loadSequenceRound();
+          }
+        }
+        function goToStart() {
+          stopTimer();
+          S = null;
+          if ("speechSynthesis" in window) speechSynthesis.cancel();
+          $("nameInput").value = "";
+          $("certName").textContent = "Detective";
+          updateMasteryLine();
+          show("screen-start");
+        }
+
+        // ---------- Teacher panel ----------
+        function buildJumpButtons() {
+          var box = $("tpJumpCases");
+          box.innerHTML = "";
+          for (var i = 0; i < TOTAL; i++) {
+            (function (n) {
+              var b = document.createElement("button");
+              b.type = "button";
+              b.textContent = "Case " + (n + 1);
+              b.addEventListener("click", function () { jumpToCase(n); });
+              box.appendChild(b);
+            })(i);
+          }
+        }
+        function tpStatusText() {
+          if (!S) return "No game is running yet. Jump starts a Student-Led game.";
+          if (S.mode === "bell") return "Bell Ringer is running. Round " + S.bellRound + ", score " + S.bellScore + ".";
+          return "Case " + (S.idx + 1) + " of " + TOTAL + " (" + (S.mode === "student" ? "Student-Led" : "Teacher-Led") + ").";
+        }
+        function openPanel() {
+          $("tpStatus").textContent = tpStatusText();
+          $("revealBox").hidden = true;
+          $("teacherPanel").hidden = false;
+        }
+        function closePanel() { $("teacherPanel").hidden = true; }
+
+        function jumpToCase(n) {
+          closePanel();
+          if (!S) { startGame("student"); }
+          if (S.mode === "bell") { stopTimer(); S.mode = "student"; }
+          S.over = false;
+          show("screen-game");
+          S.idx = n;
+          if (S.status[S.idx] === "skipped") S.status[S.idx] = "pending";
+          loadSequenceRound();
+        }
+        function jumpToScreen(which) {
+          closePanel();
+          if (!S) newRun("student");
+          stopTimer();
+          if (S) S.over = true;
+          if (which === "missed") {
+            renderMissed();
+            show("screen-missed");
+          } else {
+            renderMissed();
+            renderFinish();
+            show("screen-finish");
+          }
+        }
+        function skipCase() {
+          closePanel();
+          if (!S || S.over) return;
+          if (S.mode === "bell") { loadBellRound(); return; }
+          // Skipped: never solved, never missed, no points, no stamp.
+          if (S.status[S.idx] === "pending") S.status[S.idx] = "skipped";
+          if (S.idx < TOTAL - 1) {
+            S.idx += 1;
+            loadSequenceRound();
+          } else {
+            endRun();
+          }
+        }
+        function revealAnswer() {
+          var box = $("revealBox");
+          box.hidden = false;
+          if (S && S.current) {
+            box.innerHTML = "";
+            var label = document.createTextNode("Correct term for this case: ");
+            var b = document.createElement("b");
+            b.textContent = TERMS[S.current.termIdx].term;
+            box.appendChild(label);
+            box.appendChild(b);
+          } else {
+            box.textContent = "No case is open right now.";
+          }
+          // Display only: no stamp, no points, no state change.
+        }
+
+        // ---------- Events ----------
+        $("modeStudent").addEventListener("click", function () { startGame("student"); });
+        $("modeTeacher").addEventListener("click", function () { startGame("teacher"); });
+        $("modeBell").addEventListener("click", function () { startGame("bell"); });
+        $("nextBtn").addEventListener("click", advance);
+        $("toFinishBtn").addEventListener("click", function () { renderFinish(); show("screen-finish"); });
+        $("playAgainBtn").addEventListener("click", goToStart);
+        $("nameInput").addEventListener("input", function () {
+          var v = $("nameInput").value.trim();
+          $("certName").textContent = v ? v : "Detective";
+        });
+        $("hearBtn").addEventListener("click", function () {
+          if (!S || !S.current || !("speechSynthesis" in window)) return;
+          speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance(S.current.text);
+          u.rate = 0.95;
+          speechSynthesis.speak(u);
+        });
+        $("teacherBtn").addEventListener("click", openPanel);
+        $("tpClose").addEventListener("click", closePanel);
+        $("teacherPanel").addEventListener("click", function (e) { if (e.target === $("teacherPanel")) closePanel(); });
+        $("tpSkip").addEventListener("click", skipCase);
+        $("tpRevealBtn").addEventListener("click", revealAnswer);
+        $("tpReset").addEventListener("click", function () { closePanel(); goToStart(); });
+        $("tpJumpMissed").addEventListener("click", function () { jumpToScreen("missed"); });
+        $("tpJumpFinish").addEventListener("click", function () { jumpToScreen("finish"); });
+
+        // ---------- Init ----------
+        $("unitLineStart").textContent = BANK.unitTitle;
+        applySampleTag();
+        buildJumpButtons();
+        updateMasteryLine();
+        show("screen-start");
+      })();
+    </script>
+  </body>
+</html>

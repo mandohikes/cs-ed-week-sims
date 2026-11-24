@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Unlock the Lab</title>
+    <style>
+      :root {
+        --bg: #e9f4f4;
+        --panel: #ffffff;
+        --panel-2: #f4f9f9;
+        --ink: #17323a;
+        --ink-soft: #47636b;
+        --line: #c3d8da;
+        --teal: #0e7c86;
+        --teal-dark: #0a5c64;
+        --teal-soft: #d7eeee;
+        --amber: #e8930c;
+        --amber-soft: #fdeeda;
+        --green: #1e8e57;
+        --green-soft: #dcf3e6;
+        --red: #b23a2e;
+        --red-soft: #fbe7e3;
+        --grey-lock: #8fa6ab;
+        --door: #256d78;
+        --door-dark: #17454d;
+        --door-in: #ffd98a;
+        --shadow: 0 6px 22px rgba(23, 50, 58, 0.14);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0c1a1d;
+          --panel: #15262a;
+          --panel-2: #1a2f34;
+          --ink: #e9f3f3;
+          --ink-soft: #a9c2c7;
+          --line: #2e484e;
+          --teal: #2ba7b3;
+          --teal-dark: #7fd3db;
+          --teal-soft: #17393e;
+          --amber: #f2a93b;
+          --amber-soft: #3a2c12;
+          --green: #3cb97f;
+          --green-soft: #14382a;
+          --red: #e07a6c;
+          --red-soft: #40201b;
+          --grey-lock: #5f7a80;
+          --door: #2a7a88;
+          --door-dark: #123239;
+          --door-in: #ffd98a;
+          --shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        line-height: 1.45;
+        -webkit-text-size-adjust: 100%;
+      }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, input:focus-visible {
+        outline: 3px solid var(--amber);
+        outline-offset: 2px;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 58px 16px 96px;
+      }
+      .screen { display: none; }
+      .screen.active { display: block; }
+      h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: 0.2px; }
+      h2 { font-size: 1.45rem; margin: 0 0 6px; }
+      h3 { font-size: 1.1rem; margin: 0 0 8px; }
+      .unit-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        margin: 2px 0 0;
+      }
+      .instruction {
+        font-size: 1.05rem;
+        color: var(--ink-soft);
+        margin: 6px 0 14px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      /* SAMPLE watermark tag, shown only when the bank title contains SAMPLE */
+      #sampleTag {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 120;
+        display: none;
+        background: var(--amber);
+        color: #22160a;
+        font-weight: 800;
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 2px dashed #22160a;
+        transform: rotate(-4deg);
+        box-shadow: var(--shadow);
+      }
+      #sampleTag.on { display: block; }
+      /* Start screen */
+      .start-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      @media (min-width: 720px) {
+        .start-grid { grid-template-columns: 300px 1fr; align-items: start; }
+      }
+      .door-box {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 14px;
+        text-align: center;
+      }
+      .door-box svg { max-width: 100%; height: auto; }
+      .mode-list { display: grid; gap: 12px; }
+      .mode-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: var(--panel);
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        min-height: 56px;
+        color: var(--ink);
+      }
+      .mode-btn:hover { border-color: var(--teal); }
+      .mode-btn .mode-name { font-size: 1.2rem; font-weight: 800; display: block; }
+      .mode-btn .mode-desc { color: var(--ink-soft); font-size: 0.95rem; display: block; margin-top: 2px; }
+      .mastery-note {
+        display: none;
+        margin-top: 14px;
+        background: var(--green-soft);
+        border: 1px solid var(--green);
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 700;
+      }
+      .mastery-note.on { display: block; }
+      /* HUD */
+      .hud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hud .pill {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .hud .pill.streak { background: var(--amber-soft); border-color: var(--amber); }
+      .xp-wrap { flex: 1 1 200px; min-width: 180px; }
+      .xp-label { font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+      .xp-track {
+        height: 16px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .xp-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--teal);
+        border-radius: 999px;
+        transition: width 0.5s ease;
+      }
+      /* Locks strip */
+      .locks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 4px 0 16px;
+      }
+      .lock-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        width: 62px;
+        padding: 8px 2px 6px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+      .lock-chip svg { width: 26px; height: 30px; }
+      .lock-chip .shackle { transition: transform 0.45s ease; transform-origin: 26px 20px; }
+      .lock-chip.opened { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+      .lock-chip.opened .shackle { transform: rotate(-38deg) translateY(-2px); }
+      .lock-chip.opened .lock-body { fill: var(--green); }
+      .lock-chip.skipped { border-style: dashed; color: var(--grey-lock); background: var(--panel-2); }
+      .lock-chip.skipped .lock-body { fill: var(--grey-lock); }
+      .lock-chip.skipped .shackle { stroke: var(--grey-lock); }
+      .lock-chip.current { border-color: var(--amber); border-width: 2px; }
+      .lock-body { fill: var(--teal); }
+      .shackle { stroke: var(--teal-dark); }
+      /* Round play */
+      .term-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .term-big {
+        font-size: clamp(2rem, 7vw, 3.2rem);
+        font-weight: 900;
+        margin: 4px 0;
+        word-break: break-word;
+      }
+      .hear-btn {
+        background: var(--teal-soft);
+        color: var(--teal-dark);
+        border: 1px solid var(--teal);
+        border-radius: 999px;
+        padding: 8px 16px;
+        min-height: 40px;
+        font-weight: 700;
+      }
+      .discuss {
+        display: none;
+        background: var(--amber-soft);
+        border: 1px solid var(--amber);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin: 10px 0 0;
+        font-weight: 600;
+      }
+      .discuss.on { display: block; }
+      .feedback {
+        min-height: 1.6em;
+        font-size: 1.15rem;
+        font-weight: 800;
+        margin: 12px 0 4px;
+      }
+      .feedback.good { color: var(--green); }
+      .feedback.bad { color: var(--red); }
+      .options {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      @media (min-width: 640px) {
+        .options { grid-template-columns: 1fr 1fr; }
+      }
+      .opt-btn {
+        text-align: left;
+        background: var(--panel);
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-height: 56px;
+        font-size: 1.02rem;
+        color: var(--ink);
+        width: 100%;
+      }
+      .opt-btn:hover:not(:disabled) { border-color: var(--teal); }
+      .opt-btn:disabled { cursor: default; opacity: 0.85; }
+      .opt-btn.wrong {
+        background: var(--red-soft);
+        border-color: var(--red);
+        text-decoration: line-through;
+        opacity: 0.65;
+      }
+      .opt-btn.right {
+        background: var(--green-soft);
+        border-color: var(--green);
+        font-weight: 800;
+      }
+      /* Key turn animation */
+      .key-stage {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        margin-top: 14px;
+        background: var(--panel-2);
+        border: 1px dashed var(--amber);
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 800;
+        color: var(--ink);
+      }
+      .key-stage.on { display: flex; }
+      .key-stage svg { width: 54px; height: 30px; flex: none; }
+      .key-stage.turn svg { animation: keyturn 0.9s ease forwards; }
+      @keyframes keyturn {
+        0% { transform: rotate(0deg); }
+        60% { transform: rotate(95deg); }
+        100% { transform: rotate(90deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .key-stage.turn svg { animation: none; transform: rotate(90deg); }
+        .xp-fill { transition: none; }
+        .lock-chip .shackle { transition: none; }
+      }
+      /* Bell ringer */
+      .timer-big {
+        font-size: 2.4rem;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+      }
+      .timer-track {
+        height: 14px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        overflow: hidden;
+        flex: 1 1 160px;
+        min-width: 140px;
+      }
+      .timer-fill {
+        height: 100%;
+        width: 100%;
+        background: var(--amber);
+      }
+      .timer-fill.low { background: var(--red); }
+      /* Finish */
+      .finish-grid { display: grid; gap: 16px; }
+      @media (min-width: 720px) {
+        .finish-grid { grid-template-columns: 300px 1fr; align-items: start; }
+      }
+      .score-big { font-size: 1.5rem; font-weight: 900; margin: 4px 0 10px; }
+      .unlocker-card {
+        background: var(--teal-soft);
+        border: 2px solid var(--teal);
+        border-radius: var(--radius);
+        padding: 16px;
+        text-align: center;
+      }
+      .unlocker-card .u-name {
+        font-size: 1.6rem;
+        font-weight: 900;
+        min-height: 1.4em;
+        word-break: break-word;
+      }
+      .unlocker-card .u-sub { color: var(--ink-soft); font-weight: 700; }
+      .name-row { margin-top: 12px; text-align: left; }
+      .name-row label { font-weight: 700; display: block; margin-bottom: 4px; }
+      .name-row input {
+        width: 100%;
+        padding: 10px 12px;
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+      }
+      .missed-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+      .missed-list li {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+      }
+      .missed-list .m-term { font-weight: 900; }
+      .missed-list .m-count {
+        float: right;
+        background: var(--red-soft);
+        color: var(--red);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+      .missed-list .m-def { color: var(--ink-soft); display: block; margin-top: 2px; }
+      .big-btn {
+        background: var(--teal);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 22px;
+        min-height: 52px;
+        font-size: 1.05rem;
+        font-weight: 800;
+        width: 100%;
+      }
+      .big-btn:hover { background: var(--teal-dark); }
+      @media (prefers-color-scheme: dark) {
+        .big-btn:hover { background: var(--teal); opacity: 0.9; }
+      }
+      /* Teacher button and panel */
+      #teacherBtn {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        z-index: 110;
+        background: var(--panel);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 16px;
+        min-height: 40px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        box-shadow: var(--shadow);
+      }
+      #teacherPanel {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: none;
+        background: rgba(10, 25, 29, 0.55);
+        padding: 18px 12px;
+        overflow-y: auto;
+      }
+      #teacherPanel.on { display: block; }
+      .panel-card {
+        max-width: 560px;
+        margin: 24px auto;
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .panel-card h2 { display: flex; justify-content: space-between; align-items: center; }
+      .panel-close {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 6px 14px;
+        min-height: 40px;
+        font-weight: 700;
+      }
+      .jump-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+      .jump-grid button, .panel-actions button {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 10px 14px;
+        min-height: 44px;
+        font-weight: 700;
+      }
+      .jump-grid button:disabled { opacity: 0.45; cursor: default; }
+      .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+      .panel-actions .danger { border-color: var(--red); color: var(--red); }
+      .reveal-box {
+        display: none;
+        margin-top: 12px;
+        background: var(--amber-soft);
+        border: 1px solid var(--amber);
+        border-radius: 10px;
+        padding: 10px 14px;
+      }
+      .reveal-box.on { display: block; }
+      .panel-note { color: var(--ink-soft); font-size: 0.92rem; }
+      .door-svg .panel-l, .door-svg .panel-r { transition: transform 1s ease; }
+      .door-svg.open .panel-l { transform: translateX(-52px); }
+      .door-svg.open .panel-r { transform: translateX(52px); }
+      @media (prefers-reduced-motion: reduce) {
+        .door-svg .panel-l, .door-svg .panel-r { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sampleTag" role="note">SAMPLE</div>
+
+    <main class="wrap">
+      <!-- START SCREEN -->
+      <section class="screen active" id="screen-start" aria-label="Start">
+        <div class="start-grid">
+          <div class="door-box" id="startDoor"></div>
+          <div>
+            <h1>Unlock the Lab</h1>
+            <p class="unit-title" id="unitTitle"></p>
+            <p class="instruction">Pick a mode to start playing.</p>
+            <div class="mode-list">
+              <button class="mode-btn" id="btnStudent" type="button">
+                <span class="mode-name">Student-Led</span>
+                <span class="mode-desc">Earn XP, build a streak, and open all 8 locks.</span>
+              </button>
+              <button class="mode-btn" id="btnTeacher" type="button">
+                <span class="mode-name">Teacher-Led</span>
+                <span class="mode-desc">The class calls out answers. The teacher taps for the class.</span>
+              </button>
+              <button class="mode-btn" id="btnBell" type="button">
+                <span class="mode-name">Bell Ringer</span>
+                <span class="mode-desc">60 seconds. Match as many words as you can.</span>
+              </button>
+            </div>
+            <div class="mastery-note" id="masteryNote"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME SCREEN: TEACHER-LED AND STUDENT-LED -->
+      <section class="screen" id="screen-game" aria-label="Game">
+        <div class="hud" id="gameHud"></div>
+        <div class="locks" id="locksStrip" aria-label="Locks"></div>
+        <div class="card">
+          <div class="term-row">
+            <div class="term-big" id="termBig"></div>
+            <button class="hear-btn" id="hearGame" type="button">Hear it</button>
+          </div>
+          <p class="instruction" id="gameInstruction">Tap the definition that matches the word.</p>
+          <div class="discuss" id="discussLine"></div>
+          <div class="feedback" id="gameFeedback" aria-live="polite"></div>
+          <div class="options" id="gameOptions"></div>
+          <div class="key-stage" id="keyStage">
+            <svg viewBox="0 0 90 50" aria-hidden="true">
+              <circle cx="18" cy="25" r="12" fill="none" stroke="#e8930c" stroke-width="7"/>
+              <rect x="28" y="21" width="46" height="8" rx="4" fill="#e8930c"/>
+              <rect x="58" y="29" width="7" height="13" rx="2" fill="#e8930c"/>
+              <rect x="70" y="29" width="7" height="17" rx="2" fill="#e8930c"/>
+            </svg>
+            <span id="keyStageText">Key turning. Lock opening.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- BELL RINGER SCREEN -->
+      <section class="screen" id="screen-bell" aria-label="Bell ringer">
+        <div class="hud">
+          <span class="timer-big" id="bellTimer">60</span>
+          <div class="timer-track"><div class="timer-fill" id="bellTimerFill"></div></div>
+          <span class="pill" id="bellScore">Correct: 0</span>
+        </div>
+        <div class="card">
+          <div class="term-row">
+            <div class="term-big" id="bellTerm"></div>
+            <button class="hear-btn" id="hearBell" type="button">Hear it</button>
+          </div>
+          <p class="instruction">Match as many words as you can before time runs out.</p>
+          <div class="feedback" id="bellFeedback" aria-live="polite"></div>
+          <div class="options" id="bellOptions"></div>
+        </div>
+      </section>
+
+      <!-- FINISH SCREEN -->
+      <section class="screen" id="screen-finish" aria-label="Finish">
+        <div class="finish-grid">
+          <div class="door-box" id="finishDoor"></div>
+          <div>
+            <h2 id="finishHeading">The lab is open!</h2>
+            <p class="score-big" id="finishScore"></p>
+            <div class="unlocker-card">
+              <div class="u-sub">Official Lab Unlocker</div>
+              <div class="u-name" id="unlockerName">Lab Unlocker</div>
+              <div class="u-sub" id="unlockerStat"></div>
+              <div class="name-row">
+                <label for="nameInput">Your name for the card</label>
+                <input id="nameInput" type="text" maxlength="30" placeholder="Type your name" autocomplete="off" />
+              </div>
+            </div>
+            <div class="mastery-note" id="finishMastery"></div>
+            <div class="card" style="margin-top:16px;">
+              <h3>Missed Words: Teacher Readout</h3>
+              <div id="missedArea"></div>
+            </div>
+            <div style="margin-top:16px;">
+              <button class="big-btn" id="btnPlayAgain" type="button">Back to start</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <button id="teacherBtn" type="button" aria-haspopup="dialog">Teacher</button>
+
+    <!-- TEACHER PANEL -->
+    <div id="teacherPanel" role="dialog" aria-modal="true" aria-label="Teacher panel">
+      <div class="panel-card">
+        <h2>Teacher Panel <button class="panel-close" id="panelClose" type="button">Close</button></h2>
+        <p class="panel-note" id="panelWhere"></p>
+        <h3>Jump to</h3>
+        <div class="jump-grid" id="jumpGrid"></div>
+        <h3>Round tools</h3>
+        <div class="panel-actions">
+          <button id="tpSkip" type="button">Skip this round</button>
+          <button id="tpRevealBtn" type="button">Reveal answer</button>
+          <button id="tpReset" type="button" class="danger">Reset game</button>
+        </div>
+        <div class="reveal-box" id="revealBox"></div>
+        <p class="panel-note">Reveal is display only. It gives no points and opens no lock. Skip gives no points and opens no lock. Skipped rounds stay marked as not played.</p>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // CONFIG: swap this one object to re-skin the game per unit.
+      // Any bank with 8 or more terms works with zero other edits.
+      // ============================================================
+      window.VOCAB_BANK = { unitTitle: "Student Organizations, Leadership & Career Exploration", terms: [
+        { term: "student organization", def: "a school-sponsored group built around a subject or career area, with student officers, regular meetings, and events beyond the school day" },
+        { term: "CTSO", def: "a Career and Technical Student Organization" },
+        { term: "pathway", def: "the route, courses, credentials, and jobs in order" },
+        { term: "LMS", def: "your district's Learning Management System, its class platform" },
+        { term: "Call to Order", def: "the meeting officially starts; from this moment, decisions count" },
+        { term: "Roll / Attendance", def: "who is present is recorded" },
+        { term: "minutes", def: "the group's memory" },
+        { term: "Reports", def: "officers report; the Treasurer on money" },
+        { term: "Old Business", def: "unfinished items: did we do what we decided?" },
+        { term: "New Business", def: "new ideas, where motions happen" },
+        { term: "Announcements", def: "dates and reminders; no decisions" },
+        { term: "Adjournment", def: "the meeting officially ends" },
+        { term: "motion", def: "four steps: Move, Second, Discuss, Vote, in that order, every time" },
+        { term: "second", def: "at least two people think the idea deserves discussion" },
+        { term: "leadership", def: "not a personality; it is a set of jobs done well" }
+      ] };
+
+      (function () {
+        "use strict";
+        var BANK = window.VOCAB_BANK;
+        var TOTAL_ROUNDS = 8;
+        var BELL_SECONDS = 60;
+        var MAX_XP = 1360; // 100 + 120 + 140 + 160 + 180 + 200 + 220 + 240
+
+        var DISCUSS = [
+          "Talk it out: say the meaning in your own words.",
+          "Ask the class: where have you seen this in the lab?",
+          "Quick vote first, then tap the answer the class picks.",
+          "Ask a volunteer to use the word in a sentence.",
+          "Ask the class: what word could be confused with this one?",
+          "Have the class act out or point to this part.",
+          "Ask: why does this word matter for our robot?",
+          "Final lock: have the class read the word out loud together."
+        ];
+
+        function shuffle(arr) {
+          var a = arr.slice();
+          for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        }
+        function el(id) { return document.getElementById(id); }
+        function speak(text) {
+          try {
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+              var u = new SpeechSynthesisUtterance(text);
+              u.rate = 0.95;
+              window.speechSynthesis.speak(u);
+            }
+          } catch (e) { /* audio is optional */ }
+        }
+        function makeOptions(correctItem, pool) {
+          var others = pool.filter(function (t) { return t.term !== correctItem.term; });
+          var picks = shuffle(others).slice(0, 3);
+          var opts = picks.map(function (t) { return { def: t.def, correct: false }; });
+          opts.push({ def: correctItem.def, correct: true });
+          return shuffle(opts);
+        }
+
+        // ---------------- State ----------------
+        var G = {
+          screen: "start",       // start | game | bell | finish
+          mode: null,            // student | teacher | bell
+          rounds: [],            // 8 term objects for door modes
+          status: [],            // pending | opened | skipped
+          idx: 0,
+          firstTry: true,
+          busy: false,
+          score: 0,              // student points, or bell correct count
+          streak: 0,
+          misses: {},            // term -> { term, def, count }
+          lastFinishMode: null
+        };
+        // Session mastery: keys to the FIRST clear only (anti-farming).
+        var mastery = {
+          doorCleared: false,
+          doorStat: "",
+          bellPlayed: false,
+          bellStat: ""
+        };
+        var bell = {
+          current: null,
+          firstTry: true,
+          busy: false,
+          endsAt: 0,
+          timerId: null,
+          deck: []
+        };
+
+        // ---------------- Door SVG ----------------
+        function doorSVG(open) {
+          var locks = "";
+          if (!open) {
+            var pos = [[52,58],[92,58],[132,58],[52,102],[132,102],[52,146],[92,146],[132,146]];
+            for (var i = 0; i < pos.length; i++) {
+              locks += '<g><rect x="' + (pos[i][0]-11) + '" y="' + pos[i][1] + '" width="22" height="18" rx="4" fill="#e8930c"/>' +
+                '<path d="M ' + (pos[i][0]-7) + ' ' + pos[i][1] + ' v-5 a7 7 0 0 1 14 0 v5" fill="none" stroke="#f4f9f9" stroke-width="3.5"/></g>';
+            }
+          }
+          return '' +
+          '<svg class="door-svg ' + (open ? "open" : "") + '" viewBox="0 0 184 230" width="230" role="img" aria-label="' + (open ? "Lab door open with a robot inside" : "Closed lab door with eight locks") + '">' +
+            '<rect x="6" y="6" width="172" height="218" rx="12" fill="#17454d"/>' +
+            (open ? '<rect x="34" y="24" width="116" height="186" rx="8" fill="#ffd98a"/>' +
+              '<g>' +
+                '<circle cx="92" cy="118" r="26" fill="#0e7c86"/>' +
+                '<rect x="72" y="92" width="40" height="16" rx="7" fill="#0a5c64"/>' +
+                '<circle cx="83" cy="116" r="5" fill="#ffffff"/><circle cx="101" cy="116" r="5" fill="#ffffff"/>' +
+                '<circle cx="83" cy="116" r="2.2" fill="#17323a"/><circle cx="101" cy="116" r="2.2" fill="#17323a"/>' +
+                '<path d="M 82 130 q 10 7 20 0" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+                '<rect x="86" y="66" width="12" height="16" rx="4" fill="#e8930c"/>' +
+                '<circle cx="92" cy="62" r="6" fill="#e8930c"/>' +
+                '<rect x="66" y="142" width="52" height="34" rx="9" fill="#0e7c86"/>' +
+                '<rect x="40" y="146" width="26" height="10" rx="5" fill="#0a5c64" transform="rotate(-28 53 151)"/>' +
+                '<rect x="118" y="146" width="26" height="10" rx="5" fill="#0a5c64" transform="rotate(28 131 151)"/>' +
+              '</g>' : '') +
+            '<g class="panel-l"><rect x="30" y="20" width="62" height="194" rx="8" fill="#256d78" stroke="#17454d" stroke-width="3"/>' +
+              '<rect x="42" y="34" width="38" height="44" rx="6" fill="#d7eeee" opacity="0.85"/></g>' +
+            '<g class="panel-r"><rect x="92" y="20" width="62" height="194" rx="8" fill="#256d78" stroke="#17454d" stroke-width="3"/>' +
+              '<rect x="104" y="34" width="38" height="44" rx="6" fill="#d7eeee" opacity="0.85"/></g>' +
+            locks +
+          '</svg>';
+        }
+        function lockChipSVG() {
+          return '<svg viewBox="0 0 40 46" aria-hidden="true">' +
+            '<path class="shackle" d="M 12 22 v-6 a8 8 0 0 1 16 0 v6" fill="none" stroke-width="5"/>' +
+            '<rect class="lock-body" x="7" y="21" width="26" height="21" rx="5"/>' +
+            '<circle cx="20" cy="30" r="3.4" fill="#ffffff"/><rect x="18.4" y="30" width="3.2" height="7" rx="1.6" fill="#ffffff"/></svg>';
+        }
+
+        // ---------------- Screens ----------------
+        function show(name) {
+          G.screen = name;
+          ["start", "game", "bell", "finish"].forEach(function (s) {
+            el("screen-" + s).classList.toggle("active", s === name);
+          });
+          el("revealBox").classList.remove("on");
+        }
+        function recordMiss(item) {
+          if (!G.misses[item.term]) G.misses[item.term] = { term: item.term, def: item.def, count: 0 };
+          G.misses[item.term].count++;
+        }
+        function sortedMisses() {
+          return Object.keys(G.misses).map(function (k) { return G.misses[k]; }).sort(function (a, b) {
+            if (b.count !== a.count) return b.count - a.count;
+            return a.term < b.term ? -1 : 1;
+          });
+        }
+
+        // ---------------- Door modes ----------------
+        function startDoorGame(mode) {
+          stopBellTimer();
+          G.mode = mode;
+          G.rounds = shuffle(BANK.terms).slice(0, TOTAL_ROUNDS);
+          G.status = G.rounds.map(function () { return "pending"; });
+          G.idx = 0;
+          G.score = 0;
+          G.streak = 0;
+          G.misses = {};
+          G.busy = false;
+          show("game");
+          renderRound();
+        }
+        function currentItem() { return G.rounds[G.idx]; }
+        function openedCount() { return G.status.filter(function (s) { return s === "opened"; }).length; }
+
+        function renderHUD() {
+          var hud = el("gameHud");
+          var html = '<span class="pill">Lock ' + (G.idx + 1) + ' of ' + TOTAL_ROUNDS + '</span>';
+          html += '<span class="pill">' + (G.mode === "teacher" ? "Teacher-Led" : "Student-Led") + '</span>';
+          if (G.mode === "student") {
+            html += '<span class="pill streak">Streak: ' + G.streak + '</span>';
+            html += '<div class="xp-wrap"><div class="xp-label">XP: ' + G.score + ' points</div>' +
+              '<div class="xp-track"><div class="xp-fill" style="width:' + Math.min(100, Math.round(G.score / MAX_XP * 100)) + '%"></div></div></div>';
+          } else {
+            html += '<span class="pill">Locks opened: ' + openedCount() + ' of ' + TOTAL_ROUNDS + '</span>';
+          }
+          hud.innerHTML = html;
+        }
+        function renderLocks() {
+          var strip = el("locksStrip");
+          strip.innerHTML = "";
+          G.status.forEach(function (st, i) {
+            var chip = document.createElement("div");
+            chip.className = "lock-chip" + (st === "opened" ? " opened" : st === "skipped" ? " skipped" : "") + (i === G.idx ? " current" : "");
+            var label = st === "opened" ? "Open" : st === "skipped" ? "Not played" : "Lock " + (i + 1);
+            chip.innerHTML = lockChipSVG() + "<span>" + label + "</span>";
+            strip.appendChild(chip);
+          });
+        }
+        function renderRound() {
+          G.firstTry = true;
+          G.busy = false;
+          var item = currentItem();
+          renderHUD();
+          renderLocks();
+          el("termBig").textContent = item.term;
+          el("gameFeedback").textContent = "";
+          el("gameFeedback").className = "feedback";
+          el("keyStage").className = "key-stage";
+          var disc = el("discussLine");
+          if (G.mode === "teacher") {
+            disc.textContent = DISCUSS[G.idx % DISCUSS.length];
+            disc.classList.add("on");
+          } else {
+            disc.classList.remove("on");
+          }
+          var box = el("gameOptions");
+          box.innerHTML = "";
+          makeOptions(item, BANK.terms).forEach(function (opt) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "opt-btn";
+            b.textContent = opt.def;
+            b.addEventListener("click", function () { pickGameOption(opt, b); });
+            box.appendChild(b);
+          });
+        }
+        function pickGameOption(opt, btn) {
+          if (G.busy) return;
+          var item = currentItem();
+          var fb = el("gameFeedback");
+          if (!opt.correct) {
+            btn.disabled = true;
+            btn.classList.add("wrong");
+            G.firstTry = false;
+            if (G.mode === "student") G.streak = 0;
+            recordMiss(item);
+            fb.textContent = "Not that one. Try again.";
+            fb.className = "feedback bad";
+            renderHUD();
+            return;
+          }
+          btn.classList.add("right");
+          var wasOpened = G.status[G.idx] === "opened";
+          var gained = 0;
+          if (!wasOpened) {
+            G.status[G.idx] = "opened";
+            if (G.mode === "student" && G.firstTry) {
+              G.streak++;
+              gained = 100 + (G.streak - 1) * 20;
+              G.score += gained;
+            } else if (G.mode === "student") {
+              G.streak = 0;
+            }
+          }
+          G.busy = true;
+          if (G.mode === "student" && gained > 0) {
+            fb.textContent = G.streak > 1 ? "Correct! +" + gained + " XP. Combo x" + G.streak + "." : "Correct! +" + gained + " XP.";
+          } else if (wasOpened) {
+            fb.textContent = "Correct. This lock was already open.";
+          } else {
+            fb.textContent = "Correct! Lock open.";
+          }
+          fb.className = "feedback good";
+          renderHUD();
+          renderLocks();
+          var stage = el("keyStage");
+          el("keyStageText").textContent = "Key turning. Lock " + (G.idx + 1) + " opening.";
+          stage.classList.add("on");
+          requestAnimationFrame(function () { stage.classList.add("turn"); });
+          setTimeout(function () {
+            stage.classList.remove("turn");
+            advanceRound();
+          }, 1250);
+        }
+        function nextPending(from) {
+          for (var i = from + 1; i < TOTAL_ROUNDS; i++) if (G.status[i] === "pending") return i;
+          for (var j = 0; j < TOTAL_ROUNDS; j++) if (G.status[j] === "pending") return j;
+          return -1;
+        }
+        function advanceRound() {
+          var n = nextPending(G.idx);
+          if (n === -1) { finishDoorGame(); return; }
+          G.idx = n;
+          renderRound();
+        }
+        function finishDoorGame() {
+          G.lastFinishMode = G.mode;
+          show("finish");
+          renderFinish();
+        }
+
+        // ---------------- Bell ringer ----------------
+        function startBell() {
+          stopBellTimer();
+          G.mode = "bell";
+          G.score = 0;
+          G.misses = {};
+          bell.deck = shuffle(BANK.terms);
+          bell.busy = false;
+          show("bell");
+          bellNext();
+          bell.endsAt = Date.now() + BELL_SECONDS * 1000;
+          updateBellTimer();
+          bell.timerId = setInterval(updateBellTimer, 200);
+        }
+        function stopBellTimer() {
+          if (bell.timerId) { clearInterval(bell.timerId); bell.timerId = null; }
+        }
+        function updateBellTimer() {
+          var left = Math.max(0, Math.round((bell.endsAt - Date.now()) / 1000));
+          el("bellTimer").textContent = left;
+          var fill = el("bellTimerFill");
+          fill.style.width = (left / BELL_SECONDS * 100) + "%";
+          fill.classList.toggle("low", left <= 10);
+          if (left <= 0) {
+            stopBellTimer();
+            G.lastFinishMode = "bell";
+            show("finish");
+            renderFinish();
+          }
+        }
+        function bellNext() {
+          if (bell.deck.length === 0) bell.deck = shuffle(BANK.terms);
+          bell.current = bell.deck.pop();
+          bell.firstTry = true;
+          bell.busy = false;
+          el("bellTerm").textContent = bell.current.term;
+          el("bellScore").textContent = "Correct: " + G.score;
+          el("bellFeedback").textContent = "";
+          el("bellFeedback").className = "feedback";
+          var box = el("bellOptions");
+          box.innerHTML = "";
+          makeOptions(bell.current, BANK.terms).forEach(function (opt) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "opt-btn";
+            b.textContent = opt.def;
+            b.addEventListener("click", function () { pickBellOption(opt, b); });
+            box.appendChild(b);
+          });
+        }
+        function pickBellOption(opt, btn) {
+          if (bell.busy) return;
+          var fb = el("bellFeedback");
+          if (!opt.correct) {
+            btn.disabled = true;
+            btn.classList.add("wrong");
+            bell.firstTry = false;
+            recordMiss(bell.current);
+            fb.textContent = "Not that one. Try again.";
+            fb.className = "feedback bad";
+            return;
+          }
+          btn.classList.add("right");
+          bell.busy = true;
+          G.score++;
+          el("bellScore").textContent = "Correct: " + G.score;
+          fb.textContent = "Correct!";
+          fb.className = "feedback good";
+          setTimeout(function () { if (G.screen === "bell") bellNext(); }, 550);
+        }
+
+        // ---------------- Finish ----------------
+        function renderFinish() {
+          var mode = G.lastFinishMode || G.mode;
+          var allOpen = mode !== "bell" && openedCount() === TOTAL_ROUNDS;
+          el("finishDoor").innerHTML = doorSVG(allOpen);
+          var statText = "";
+          if (mode === "bell") {
+            el("finishHeading").textContent = "Time is up!";
+            statText = "Correct matches: " + G.score;
+            el("finishScore").textContent = "Score: " + G.score + " correct";
+          } else if (mode === "teacher") {
+            el("finishHeading").textContent = allOpen ? "The lab is open!" : "Run complete.";
+            statText = "Locks opened: " + openedCount() + " of " + TOTAL_ROUNDS;
+            el("finishScore").textContent = statText;
+          } else {
+            el("finishHeading").textContent = allOpen ? "The lab is open!" : "Run complete.";
+            statText = "Score: " + G.score + " XP";
+            el("finishScore").textContent = "Total score: " + G.score + " XP";
+          }
+          el("unlockerStat").textContent = statText;
+          var name = el("nameInput").value.trim();
+          el("unlockerName").textContent = name ? name : "Lab Unlocker";
+
+          // Anti-farming: mastery keys to the first clear only.
+          var fm = el("finishMastery");
+          if (mode === "bell") {
+            if (!mastery.bellPlayed) {
+              mastery.bellPlayed = true;
+              mastery.bellStat = statText;
+              fm.textContent = "First Bell Ringer run recorded: " + statText + ".";
+            } else {
+              fm.textContent = "Replay finished. Bell Ringer record stays with your first run: " + mastery.bellStat + ".";
+            }
+          } else if (allOpen) {
+            if (!mastery.doorCleared) {
+              mastery.doorCleared = true;
+              mastery.doorStat = statText;
+              fm.textContent = "Lab mastered. First clear recorded: " + statText + ".";
+            } else {
+              fm.textContent = "Replay finished. Mastery stays with your first clear: " + mastery.doorStat + ".";
+            }
+          } else {
+            fm.textContent = mastery.doorCleared
+              ? "Mastery stays with your first clear: " + mastery.doorStat + "."
+              : "Open all 8 locks in one run to record lab mastery.";
+          }
+          fm.classList.add("on");
+          updateMasteryNote();
+
+          var area = el("missedArea");
+          var list = sortedMisses();
+          if (list.length === 0) {
+            area.innerHTML = "<p>No words were missed.</p>";
+          } else {
+            var ul = document.createElement("ul");
+            ul.className = "missed-list";
+            list.forEach(function (m) {
+              var li = document.createElement("li");
+              var count = document.createElement("span");
+              count.className = "m-count";
+              count.textContent = m.count === 1 ? "missed 1 time" : "missed " + m.count + " times";
+              var t = document.createElement("span");
+              t.className = "m-term";
+              t.textContent = m.term;
+              var d = document.createElement("span");
+              d.className = "m-def";
+              d.textContent = m.def;
+              li.appendChild(count);
+              li.appendChild(t);
+              li.appendChild(d);
+              ul.appendChild(li);
+            });
+            area.innerHTML = "";
+            area.appendChild(ul);
+          }
+        }
+        function updateMasteryNote() {
+          var note = el("masteryNote");
+          if (mastery.doorCleared) {
+            note.textContent = "Lab mastered in this session: " + mastery.doorStat + ". Replays will not change it.";
+            note.classList.add("on");
+          } else {
+            note.classList.remove("on");
+          }
+        }
+
+        // ---------------- Reset ----------------
+        function resetAll() {
+          stopBellTimer();
+          G.mode = null;
+          G.rounds = [];
+          G.status = [];
+          G.idx = 0;
+          G.score = 0;
+          G.streak = 0;
+          G.misses = {};
+          G.busy = false;
+          el("nameInput").value = "";
+          show("start");
+        }
+
+        // ---------------- Teacher panel ----------------
+        function openPanel() { buildPanel(); el("teacherPanel").classList.add("on"); }
+        function closePanel() { el("teacherPanel").classList.remove("on"); }
+        function buildPanel() {
+          var where = el("panelWhere");
+          if (G.screen === "start") where.textContent = "You are on the start screen.";
+          else if (G.screen === "game") where.textContent = "You are on Lock " + (G.idx + 1) + " of " + TOTAL_ROUNDS + ". Word: " + currentItem().term + ".";
+          else if (G.screen === "bell") where.textContent = "You are in Bell Ringer. Time left: " + el("bellTimer").textContent + " seconds.";
+          else where.textContent = "You are on the finish screen.";
+
+          var grid = el("jumpGrid");
+          grid.innerHTML = "";
+          function addJump(label, fn, disabled) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.disabled = !!disabled;
+            b.addEventListener("click", function () { fn(); });
+            grid.appendChild(b);
+          }
+          addJump("Start screen", function () { closePanel(); resetAll(); });
+          if (G.rounds.length === TOTAL_ROUNDS) {
+            for (var i = 0; i < TOTAL_ROUNDS; i++) {
+              (function (n) {
+                var st = G.status[n];
+                var label = "Lock " + (n + 1) + (st === "opened" ? " (open)" : st === "skipped" ? " (not played)" : "");
+                addJump(label, function () {
+                  closePanel();
+                  jumpToRound(n);
+                }, st === "opened" && G.screen === "game" && G.idx === n);
+              })(i);
+            }
+          }
+          if (G.mode === "bell" || G.screen === "bell") {
+            addJump("Bell Ringer", function () { closePanel(); if (G.screen !== "bell") startBell(); });
+          }
+          addJump("Finish screen", function () {
+            closePanel();
+            if (G.screen === "game") { G.lastFinishMode = G.mode; show("finish"); renderFinish(); }
+            else if (G.screen === "bell") { stopBellTimer(); G.lastFinishMode = "bell"; show("finish"); renderFinish(); }
+            else if (G.screen === "start") { G.lastFinishMode = G.mode || "student"; show("finish"); renderFinish(); }
+          });
+          el("tpSkip").disabled = !(G.screen === "game" || G.screen === "bell");
+          el("revealBox").classList.remove("on");
+        }
+        function jumpToRound(n) {
+          stopBellTimer();
+          if (G.mode === "bell" || !G.mode) G.mode = "student";
+          G.lastFinishMode = null;
+          if (G.status[n] === "skipped") G.status[n] = "pending";
+          G.idx = n;
+          G.busy = false;
+          show("game");
+          renderRound();
+        }
+        function tpSkipRound() {
+          if (G.screen === "game") {
+            if (G.status[G.idx] !== "opened") G.status[G.idx] = "skipped";
+            if (G.mode === "student") G.streak = 0;
+            closePanel();
+            advanceRound();
+          } else if (G.screen === "bell") {
+            closePanel();
+            bellNext();
+          }
+        }
+        function tpReveal() {
+          var box = el("revealBox");
+          var item = null;
+          if (G.screen === "game" && G.rounds.length) item = currentItem();
+          else if (G.screen === "bell") item = bell.current;
+          if (!item) {
+            box.textContent = "No round is in play right now.";
+          } else {
+            box.textContent = "Correct definition for " + item.term + ": " + item.def;
+          }
+          box.classList.add("on");
+        }
+
+        // ---------------- Wiring ----------------
+        el("unitTitle").textContent = BANK.unitTitle;
+        el("startDoor").innerHTML = doorSVG(false);
+        el("finishDoor").innerHTML = doorSVG(false);
+        if (BANK.unitTitle.indexOf("SAMPLE") !== -1) el("sampleTag").classList.add("on");
+
+        el("btnStudent").addEventListener("click", function () { startDoorGame("student"); });
+        el("btnTeacher").addEventListener("click", function () { startDoorGame("teacher"); });
+        el("btnBell").addEventListener("click", function () { startBell(); });
+        el("btnPlayAgain").addEventListener("click", function () { resetAll(); });
+        el("hearGame").addEventListener("click", function () { if (G.rounds.length) speak(currentItem().term); });
+        el("hearBell").addEventListener("click", function () { if (bell.current) speak(bell.current.term); });
+        el("nameInput").addEventListener("input", function () {
+          var name = el("nameInput").value.trim();
+          el("unlockerName").textContent = name ? name : "Lab Unlocker";
+        });
+        el("teacherBtn").addEventListener("click", openPanel);
+        el("panelClose").addEventListener("click", closePanel);
+        el("tpSkip").addEventListener("click", tpSkipRound);
+        el("tpRevealBtn").addEventListener("click", tpReveal);
+        el("tpReset").addEventListener("click", function () { closePanel(); resetAll(); });
+        el("teacherPanel").addEventListener("click", function (e) { if (e.target === el("teacherPanel")) closePanel(); });
+      })();
+    </script>
+  </body>
+</html>

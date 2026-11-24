@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Vocab Boss Battle</title>
+<style>
+  :root{
+    --bg:#f4f1e8; --panel:#ffffff; --panel2:#efe9db; --ink:#1d2430; --muted:#5a6472;
+    --line:#d8d2c2; --accent:#0e7c66; --accent-ink:#ffffff; --amber:#b97a0f; --red:#c0392b;
+    --good:#0e7c66; --boss:#15957c; --boss-dark:#0b5f4e; --heart:#d93a52; --heart-off:#c9cdd4;
+    --shadow:0 2px 10px rgba(20,25,35,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14181f; --panel:#1f242e; --panel2:#262c38; --ink:#eef1f5; --muted:#a7b0bd;
+      --line:#39414f; --accent:#2bb673; --accent-ink:#0c1410; --amber:#e0a32e; --red:#e0655a;
+      --good:#2bb673; --boss:#2bb673; --boss-dark:#157347; --heart:#ff5d78; --heart-off:#3a4150;
+      --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45;
+    -webkit-text-size-adjust:100%;
+  }
+  button, input{ font:inherit; }
+  button{ min-height:44px; cursor:pointer; }
+  .wrap{ max-width:880px; margin:0 auto; padding:16px 16px 96px; }
+  body.has-sample .wrap{ padding-top:58px; }
+  h1{ font-size:2rem; margin:.2em 0 .1em; letter-spacing:.01em; }
+  h2{ font-size:1.35rem; margin:.4em 0 .3em; }
+  h3{ font-size:1.05rem; margin:.6em 0 .3em; }
+  p{ margin:.4em 0; }
+  .muted{ color:var(--muted); }
+  .small{ font-size:.88rem; }
+  .unit-line{ font-size:1.05rem; font-weight:700; }
+  .boss-line{ font-weight:700; }
+
+  /* Persistent corner items */
+  #sampleTag{
+    position:fixed; top:10px; left:10px; z-index:60;
+    background:var(--amber); color:#fff; font-weight:800; letter-spacing:.14em;
+    padding:6px 12px; border-radius:6px; font-size:.85rem; display:none;
+    box-shadow:var(--shadow);
+  }
+  #sampleTag.on{ display:block; }
+  #teacherBtn{
+    position:fixed; right:10px; bottom:10px; z-index:60;
+    background:var(--panel); color:var(--muted); border:1px solid var(--line);
+    border-radius:999px; padding:8px 16px; font-size:.85rem; font-weight:600;
+    box-shadow:var(--shadow); min-height:40px;
+  }
+  #teacherBtn:hover{ color:var(--ink); }
+
+  /* Screens */
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:18px; box-shadow:var(--shadow); margin:14px 0;
+  }
+  .mode-grid{ display:grid; gap:12px; grid-template-columns:1fr; margin-top:14px; }
+  @media (min-width:640px){ .mode-grid{ grid-template-columns:repeat(3,1fr); } }
+  .mode-card{
+    text-align:left; background:var(--panel); border:2px solid var(--line); border-radius:14px;
+    padding:16px; color:var(--ink); box-shadow:var(--shadow); min-height:44px; height:100%;
+  }
+  .mode-card:hover, .mode-card:focus-visible{ border-color:var(--accent); }
+  .mode-card .mode-name{ font-size:1.15rem; font-weight:800; display:block; margin-bottom:4px; }
+  .mode-card .mode-desc{ color:var(--muted); font-size:.92rem; display:block; }
+
+  .btn{
+    background:var(--accent); color:var(--accent-ink); border:none; border-radius:10px;
+    padding:10px 18px; font-weight:700; min-height:44px;
+  }
+  .btn.secondary{ background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
+  .btn:disabled{ opacity:.55; cursor:default; }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+
+  /* HUD */
+  .hud{ display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; margin:12px 0; }
+  .hud-box{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:8px 14px; box-shadow:var(--shadow); min-width:104px;
+  }
+  .hud-box .label{ font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; }
+  .hud-box .value{ font-size:1.25rem; font-weight:800; }
+  .hearts{ font-size:1.3rem; letter-spacing:2px; line-height:1.2; }
+  .heart{ color:var(--heart); }
+  .heart.off{ color:var(--heart-off); }
+  .xp-track{ background:var(--panel2); border:1px solid var(--line); border-radius:999px; height:16px; overflow:hidden; margin-top:6px; }
+  .xp-fill{ background:var(--accent); height:100%; width:0%; transition:width .4s ease; }
+  .combo{
+    display:none; background:var(--amber); color:#fff; font-weight:800; border-radius:999px;
+    padding:6px 14px; align-self:center;
+  }
+  .combo.on{ display:inline-block; }
+  .timer-big{ font-size:1.6rem; font-weight:800; }
+  .timer-big.low{ color:var(--red); }
+
+  /* Teams */
+  .teams{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+  .team-col{
+    border:2px solid var(--line); border-radius:12px; padding:12px; background:var(--panel);
+    text-align:left; color:var(--ink); width:100%;
+  }
+  .team-col .tname{ font-weight:800; font-size:1.05rem; display:block; }
+  .team-col .tdmg{ color:var(--muted); font-size:.9rem; display:block; }
+  .team-col.active-team{ border-color:var(--accent); background:var(--panel2); }
+  .team-col .pick-note{ font-size:.8rem; font-weight:700; color:var(--accent); display:block; margin-top:4px; }
+
+  /* Boss */
+  .boss-zone{ text-align:center; padding:8px 0 0; position:relative; }
+  .boss-wrap{ display:inline-block; transition:transform .3s ease; }
+  .boss-wrap.phase-2{ transform:scale(1.08); --boss:#d9930d; --boss-dark:#8a5c04; }
+  .boss-wrap.phase-3{ transform:scale(1.16); --boss:#d93a52; --boss-dark:#8e1f33; }
+  .boss-wrap.hit{ animation:hitshake .45s ease; }
+  .boss-wrap.big-hit{ animation:hitshake .7s ease; }
+  @keyframes hitshake{
+    0%{ transform:translateX(0); } 20%{ transform:translateX(-9px) rotate(-2deg); }
+    40%{ transform:translateX(8px) rotate(2deg); } 60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(5px); } 100%{ transform:translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .boss-wrap.hit, .boss-wrap.big-hit{ animation:none; }
+    .xp-fill{ transition:none; }
+  }
+  .taunt{
+    display:inline-block; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:8px 14px; margin-top:8px; font-weight:600; box-shadow:var(--shadow); max-width:92%;
+  }
+  .phase-label{ font-weight:800; letter-spacing:.06em; text-transform:uppercase; font-size:.8rem; color:var(--muted); }
+  .combo-flair{
+    display:none; font-size:1.5rem; font-weight:900; color:var(--amber); margin-top:6px;
+  }
+  .combo-flair.on{ display:block; animation:pop .6s ease; }
+  @keyframes pop{ 0%{ transform:scale(.6); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce){ .combo-flair.on{ animation:none; } }
+
+  /* Question */
+  .prompt-text{ font-size:1.3rem; font-weight:700; margin:6px 0 4px; }
+  .options{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:14px; }
+  @media (min-width:640px){ .options{ grid-template-columns:1fr 1fr; } }
+  .opt{
+    background:var(--panel); border:2px solid var(--line); border-radius:12px; color:var(--ink);
+    padding:14px 16px; text-align:left; font-size:1.05rem; font-weight:600; min-height:52px;
+  }
+  .opt:hover:not(:disabled), .opt:focus-visible:not(:disabled){ border-color:var(--accent); }
+  .opt:disabled{ opacity:.45; cursor:default; text-decoration:line-through; }
+  .opt.correct-pick{ border-color:var(--good); opacity:1; text-decoration:none; background:var(--panel2); }
+  .feedback{ min-height:1.5em; font-weight:800; margin-top:12px; font-size:1.05rem; }
+  .feedback.good{ color:var(--good); }
+  .feedback.retry{ color:var(--amber); }
+  .hear-btn{
+    background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:999px;
+    padding:6px 14px; font-size:.85rem; font-weight:700; min-height:40px;
+  }
+  .instruction{ font-weight:700; font-size:1.02rem; }
+
+  /* End and finish */
+  .missed-list{ list-style:none; margin:10px 0; padding:0; }
+  .missed-list li{
+    border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:8px; background:var(--panel);
+  }
+  .missed-list .mterm{ font-weight:800; }
+  .missed-list .mcount{ color:var(--red); font-weight:800; }
+  .missed-list .mdef{ color:var(--muted); display:block; margin-top:2px; }
+  .cert{
+    border:3px double var(--amber); border-radius:10px; background:var(--panel);
+    padding:26px 20px; text-align:center; box-shadow:var(--shadow); margin-top:14px;
+  }
+  .cert .cert-title{ font-size:1.6rem; font-weight:900; letter-spacing:.04em; margin:4px 0; }
+  .cert .cert-name{ font-size:1.4rem; font-weight:800; color:var(--accent); margin:8px 0; min-height:1.4em; }
+  .cert .seal{
+    display:inline-block; border:2px solid var(--amber); color:var(--amber); border-radius:999px;
+    padding:4px 14px; font-weight:800; letter-spacing:.1em; font-size:.8rem; margin-top:10px;
+  }
+  .name-input{
+    width:100%; max-width:420px; padding:12px 14px; border:2px solid var(--line); border-radius:10px;
+    background:var(--panel); color:var(--ink); min-height:48px; font-size:1.05rem;
+  }
+  .stat-row{ display:flex; flex-wrap:wrap; gap:10px; margin:10px 0; }
+  .notice{
+    border:1px dashed var(--amber); border-radius:10px; padding:10px 14px; font-weight:700; margin:10px 0;
+  }
+
+  /* Teacher panel */
+  #teacherPanel{
+    position:fixed; inset:0; z-index:80; display:none;
+    background:rgba(10,12,16,.45); padding:16px; overflow:auto;
+  }
+  #teacherPanel.open{ display:block; }
+  .teacher-card{
+    max-width:520px; margin:24px auto; background:var(--panel); color:var(--ink);
+    border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:var(--shadow);
+  }
+  .teacher-card .btn, .teacher-card .btn.secondary{ margin:0 8px 8px 0; }
+  .reveal-box{
+    border:1px solid var(--line); background:var(--panel2); border-radius:10px;
+    padding:10px 14px; margin-top:8px; font-weight:700; min-height:2.6em;
+  }
+  .rule-line{ font-weight:700; border-left:4px solid var(--amber); padding:6px 10px; background:var(--panel2); border-radius:0 8px 8px 0; }
+</style>
+</head>
+<body>
+
+<div id="sampleTag" role="status">SAMPLE</div>
+<button id="teacherBtn" type="button" aria-haspopup="dialog">Teacher</button>
+
+<main class="wrap">
+
+  <!-- START SCREEN -->
+  <section class="screen active" id="screen-start" aria-label="Start screen">
+    <h1>Vocab Boss Battle</h1>
+    <p class="unit-line" data-unit-title>Unit</p>
+    <p class="boss-line">Boss: <span data-boss-name>Boss</span></p>
+    <p class="instruction">Pick a mode and start the battle.</p>
+    <p class="small muted" id="sampleNote" style="display:none">Demo bank loaded. Swap in a real unit bank to use this in class.</p>
+    <div class="mode-grid">
+      <button class="mode-card" type="button" data-start-mode="student">
+        <span class="mode-name">Student-Led</span>
+        <span class="mode-desc">Answer on your own. Earn XP, build a streak, drop all 10 hearts.</span>
+      </button>
+      <button class="mode-card" type="button" data-start-mode="teacher">
+        <span class="mode-name">Teacher-Led</span>
+        <span class="mode-desc">Team A vs Team B. The teacher taps the answering team, then the answer.</span>
+      </button>
+      <button class="mode-card" type="button" data-start-mode="bell">
+        <span class="mode-name">Bell Ringer</span>
+        <span class="mode-desc">60 seconds. Endless questions. Score is first-try corrects.</span>
+      </button>
+    </div>
+    <div class="panel">
+      <h3>How it works</h3>
+      <p class="small">A first-try correct hits the boss for one heart. A wrong pick lets you retry the same question, but a retry correct deals no damage.</p>
+    </div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section class="screen" id="screen-game" aria-label="Game screen">
+    <p class="unit-line" data-unit-title>Unit</p>
+    <p class="instruction" id="gameInstruction">Tap the matching answer.</p>
+
+    <div class="hud" id="hudStudent">
+      <div class="hud-box"><span class="label">Score</span><div class="value" id="scoreVal">0</div></div>
+      <div class="hud-box"><span class="label">Streak</span><div class="value" id="streakVal">0</div></div>
+      <div class="hud-box" style="flex:1; min-width:170px"><span class="label">XP</span>
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      </div>
+      <span class="combo" id="comboBadge">Combo x2</span>
+    </div>
+
+    <div class="hud" id="hudBell" style="display:none">
+      <div class="hud-box"><span class="label">Time left</span><div class="timer-big" id="timerVal">60</div></div>
+      <div class="hud-box"><span class="label">Score</span><div class="value" id="bellScoreVal">0</div></div>
+      <span class="combo" id="comboBadgeBell">Combo x2</span>
+    </div>
+
+    <div id="teamZone" style="display:none">
+      <p class="instruction">First tap the answering team.</p>
+      <div class="teams">
+        <button class="team-col" type="button" id="teamBtnA">
+          <span class="tname">Team A</span>
+          <span class="tdmg">Boss damage: <strong id="teamDmgA">0</strong></span>
+          <span class="pick-note" id="teamNoteA"></span>
+        </button>
+        <button class="team-col" type="button" id="teamBtnB">
+          <span class="tname">Team B</span>
+          <span class="tdmg">Boss damage: <strong id="teamDmgB">0</strong></span>
+          <span class="pick-note" id="teamNoteB"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="boss-zone">
+      <div class="hearts" id="heartsRow" aria-label="Boss health hearts"></div>
+      <div class="boss-wrap" id="bossWrap">
+        <svg width="170" height="150" viewBox="0 0 170 150" role="img" aria-label="Boss robot">
+          <rect x="78" y="6" width="14" height="22" rx="4" fill="var(--boss-dark)"/>
+          <circle cx="85" cy="8" r="8" fill="var(--amber)"/>
+          <rect x="30" y="28" width="110" height="84" rx="14" fill="var(--boss)"/>
+          <rect x="18" y="52" width="12" height="34" rx="6" fill="var(--boss-dark)"/>
+          <rect x="140" y="52" width="12" height="34" rx="6" fill="var(--boss-dark)"/>
+          <rect x="44" y="46" width="26" height="20" rx="6" fill="#101418"/>
+          <rect x="100" y="46" width="26" height="20" rx="6" fill="#101418"/>
+          <circle cx="57" cy="56" r="5" fill="#ffffff"/>
+          <circle cx="113" cy="56" r="5" fill="#ffffff"/>
+          <rect x="52" y="82" width="66" height="10" rx="5" fill="#101418"/>
+          <rect x="60" y="84" width="8" height="6" fill="#ffffff"/>
+          <rect x="76" y="84" width="8" height="6" fill="#ffffff"/>
+          <rect x="92" y="84" width="8" height="6" fill="#ffffff"/>
+          <rect x="38" y="34" width="18" height="5" fill="var(--boss-dark)" opacity="0.7"/>
+          <rect x="118" y="98" width="16" height="5" fill="var(--boss-dark)" opacity="0.7"/>
+          <rect x="52" y="112" width="20" height="16" rx="4" fill="var(--boss-dark)"/>
+          <rect x="98" y="112" width="20" height="16" rx="4" fill="var(--boss-dark)"/>
+        </svg>
+      </div>
+      <div><span class="boss-line" data-boss-name>Boss</span> <span class="phase-label" id="phaseLabel">Phase 1</span></div>
+      <div class="combo-flair" id="comboFlair">COMBO HIT!</div>
+      <div><span class="taunt" id="tauntBubble">Ready when you are.</span></div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
+        <span class="label muted" style="font-weight:700; font-size:.8rem; letter-spacing:.08em" id="promptKind">WHICH TERM MATCHES?</span>
+        <button class="hear-btn" type="button" id="hearPromptBtn">Hear it</button>
+      </div>
+      <p class="prompt-text" id="promptText">Loading question.</p>
+      <div class="options" id="optionsBox"></div>
+      <p class="feedback" id="feedbackLine" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- END SCREEN -->
+  <section class="screen" id="screen-end" aria-label="End screen">
+    <h2 id="endHeading">Results</h2>
+    <p class="unit-line" data-unit-title>Unit</p>
+    <div id="endNotPlayed" class="notice" style="display:none">Not played yet. No results to show.</div>
+    <div class="stat-row" id="endStats"></div>
+    <p id="endWinner" class="boss-line"></p>
+    <div class="panel">
+      <h3>Missed Words</h3>
+      <p class="small muted">Words missed at least once this game, most missed first.</p>
+      <ul class="missed-list" id="missedList"></ul>
+      <p id="missedEmpty" class="boss-line" style="display:none">No missed words. Clean run.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="button" id="toFinishBtn">Get Boss Battler Card</button>
+      <button class="btn secondary" type="button" id="playAgainBtn">Play Again</button>
+      <button class="btn secondary" type="button" data-goto-start>Back to Start</button>
+    </div>
+  </section>
+
+  <!-- FINISH SCREEN -->
+  <section class="screen" id="screen-finish" aria-label="Finish screen">
+    <h2>Boss Battler Card</h2>
+    <p class="instruction">Type a name to put it on the card.</p>
+    <div id="finishNotPlayed" class="notice" style="display:none">Not played yet. Play a game to earn this card.</div>
+    <label for="nameInput" class="boss-line">Battler name</label><br/>
+    <input class="name-input" id="nameInput" type="text" maxlength="30" placeholder="Your name" autocomplete="off" />
+    <div class="cert" aria-label="Boss Battler certificate card">
+      <div class="small muted" style="letter-spacing:.12em; font-weight:700">BOSS BATTLER</div>
+      <div class="cert-title">Vocab Boss Battle</div>
+      <p class="small muted" style="margin:0">This card belongs to</p>
+      <div class="cert-name" id="certName">A Brave Battler</div>
+      <p>Unit: <strong data-unit-title>Unit</strong></p>
+      <p>Boss: <strong data-boss-name>Boss</strong></p>
+      <p>Result: <strong id="certResult">Not played yet</strong></p>
+      <p id="certMastery" class="small muted"></p>
+      <span class="seal">BOSS BATTLER</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="button" id="finishPlayAgainBtn">Play Again</button>
+      <button class="btn secondary" type="button" data-goto-start>Back to Start</button>
+      <button class="btn secondary" type="button" id="toEndBtn">See Missed Words</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- TEACHER PANEL -->
+<div id="teacherPanel" role="dialog" aria-modal="true" aria-label="Teacher panel">
+  <div class="teacher-card">
+    <h2 style="margin-top:0">Teacher Panel</h2>
+    <p class="rule-line">Retry rule: a question damages the boss only on a first-try correct. A retry correct deals no damage.</p>
+    <h3>Jump to screen</h3>
+    <div>
+      <button class="btn secondary" type="button" data-jump="start">Start</button>
+      <button class="btn secondary" type="button" data-jump="game">Game</button>
+      <button class="btn secondary" type="button" data-jump="end">End</button>
+      <button class="btn secondary" type="button" data-jump="finish">Finish</button>
+    </div>
+    <h3>Current question</h3>
+    <div>
+      <button class="btn secondary" type="button" id="skipBtn">Skip Question</button>
+      <button class="btn secondary" type="button" id="revealBtn">Reveal Answer</button>
+    </div>
+    <div class="reveal-box" id="revealBox">Reveal is display only. It deals no damage and awards no points.</div>
+    <h3>Session</h3>
+    <p class="small muted" id="teacherStats">No game started yet.</p>
+    <div>
+      <button class="btn" type="button" id="resetBtn">Reset Game</button>
+      <button class="btn secondary" type="button" id="closeTeacherBtn">Close Panel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG: swap this one object to build a game for any unit.
+   ============================================================ */
+window.VOCAB_BANK = { unitTitle: "Multimedia", bossName: "The Glitch", terms: [
+  { term: "CF I", def: "Cyber Foundations I, Course 000284" },
+  { term: "Comp.", def: "Competency, the numbered performance in the state framework that a day teaches and proves" },
+  { term: "DOK", def: "Depth of Knowledge, levels 1 to 4, how deeply a student must think" },
+  { term: "P plus a number (for example P88)", def: "a Printable, a ready-to-copy student or teacher document printed in full in the unit Printable Pack and also published as its own linked document" },
+  { term: "Track A", def: "General and Low-Tech (paper first; digital steps are completed when devices are available, exactly as each day directs)" },
+  { term: "Track B", def: "Google (Google Workspace for Education: Classroom, Drive, Docs, Sites)" },
+  { term: "Track C", def: "Microsoft and Apple (Microsoft 365 and Apple tools where the district uses them)" },
+  { term: "balance", def: "visual weight distributed deliberately" },
+  { term: "contrast", def: "making what matters clearly different so the eye goes there first" },
+  { term: "alignment", def: "every element lining up with something else on an invisible grid" },
+  { term: "repetition", def: "colors, fonts, shapes, or spacing recurring so the pieces read as one family" },
+  { term: "proximity", def: "related things grouped close and unrelated things separated" },
+  { term: "hierarchy", def: "importance encoded in size and weight in steady steps, so a reader can reconstruct a page's outline from font sizes alone" },
+  { term: "palette", def: "a design's planned set of colors: a main color, a support color, and an accent used sparingly" },
+  { term: "PSA", def: "a public service announcement, a short spot built to change what an audience does" },
+  { term: "podcast episode", def: "a focused audio program built to inform or persuade" },
+  { term: "storyboard", def: "the shot-by-shot or segment-by-segment plan of a piece before production" },
+  { term: "keyframe", def: "a defined position or state at a set time in an animation, with the tool filling the states between" },
+  { term: "credits", def: "the closing block of a product naming its makers and the source and license of everything in it that they did not make" },
+  { term: "copyright", def: "the creator's automatic ownership of a work from the moment it is made" },
+  { term: "license", def: "the owner's stated terms for use" },
+  { term: "Creative Commons", def: "a family of standard licenses creators attach to their work" },
+  { term: "fair use", def: "the law's narrow exception for some uses, judged by four factors every time: purpose, nature of the work, amount taken, and market effect" },
+  { term: "credit", def: "honesty about sources; it is never a substitute for permission" },
+  { term: "web page", def: "a designed document a browser assembles from parts; its five regions are the header (identity), navigation (movement), hero (the first screenful and its one message), content sections (the substance in scannable blocks), and footer (credits and closing information)" },
+  { term: "wireframe", def: "the paper sketch of those regions in position, labeled with what lives in each" },
+  { term: "template", def: "a builder's professional starting layout" },
+  { term: "embed", def: "to place media so it plays or displays inside the page" },
+  { term: "alt text", def: "the short plain description of an image that a screen reader speaks, so a visitor who cannot see the image still gets its information" },
+  { term: "optimization", def: "preparing media for the web (resize to display size, choose the format, compress) so pages load fast without looking broken" },
+  { term: "AI design tool", def: "suggests layouts, generates or edits images, or drafts text and pages from a prompt" },
+  { term: "MDES", def: "the Mississippi Department of Employment Security" },
+  { term: "BLS", def: "the U.S. Bureau of Labor Statistics, whose Occupational Outlook Handbook carries the national career figures this unit verifies against" },
+  { term: "ISP", def: "Individual Success Plan, the student's own career and course plan, built in Unit 1 and updated in every unit since" },
+  { term: "FERPA", def: "the Family Educational Rights and Privacy Act, the federal student privacy law: in this unit it shows up as hard rules, recording only with consent, class accounts only, and credentials never written down, on any day, on any track" },
+  { term: "Exit ticket", def: "the short closing task, the same across all three tracks, that proves the day's competency" },
+  { term: "Micro-cycle", def: "one short teaching cycle inside a day: Teach, Show, Check, Do, Reset" }
+] };
+
+(function(){
+  "use strict";
+  var BANK = window.VOCAB_BANK || { unitTitle: "Unit", bossName: "Boss", terms: [] };
+  var TERMS = (BANK.terms || []).slice();
+  var MAX_HEARTS = 10;
+
+  var TAUNTS = {
+    1: ["Nice try. I am still standing.", "Ooh, close one. Go again.", "You can do this. One more try.", "That tickled. Try another."],
+    2: ["Hey, I felt that one. Keep going.", "My circuits are buzzing now.", "Good fight. Do not stop.", "I am wobbling a little."],
+    3: ["Whoa, I am barely holding on.", "One more good hit could do it.", "You are a tough battler.", "My screen is flickering. Nice work."]
+  };
+  var PRAISE = ["Correct. Boss hit.", "Yes. Direct hit.", "Got it. Boss down a heart.", "Right. Strong hit."];
+
+  var state = {
+    screen: "start",
+    mode: "student",
+    hearts: MAX_HEARTS,
+    score: 0,
+    xp: 0,
+    streak: 0,
+    bestStreak: 0,
+    deck: [],
+    deckIdx: 0,
+    current: null,
+    missed: {},
+    teamDamage: { A: 0, B: 0 },
+    activeTeam: null,
+    hasPlayed: false,
+    skipped: 0,
+    questionsAnswered: 0,
+    firstTryCorrects: 0,
+    timeLeft: 60,
+    timerId: null,
+    outcome: "not-played",
+    outcomeText: "Not played yet",
+    bossDefeatedOnce: false,
+    masteryGrantedThisRun: false,
+    gameActive: false,
+    lock: false
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function phaseFor(hearts){
+    if (hearts <= 2) return 3;
+    if (hearts <= 5) return 2;
+    return 1;
+  }
+  function speak(text){
+    try{
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    }catch(e){ /* audio is optional */ }
+  }
+
+  /* ---------- static bank rendering ---------- */
+  function renderBankText(){
+    var titles = document.querySelectorAll("[data-unit-title]");
+    for (var i = 0; i < titles.length; i++) titles[i].textContent = BANK.unitTitle;
+    var bosses = document.querySelectorAll("[data-boss-name]");
+    for (var j = 0; j < bosses.length; j++) bosses[j].textContent = BANK.bossName;
+    var isSample = String(BANK.unitTitle || "").toUpperCase().indexOf("SAMPLE") !== -1;
+    $("sampleTag").className = isSample ? "on" : "";
+    document.body.classList.toggle("has-sample", isSample);
+    $("sampleNote").style.display = isSample ? "block" : "none";
+    document.title = "Vocab Boss Battle";
+  }
+
+  /* ---------- screens ---------- */
+  function showScreen(name){
+    state.screen = name;
+    var names = ["start", "game", "end", "finish"];
+    for (var i = 0; i < names.length; i++){
+      $("screen-" + names[i]).classList.toggle("active", names[i] === name);
+    }
+    if (name === "end") renderEnd();
+    if (name === "finish") renderFinish();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- game setup ---------- */
+  function buildDeck(){
+    var idx = [];
+    for (var i = 0; i < TERMS.length; i++) idx.push(i);
+    state.deck = shuffle(idx);
+    state.deckIdx = 0;
+  }
+  function startGame(mode){
+    stopTimer();
+    state.mode = mode;
+    state.hearts = MAX_HEARTS;
+    state.score = 0;
+    state.xp = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    state.missed = {};
+    state.teamDamage = { A: 0, B: 0 };
+    state.activeTeam = null;
+    state.hasPlayed = false;
+    state.skipped = 0;
+    state.questionsAnswered = 0;
+    state.firstTryCorrects = 0;
+    state.outcome = "in-progress";
+    state.outcomeText = "Game in progress";
+    state.masteryGrantedThisRun = false;
+    state.gameActive = true;
+    state.lock = false;
+    buildDeck();
+    $("hudStudent").style.display = (mode === "student") ? "flex" : "none";
+    $("hudBell").style.display = (mode === "bell") ? "flex" : "none";
+    $("teamZone").style.display = (mode === "teacher") ? "block" : "none";
+    $("gameInstruction").textContent = (mode === "teacher")
+      ? "Tap the matching answer for the chosen team."
+      : (mode === "bell" ? "Answer fast. First-try corrects score." : "Tap the matching answer.");
+    setTaunt("Ready when you are.");
+    if (mode === "bell"){
+      state.timeLeft = 60;
+      renderTimer();
+      state.timerId = window.setInterval(tickTimer, 1000);
+    }
+    updateHUD();
+    renderHearts();
+    renderBossPhase();
+    showScreen("game");
+    newQuestion();
+  }
+  function stopTimer(){
+    if (state.timerId !== null){ window.clearInterval(state.timerId); state.timerId = null; }
+  }
+  function tickTimer(){
+    state.timeLeft -= 1;
+    renderTimer();
+    if (state.timeLeft <= 0){
+      stopTimer();
+      endGame("time-up");
+    }
+  }
+  function renderTimer(){
+    var el = $("timerVal");
+    el.textContent = String(Math.max(0, state.timeLeft));
+    el.className = "timer-big" + (state.timeLeft <= 10 ? " low" : "");
+    $("bellScoreVal").textContent = String(state.score);
+  }
+
+  /* ---------- questions ---------- */
+  function newQuestion(){
+    if (!state.gameActive) return;
+    if (state.deckIdx >= state.deck.length){
+      if (TERMS.length === 0){ endGame("questions-end"); return; }
+      buildDeck();
+    }
+    var termIdx = state.deck[state.deckIdx];
+    state.deckIdx += 1;
+    var target = TERMS[termIdx];
+    var others = [];
+    for (var i = 0; i < TERMS.length; i++) if (i !== termIdx) others.push(TERMS[i]);
+    others = shuffle(others).slice(0, 3);
+    var options = shuffle([target].concat(others));
+    var kind = Math.random() < 0.5 ? "def2term" : "term2def";
+    state.current = {
+      target: target,
+      options: options,
+      kind: kind,
+      attempts: 0,
+      prompt: kind === "def2term" ? target.def : target.term,
+      correctLabel: kind === "def2term" ? target.term : target.def
+    };
+    state.activeTeam = null;
+    renderTeamZone();
+    renderQuestion();
+    $("revealBox").textContent = "Reveal is display only. It deals no damage and awards no points.";
+  }
+  function renderQuestion(){
+    var q = state.current;
+    if (!q) return;
+    $("promptKind").textContent = q.kind === "def2term" ? "WHICH TERM MATCHES THIS DEFINITION?" : "WHICH DEFINITION MATCHES THIS TERM?";
+    $("promptText").textContent = q.prompt;
+    setFeedback("", "");
+    var box = $("optionsBox");
+    box.innerHTML = "";
+    q.options.forEach(function(opt){
+      var label = q.kind === "def2term" ? opt.term : opt.def;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.textContent = label;
+      b.setAttribute("data-label", label);
+      b.addEventListener("click", function(){ pickAnswer(b, opt); });
+      box.appendChild(b);
+    });
+    updateTeacherStats();
+  }
+  function setFeedback(text, cls){
+    var f = $("feedbackLine");
+    f.textContent = text;
+    f.className = "feedback" + (cls ? " " + cls : "");
+  }
+  function setTaunt(text){ $("tauntBubble").textContent = text; }
+
+  function pickAnswer(btn, opt){
+    if (!state.gameActive || state.lock || !state.current) return;
+    var q = state.current;
+    if (state.mode === "teacher" && !state.activeTeam){
+      setFeedback("Pick Team A or Team B first.", "retry");
+      return;
+    }
+    state.hasPlayed = true;
+    var isCorrect = (opt === q.target);
+    if (isCorrect){
+      btn.classList.add("correct-pick");
+      lockOptions();
+      state.lock = true;
+      state.questionsAnswered += 1;
+      if (q.attempts === 0){
+        state.firstTryCorrects += 1;
+        state.score = state.firstTryCorrects;
+        state.streak += 1;
+        if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+        state.xp = Math.min(100, state.firstTryCorrects * 10);
+        if (state.mode === "teacher" && state.activeTeam){
+          state.teamDamage[state.activeTeam] += 1;
+        }
+        var combo = (state.streak % 3 === 0);
+        damageBoss(combo);
+        setFeedback(combo ? "Correct. Combo hit!" : PRAISE[Math.floor(Math.random() * PRAISE.length)], "good");
+        updateHUD();
+        if (state.hearts <= 0){
+          window.setTimeout(function(){ endGame("defeated"); }, 950);
+          return;
+        }
+      } else {
+        state.streak = 0;
+        setFeedback("Correct. No damage on a retry.", "good");
+        updateHUD();
+      }
+      window.setTimeout(function(){
+        state.lock = false;
+        if (state.gameActive) newQuestion();
+      }, 950);
+    } else {
+      btn.disabled = true;
+      q.attempts += 1;
+      state.streak = 0;
+      var key = q.target.term;
+      if (!state.missed[key]) state.missed[key] = { term: q.target.term, def: q.target.def, count: 0 };
+      state.missed[key].count += 1;
+      var set = TAUNTS[phaseFor(state.hearts)];
+      setTaunt(set[Math.floor(Math.random() * set.length)]);
+      setFeedback("Not that one. Try again.", "retry");
+      updateHUD();
+      updateTeacherStats();
+    }
+  }
+  function lockOptions(){
+    var opts = $("optionsBox").querySelectorAll(".opt");
+    for (var i = 0; i < opts.length; i++) opts[i].disabled = true;
+  }
+  function damageBoss(combo){
+    state.hearts = Math.max(0, state.hearts - 1);
+    renderHearts();
+    renderBossPhase();
+    var wrap = $("bossWrap");
+    wrap.classList.remove("hit", "big-hit");
+    void wrap.offsetWidth;
+    wrap.classList.add(combo ? "big-hit" : "hit");
+    var flair = $("comboFlair");
+    if (combo){
+      flair.classList.add("on");
+      window.setTimeout(function(){ flair.classList.remove("on"); }, 1400);
+    }
+    if (state.hearts > 0){
+      var sets = TAUNTS[phaseFor(state.hearts)];
+      if (combo) setTaunt("Whoa. Combo power. Nice streak.");
+    } else {
+      setTaunt("You got me. Great battling.");
+    }
+  }
+  function renderHearts(){
+    var row = $("heartsRow");
+    var html = "";
+    for (var i = 0; i < MAX_HEARTS; i++){
+      html += '<span class="heart' + (i < state.hearts ? "" : " off") + '">&#9829;</span>';
+    }
+    row.innerHTML = html;
+  }
+  function renderBossPhase(){
+    var p = phaseFor(state.hearts);
+    var wrap = $("bossWrap");
+    wrap.classList.remove("phase-2", "phase-3");
+    if (p === 2) wrap.classList.add("phase-2");
+    if (p === 3) wrap.classList.add("phase-3");
+    $("phaseLabel").textContent = "Phase " + p;
+  }
+  function updateHUD(){
+    $("scoreVal").textContent = String(state.score);
+    $("streakVal").textContent = String(state.streak);
+    $("xpFill").style.width = state.xp + "%";
+    var comboText = state.streak >= 2 ? "Combo x" + (Math.floor(state.streak / 3) + 1) + " streak " + state.streak : "";
+    var badges = [$("comboBadge"), $("comboBadgeBell")];
+    badges.forEach(function(b){
+      if (state.streak >= 2){ b.textContent = comboText; b.classList.add("on"); }
+      else b.classList.remove("on");
+    });
+    $("bellScoreVal").textContent = String(state.score);
+    renderTeamZone();
+  }
+  function renderTeamZone(){
+    $("teamDmgA").textContent = String(state.teamDamage.A);
+    $("teamDmgB").textContent = String(state.teamDamage.B);
+    $("teamBtnA").classList.toggle("active-team", state.activeTeam === "A");
+    $("teamBtnB").classList.toggle("active-team", state.activeTeam === "B");
+    $("teamNoteA").textContent = state.activeTeam === "A" ? "Answering now" : "Tap to answer";
+    $("teamNoteB").textContent = state.activeTeam === "B" ? "Answering now" : "Tap to answer";
+  }
+
+  /* ---------- end and finish ---------- */
+  function endGame(reason){
+    if (!state.gameActive && reason !== "jump") return;
+    stopTimer();
+    state.gameActive = false;
+    state.outcome = reason;
+    if (reason === "defeated"){
+      if (!state.bossDefeatedOnce){
+        state.bossDefeatedOnce = true;
+        state.masteryGrantedThisRun = true;
+      } else {
+        state.masteryGrantedThisRun = false;
+      }
+      state.outcomeText = "Defeated " + BANK.bossName;
+    } else if (reason === "time-up"){
+      state.outcomeText = "Time up. Score " + state.score;
+    } else if (reason === "questions-end"){
+      state.outcomeText = state.hearts > 0
+        ? BANK.bossName + " still standing with " + state.hearts + " hearts left"
+        : "Defeated " + BANK.bossName;
+      if (state.hearts <= 0 && !state.bossDefeatedOnce){
+        state.bossDefeatedOnce = true;
+        state.masteryGrantedThisRun = true;
+      }
+    }
+    showScreen("end");
+  }
+  function missedSorted(){
+    var arr = [];
+    for (var k in state.missed){
+      if (Object.prototype.hasOwnProperty.call(state.missed, k)) arr.push(state.missed[k]);
+    }
+    arr.sort(function(a, b){
+      if (b.count !== a.count) return b.count - a.count;
+      return a.term < b.term ? -1 : 1;
+    });
+    return arr;
+  }
+  function modeLabel(){
+    if (state.mode === "teacher") return "Teacher-Led";
+    if (state.mode === "bell") return "Bell Ringer";
+    return "Student-Led";
+  }
+  function renderEnd(){
+    var played = state.hasPlayed;
+    $("endNotPlayed").style.display = played ? "none" : "block";
+    $("endHeading").textContent = !played ? "Results"
+      : state.outcome === "defeated" ? BANK.bossName + " Defeated"
+      : state.outcome === "time-up" ? "Time Up"
+      : state.outcome === "questions-end" ? "Questions Done" : "Results";
+    var stats = $("endStats");
+    stats.innerHTML = "";
+    function stat(label, value){
+      var d = document.createElement("div");
+      d.className = "hud-box";
+      d.innerHTML = '<span class="label"></span><div class="value"></div>';
+      d.querySelector(".label").textContent = label;
+      d.querySelector(".value").textContent = value;
+      stats.appendChild(d);
+    }
+    if (played){
+      stat("Mode", modeLabel());
+      stat("First-try corrects", String(state.firstTryCorrects));
+      stat("Boss hearts left", String(state.hearts));
+      stat("Best streak", String(state.bestStreak));
+      if (state.skipped > 0) stat("Skipped", String(state.skipped));
+    } else {
+      stat("Mode", modeLabel());
+      stat("Result", "Not played");
+    }
+    var winner = "";
+    if (played && state.mode === "teacher"){
+      if (state.teamDamage.A > state.teamDamage.B) winner = "Team A wins with " + state.teamDamage.A + " boss damage to " + state.teamDamage.B + ".";
+      else if (state.teamDamage.B > state.teamDamage.A) winner = "Team B wins with " + state.teamDamage.B + " boss damage to " + state.teamDamage.A + ".";
+      else winner = "Tie game. Both teams dealt " + state.teamDamage.A + " boss damage.";
+    }
+    $("endWinner").textContent = winner;
+    var list = $("missedList");
+    list.innerHTML = "";
+    var arr = missedSorted();
+    $("missedEmpty").style.display = arr.length === 0 ? "block" : "none";
+    arr.forEach(function(m){
+      var li = document.createElement("li");
+      var top = document.createElement("span");
+      top.innerHTML = '<span class="mterm"></span> <span class="mcount"></span>';
+      top.querySelector(".mterm").textContent = m.term;
+      top.querySelector(".mcount").textContent = "missed " + m.count + (m.count === 1 ? " time" : " times");
+      var def = document.createElement("span");
+      def.className = "mdef";
+      def.textContent = m.def;
+      li.appendChild(top);
+      li.appendChild(def);
+      list.appendChild(li);
+    });
+    updateTeacherStats();
+  }
+  function renderFinish(){
+    var played = state.hasPlayed;
+    $("finishNotPlayed").style.display = played ? "none" : "block";
+    $("certResult").textContent = played ? state.outcomeText : "Not played yet";
+    var name = $("nameInput").value.trim();
+    $("certName").textContent = name || "A Brave Battler";
+    var m = $("certMastery");
+    if (!played) m.textContent = "";
+    else if (state.outcome === "defeated" && state.masteryGrantedThisRun) m.textContent = "Mastery earned: first boss defeat.";
+    else if (state.outcome === "defeated") m.textContent = "Boss defeated again. No extra mastery for repeat defeats.";
+    else if (state.bossDefeatedOnce) m.textContent = "Mastery already earned on the first defeat.";
+    else m.textContent = "";
+    updateTeacherStats();
+  }
+
+  /* ---------- teacher panel ---------- */
+  function updateTeacherStats(){
+    var el = $("teacherStats");
+    if (!state.hasPlayed && !state.gameActive){
+      el.textContent = "No game played yet. Jumps and skips award nothing.";
+      return;
+    }
+    el.textContent = "Mode: " + modeLabel()
+      + ". Hearts left: " + state.hearts
+      + ". First-try corrects: " + state.firstTryCorrects
+      + ". Questions answered: " + state.questionsAnswered
+      + ". Skipped: " + state.skipped
+      + ". Missed words logged: " + missedSorted().length + ".";
+  }
+  function openTeacher(){ $("teacherPanel").classList.add("open"); updateTeacherStats(); }
+  function closeTeacher(){ $("teacherPanel").classList.remove("open"); }
+
+  /* ---------- wiring ---------- */
+  function init(){
+    renderBankText();
+    renderHearts();
+    var modeBtns = document.querySelectorAll("[data-start-mode]");
+    for (var i = 0; i < modeBtns.length; i++){
+      (function(btn){
+        btn.addEventListener("click", function(){ startGame(btn.getAttribute("data-start-mode")); });
+      })(modeBtns[i]);
+    }
+    $("teamBtnA").addEventListener("click", function(){ state.activeTeam = "A"; renderTeamZone(); });
+    $("teamBtnB").addEventListener("click", function(){ state.activeTeam = "B"; renderTeamZone(); });
+    $("hearPromptBtn").addEventListener("click", function(){
+      if (state.current) speak(state.current.prompt);
+    });
+    $("toFinishBtn").addEventListener("click", function(){ showScreen("finish"); });
+    $("toEndBtn").addEventListener("click", function(){ showScreen("end"); });
+    $("playAgainBtn").addEventListener("click", function(){ showScreen("start"); });
+    $("finishPlayAgainBtn").addEventListener("click", function(){ showScreen("start"); });
+    var gotos = document.querySelectorAll("[data-goto-start]");
+    for (var g = 0; g < gotos.length; g++){
+      gotos[g].addEventListener("click", function(){ stopTimer(); showScreen("start"); });
+    }
+    $("nameInput").addEventListener("input", function(){
+      var name = $("nameInput").value.trim();
+      $("certName").textContent = name || "A Brave Battler";
+    });
+    $("teacherBtn").addEventListener("click", openTeacher);
+    $("closeTeacherBtn").addEventListener("click", closeTeacher);
+    $("teacherPanel").addEventListener("click", function(e){
+      if (e.target === $("teacherPanel")) closeTeacher();
+    });
+    var jumps = document.querySelectorAll("[data-jump]");
+    for (var j = 0; j < jumps.length; j++){
+      (function(btn){
+        btn.addEventListener("click", function(){
+          var target = btn.getAttribute("data-jump");
+          closeTeacher();
+          if (target === "game" && !state.gameActive && !state.current){
+            startGame(state.mode || "student");
+            state.hasPlayed = false;
+          } else {
+            showScreen(target);
+          }
+        });
+      })(jumps[j]);
+    }
+    $("skipBtn").addEventListener("click", function(){
+      if (state.screen === "game" && state.gameActive && state.current){
+        state.skipped += 1;
+        state.lock = false;
+        closeTeacher();
+        newQuestion();
+        setFeedback("Skipped. No points.", "");
+      } else {
+        $("revealBox").textContent = "No active question to skip right now.";
+      }
+      updateTeacherStats();
+    });
+    $("revealBtn").addEventListener("click", function(){
+      if (state.current && state.gameActive){
+        $("revealBox").textContent = "Correct answer: " + state.current.correctLabel + " (display only, no damage, no points)";
+      } else {
+        $("revealBox").textContent = "No question is active right now.";
+      }
+    });
+    $("resetBtn").addEventListener("click", function(){
+      stopTimer();
+      state.hearts = MAX_HEARTS;
+      state.score = 0; state.xp = 0; state.streak = 0; state.bestStreak = 0;
+      state.missed = {}; state.teamDamage = { A: 0, B: 0 }; state.activeTeam = null;
+      state.hasPlayed = false; state.skipped = 0; state.questionsAnswered = 0;
+      state.firstTryCorrects = 0; state.current = null; state.gameActive = false;
+      state.outcome = "not-played"; state.outcomeText = "Not played yet";
+      state.masteryGrantedThisRun = false;
+      renderHearts(); renderBossPhase(); updateHUD();
+      closeTeacher();
+      showScreen("start");
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
