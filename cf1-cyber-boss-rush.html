@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Boss Rush - Cyber Foundations I Capstone</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg:#0f1b33; --card:#1b2b4d; --card2:#24365e; --ink:#f2f6ff; --muted:#a9bce0;
+    --accent:#ffd23f; --good:#37d67a; --bad:#ff5a5a; --warn:#ffb020; --line:#35508a;
+  }
+  body[data-theme="sunset"]{ --bg:#2b1030; --card:#47204a; --card2:#5a2a5e; --ink:#fff4e8; --muted:#e8b7d4; --accent:#ff9f43; --line:#7a3a72; }
+  body[data-theme="forest"]{ --bg:#0e2a1a; --card:#173d27; --card2:#1f4d33; --ink:#eefbea; --muted:#a7d7b5; --accent:#a3e635; --line:#2f6b47; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+  #wrap{ max-width:760px; margin:0 auto; padding:14px 14px 90px; }
+  h1{ font-size:26px; margin:6px 0 2px; }
+  h2{ font-size:21px; margin:4px 0 6px; }
+  .sub{ color:var(--muted); font-size:14px; margin:2px 0 10px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:10px 0; }
+  .bossgrid{ display:grid; grid-template-columns:1fr; gap:10px; }
+  @media (min-width:620px){ .bossgrid{ grid-template-columns:1fr 1fr 1fr; } }
+  .boss{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+  .boss .bname{ font-size:17px; font-weight:700; }
+  .status{ color:var(--muted); font-size:13px; min-height:18px; margin:4px 0 8px; }
+  .stars{ color:var(--accent); font-size:15px; min-height:20px; }
+  button{ font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line); background:var(--card2); color:var(--ink); padding:9px 14px; margin:3px; }
+  button:hover{ filter:brightness(1.15); }
+  button:disabled{ opacity:.38; cursor:default; filter:none; }
+  button.primary{ background:var(--accent); color:#191919; border-color:var(--accent); font-weight:700; }
+  button.good{ border-color:var(--good); }
+  button.bad{ border-color:var(--bad); }
+  button.picked{ outline:3px solid var(--accent); }
+  button.off{ opacity:.38; text-decoration:line-through; }
+  #hud{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 12px; margin-bottom:10px; font-size:14px; }
+  #xpbarOuter{ flex:1; height:12px; background:#0a1224; border-radius:6px; overflow:hidden; border:1px solid var(--line); }
+  body[data-theme="sunset"] #xpbarOuter, body[data-theme="forest"] #xpbarOuter{ background:rgba(0,0,0,.35); }
+  #xpbar{ height:100%; width:0%; background:var(--accent); transition:width .3s; }
+  body.teacher #hud{ display:none; }
+  .msg{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; }
+  .msg .from{ font-weight:700; font-size:16px; }
+  .msg .addr{ color:var(--muted); font-size:13px; margin-bottom:8px; }
+  .msg .body{ font-size:16px; line-height:1.45; }
+  .msg .note{ color:var(--warn); font-size:13px; margin-top:8px; }
+  .fakeurl{ font-family:ui-monospace,Menlo,Consolas,monospace; background:rgba(0,0,0,.3); padding:1px 5px; border-radius:5px; }
+  .feedback{ min-height:24px; font-size:16px; font-weight:600; margin:10px 0 4px; }
+  .feedback.good{ color:var(--good); } .feedback.bad{ color:var(--bad); } .feedback.warn{ color:var(--warn); }
+  .wordcard{ border-left:4px solid var(--accent); background:rgba(0,0,0,.22); padding:8px 12px; border-radius:8px; font-size:14px; margin:10px 0; }
+  .wordcard b{ color:var(--accent); }
+  .talk{ border-left:4px solid var(--good); background:rgba(0,0,0,.22); padding:8px 12px; border-radius:8px; font-size:14px; margin:10px 0; display:none; }
+  body.teacher .talk{ display:block; }
+  .acct{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; }
+  .acct .aname{ font-weight:700; }
+  .crack{ font-size:13px; color:var(--muted); }
+  .crack b{ color:var(--ink); }
+  .chip{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:13px; font-weight:700; margin-left:8px; }
+  .chip.fell{ background:var(--bad); color:#191919; }
+  .chip.safe{ background:var(--good); color:#191919; }
+  .chip.exposed{ background:var(--warn); color:#191919; }
+  svg text{ fill:var(--ink); font-size:12px; text-anchor:middle; }
+  .node{ cursor:pointer; }
+  .node circle{ fill:var(--card2); stroke:var(--line); stroke-width:2; }
+  .node.sniffer circle{ fill:#5e2a2a; stroke:var(--bad); }
+  .node.down circle{ fill:#3a3a3a; stroke:#888; }
+  .node.goal circle{ fill:var(--good); }
+  .node.start circle{ fill:var(--accent); }
+  .node.inpath circle{ stroke:var(--accent); stroke-width:4; }
+  .node.off{ opacity:.35; cursor:default; }
+  .pathline{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:14px; background:rgba(0,0,0,.25); border-radius:8px; padding:6px 10px; min-height:20px; }
+  #teacherBtn{ position:fixed; right:12px; bottom:12px; z-index:40; opacity:.55; font-size:13px; padding:7px 12px; }
+  #teacherBtn:hover{ opacity:1; }
+  #panel{ position:fixed; top:0; right:0; width:300px; max-width:88vw; height:100%; background:var(--card); border-left:2px solid var(--line); z-index:50; padding:16px; transform:translateX(105%); transition:transform .25s; overflow-y:auto; }
+  #panel.open{ transform:translateX(0); }
+  #panel h3{ margin:10px 0 6px; font-size:15px; }
+  #panel button{ display:block; width:100%; text-align:left; margin:4px 0; }
+  #revealBox{ background:rgba(0,0,0,.25); border-radius:8px; padding:10px; font-size:14px; line-height:1.5; display:none; white-space:pre-line; }
+  .champ{ text-align:center; border:3px solid var(--accent); border-radius:16px; padding:20px 14px; background:var(--card); }
+  .champ .cname{ font-size:26px; font-weight:800; color:var(--accent); margin:6px 0; }
+  .champ .ctitle{ font-size:17px; font-weight:700; letter-spacing:1px; }
+  input[type="text"]{ font:inherit; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:rgba(0,0,0,.3); color:var(--ink); width:100%; max-width:340px; }
+  .row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+  .small{ font-size:13px; color:var(--muted); }
+  .listen{ font-size:13px; padding:6px 10px; }
+</style>
+</head>
+<body data-theme="cyber">
+<div id="wrap">
+  <div id="hud">
+    <span id="xpText">XP 0 / 130</span>
+    <div id="xpbarOuter"><div id="xpbar"></div></div>
+    <span id="streakText">Streak 0</span>
+  </div>
+  <div id="app"></div>
+</div>
+<button id="teacherBtn" onclick="togglePanel(true)">Teacher</button>
+<div id="panel">
+  <div class="row" style="justify-content:space-between;">
+    <h3 style="margin:0;">Teacher Panel</h3>
+    <button style="width:auto;" onclick="togglePanel(false)">Close</button>
+  </div>
+  <h3>Jump to screen</h3>
+  <button onclick="panelJump('start')">Start</button>
+  <button onclick="panelJump('map')">Boss Map</button>
+  <button onclick="panelJump('phisher')">The Phisher</button>
+  <button onclick="panelJump('reuser')">The Reuser</button>
+  <button onclick="panelJump('sniffer')">The Sniffer</button>
+  <button onclick="panelJump('finish')">Finish</button>
+  <h3>Skip (no points)</h3>
+  <button onclick="panelSkip()">Skip current step</button>
+  <h3>Reveal (display only)</h3>
+  <button onclick="panelReveal()">Show answers here</button>
+  <div id="revealBox"></div>
+  <h3>Reset</h3>
+  <button onclick="panelReset()">Reset whole game</button>
+</div>
+<script>
+"use strict";
+/* ============ DATA ============ */
+var FLAGS = {
+  sender: "Sender mismatch",
+  urgency: "Urgency pressure",
+  link: "Link mismatch",
+  offer: "Too-good offer",
+  password: "Asks for password"
+};
+var MSGS = [
+  { from:"Lincoln Middle School Office", addr:"office@lincolnms.example",
+    body:"Picture day is Friday. Bring your order form.", phish:false },
+  { from:"Prize Center", addr:"winner@prizecenter.example",
+    body:"You won 10,000 gems! Claim your prize now. No purchase needed!",
+    phish:true, flag:"offer", opts:["urgency","offer","sender","password"] },
+  { from:"FastShip", addr:"notice@fastship.example",
+    body:"Your package is on its way. Use the button to follow it.",
+    note:"Button says: fastship.example/track   Button goes to: fastsh1p.example",
+    phish:true, flag:"link", opts:["link","offer","urgency","sender"] },
+  { from:"SocialBuzz", addr:"alerts@socialbuzz.example",
+    body:"Your post went viral! Type your password here to keep your account active.",
+    phish:true, flag:"password", opts:["sender","password","link","offer"] },
+  { from:"Lincoln School Portal", addr:"portal@l1ncoln-school.example",
+    body:"A new lunch menu is posted. Sign in on the school site to see it.",
+    phish:true, flag:"sender", opts:["urgency","link","sender","offer"] },
+  { from:"GameVault Security", addr:"security@gamevault.example",
+    body:"Unusual sign-in spotted. Confirm in the next 10 minutes or your account locks for good.",
+    phish:true, flag:"urgency", opts:["offer","sender","urgency","password"] },
+  { from:"School Library", addr:"library@lincolnms.example",
+    body:"Your book is due Thursday. Renew it at the front desk.", phish:false }
+];
+var ACCOUNTS = [
+  { id:"game", name:"PixelPlay (game)" },
+  { id:"music", name:"TuneBox (music)" },
+  { id:"school", name:"Lincoln School Portal" }
+];
+var CANDS = ["sunnyday", "Gamer2024", "Tr@ilMix#99", "correct-horse-battery"];
+var ROUNDS = [
+  { nodes:[
+      { id:"S", label:"You", tag:"", x:45, y:110, kind:"start" },
+      { id:"A", label:"Relay A", tag:"", x:155, y:45, kind:"clean" },
+      { id:"B", label:"Relay B", tag:"SNIFFER", x:155, y:110, kind:"sniffer" },
+      { id:"D", label:"Relay D", tag:"DOWN", x:155, y:175, kind:"down" },
+      { id:"Z", label:"Friend", tag:"", x:275, y:110, kind:"goal" } ],
+    edges:{ S:["A","B","D"], A:["Z"], B:["Z"], D:[], Z:[] } },
+  { nodes:[
+      { id:"S", label:"You", tag:"", x:35, y:110, kind:"start" },
+      { id:"A", label:"Relay A", tag:"", x:125, y:40, kind:"clean" },
+      { id:"B", label:"Relay B", tag:"SNIFFER", x:125, y:180, kind:"sniffer" },
+      { id:"C", label:"Relay C", tag:"", x:215, y:110, kind:"clean" },
+      { id:"D", label:"Relay D", tag:"DOWN", x:215, y:195, kind:"down" },
+      { id:"Z", label:"Friend", tag:"", x:295, y:110, kind:"goal" } ],
+    edges:{ S:["A","B"], A:["C","D"], B:["C"], C:["Z","D"], D:["Z"], Z:[] } }
+];
+var WORDS = {
+  phisher: "<b>Phishing:</b> a fraudulent message built to trick a person into giving up credentials, money, or access",
+  reuser: "<b>Vulnerability:</b> a weakness an attacker can use (an unpatched program, a reused password, an untrained person)",
+  sniffer: "<b>Confidentiality:</b> only the right people can see it. A sniffer breaks confidentiality."
+};
+var TALKS = {
+  phisher: "Talk: which clue was easiest to spot?",
+  reuser: "Talk: why is one password everywhere a vulnerability?",
+  sniffer: "Talk: the packet arrived. Why is exposed still a loss?"
+};
+var MAXXP = 130;
+
+/* ============ CRACK-TIME MODEL ============ */
+function crackInfo(pw){
+  var cs = 0;
+  if (/[a-zA-Z]/.test(pw)) cs += 26;
+  if (/[0-9]/.test(pw)) cs += 10;
+  if (/[^a-zA-Z0-9]/.test(pw)) cs += 33;
+  var seconds = Math.pow(cs, pw.length) / 10000000000;
+  var bucket;
+  if (seconds < 60) bucket = "Instant";
+  else if (seconds < 3600) bucket = "Minutes";
+  else if (seconds < 86400) bucket = "Hours";
+  else if (seconds < 31536000) bucket = "Days";
+  else if (seconds < 3153600000) bucket = "Years";
+  else if (seconds < 4.35e17) bucket = "Centuries";
+  else bucket = "Longer than the universe";
+  return { charset: cs, seconds: seconds, bucket: bucket };
+}
+
+/* ============ STATE ============ */
+var THEME = "cyber";
+var S = null;
+function freshBoss(){ return { clearedOnce:false, stars:0, started:false, anySkip:false }; }
+function initState(){
+  S = {
+    mode: null, screen: "start", xp: 0, streak: 0, best: 0, name: "",
+    phisher: { boss: freshBoss(), idx: 0,
+      items: MSGS.map(function(){ return { solved:false, missed:false, skipped:false, stage:"judge", judgeOff:null, flagOff:{} }; }) },
+    reuser: { boss: freshBoss(), assign:{ game:null, music:null, school:null }, prediction:null, runs:0,
+      predSolved:false, predMissed:false,
+      acct:{ game:{solved:false, missed:false}, music:{solved:false, missed:false}, school:{solved:false, missed:false} },
+      last:null },
+    sniffer: { boss: freshBoss(), round: 0,
+      rounds: ROUNDS.map(function(){ return { path:["S"], sends:0, failedSends:0, exposed:false, delivered:null, missed:false, skipped:false }; }) }
+  };
+}
+function isStudent(){ return S.mode === "student"; }
+function award(n){
+  if (isStudent() && n > 0) S.xp += n;
+}
+function streakUp(){ if (isStudent()){ S.streak += 1; if (S.streak > S.best) S.best = S.streak; } }
+function streakReset(){ if (isStudent()) S.streak = 0; }
+function defeatedCount(){
+  var n = 0;
+  if (S.phisher.boss.clearedOnce) n++;
+  if (S.reuser.boss.clearedOnce) n++;
+  if (S.sniffer.boss.clearedOnce) n++;
+  return n;
+}
+function bossStatus(k){
+  var b = S[k].boss;
+  if (b.clearedOnce) return "Defeated";
+  if (k === "phisher"){
+    if (S.phisher.items.some(function(i){ return i.solved; })) return "Started, not finished";
+    if (S.phisher.items.some(function(i){ return i.skipped; })) return "Skipped, not defeated";
+  }
+  if (k === "reuser"){
+    if (S.reuser.runs > 0) return "Started, not finished";
+    if (b.anySkip) return "Skipped, not defeated";
+  }
+  if (k === "sniffer"){
+    if (S.sniffer.rounds.some(function(r){ return r.delivered; })) return "Started, not finished";
+    if (S.sniffer.rounds.some(function(r){ return r.skipped; })) return "Skipped, not defeated";
+  }
+  return "Not played yet";
+}
+function starStr(n){ var s = ""; for (var i = 0; i < 3; i++) s += (i < n ? "\u2605" : "\u2606"); return s; }
+function defeatBoss(k){
+  var b = S[k].boss;
+  if (b.clearedOnce) return;
+  b.clearedOnce = true;
+  var issues = 0;
+  if (k === "phisher") issues = S.phisher.items.filter(function(i){ return i.missed; }).length;
+  if (k === "reuser"){
+    issues = (S.reuser.predMissed ? 1 : 0) + ACCOUNTS.filter(function(a){ return S.reuser.acct[a.id].missed; }).length;
+  }
+  if (k === "sniffer"){
+    issues = S.sniffer.rounds.reduce(function(t, r){ return t + r.failedSends + (r.exposed ? 1 : 0); }, 0);
+  }
+  b.stars = issues === 0 ? 3 : (issues <= 2 ? 2 : 1);
+}
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+/* ============ NAV / RENDER ============ */
+function go(screen){
+  S.screen = screen;
+  if (screen === "phisher"){
+    S.phisher.boss.started = true;
+    for (var j = 0; j < S.phisher.items.length; j++){ if (!S.phisher.items[j].solved){ S.phisher.idx = j; break; } }
+  }
+  if (screen === "reuser") S.reuser.boss.started = true;
+  if (screen === "sniffer"){
+    S.sniffer.boss.started = true;
+    for (var i = 0; i < S.sniffer.rounds.length; i++){ if (!S.sniffer.rounds[i].delivered){ S.sniffer.round = i; break; } }
+  }
+  render();
+}
+function setMode(m){ S.mode = m; document.body.className = (m === "teacher") ? "teacher" : ""; go("map"); }
+function setTheme(t){
+  if (t === "sunset" && defeatedCount() < 1) return;
+  if (t === "forest" && defeatedCount() < 3) return;
+  THEME = t; document.body.setAttribute("data-theme", t); render();
+}
+function themeRow(){
+  var d = defeatedCount();
+  function btn(id, label, need){
+    var locked = d < need;
+    return '<button data-theme-btn="' + id + '" onclick="setTheme(\'' + id + '\')" ' +
+      (locked ? "disabled" : "") + (THEME === id ? ' class="picked"' : "") + ">" +
+      label + (locked ? " (locked)" : "") + "</button>";
+  }
+  return '<div class="row"><span class="small">Theme:</span>' +
+    btn("cyber", "Cyber", 0) + btn("sunset", "Sunset", 1) + btn("forest", "Forest", 3) + "</div>";
+}
+function listenBtn(text){
+  return '<button class="listen" onclick="speakIt(this.getAttribute(\'data-say\'))" data-say="' + esc(text) + '">Listen</button>';
+}
+function speakIt(text){
+  try {
+    if (window.speechSynthesis) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); }
+  } catch (e) {}
+}
+function render(){
+  document.getElementById("xpText").textContent = "XP " + S.xp + " / " + MAXXP;
+  document.getElementById("xpbar").style.width = Math.min(100, Math.round(S.xp / MAXXP * 100)) + "%";
+  document.getElementById("streakText").textContent = "Streak " + S.streak;
+  var app = document.getElementById("app");
+  if (S.screen === "start") app.innerHTML = viewStart();
+  else if (S.screen === "map") app.innerHTML = viewMap();
+  else if (S.screen === "phisher") app.innerHTML = viewPhisher();
+  else if (S.screen === "reuser") app.innerHTML = viewReuser();
+  else if (S.screen === "sniffer") app.innerHTML = viewSniffer();
+  else if (S.screen === "finish") app.innerHTML = viewFinish();
+}
+function viewStart(){
+  return "<h1>Cyber Boss Rush</h1>" +
+    '<p class="sub">Beat all three bosses to earn the Champion card.</p>' +
+    listenBtn("Beat all three bosses to earn the Champion card.") +
+    '<div class="card"><h2>How do you want to play?</h2>' +
+    '<button class="primary" onclick="setMode(\'student\')">Student-Led</button>' +
+    '<button onclick="setMode(\'teacher\')">Teacher-Led</button>' +
+    '<p class="small">Student-Led earns XP, streaks, and stars. Teacher-Led is for the whole class, no scoring.</p></div>' +
+    themeRow();
+}
+function bossCard(k, name, blurb){
+  var b = S[k].boss;
+  return '<div class="boss"><div class="bname">' + name + '</div>' +
+    '<div class="status" data-status="' + k + '">' + bossStatus(k) + "</div>" +
+    (b.clearedOnce && isStudent() ? '<div class="stars">' + starStr(b.stars) + "</div>" : '<div class="stars"></div>') +
+    '<p class="small">' + blurb + "</p>" +
+    '<button class="primary" onclick="go(\'' + k + '\')">Play</button></div>';
+}
+function viewMap(){
+  return "<h2>Boss Map</h2>" +
+    '<p class="sub">Pick a boss.</p>' + listenBtn("Pick a boss.") +
+    '<div class="bossgrid">' +
+    bossCard("phisher", "The Phisher", "Spot fake messages and their red flags.") +
+    bossCard("reuser", "The Reuser", "One password everywhere is the trap.") +
+    bossCard("sniffer", "The Sniffer", "Route the packet. Dodge the sniffer.") +
+    "</div>" +
+    '<div class="card"><span class="small">Bosses beaten: ' + defeatedCount() + ' of 3</span><br>' +
+    '<button onclick="go(\'finish\')">Finish</button></div>' + themeRow();
+}
+
+/* ============ BOSS 1: THE PHISHER ============ */
+var phFeedback = { text:"", cls:"" };
+function phItem(){ return S.phisher.items[S.phisher.idx]; }
+function viewPhisher(){
+  var P = S.phisher, it = phItem(), m = MSGS[P.idx];
+  var h = "<h2>The Phisher</h2>" +
+    '<p class="sub">Safe or phish? Spot the red flag.</p>' + listenBtn("Safe or phish? Spot the red flag.") +
+    '<div class="wordcard">' + WORDS.phisher + "</div>" +
+    '<div class="talk">' + TALKS.phisher + "</div>" +
+    '<p class="small">Message ' + (P.idx + 1) + " of " + MSGS.length + "</p>" +
+    '<div class="msg"><div class="from">' + esc(m.from) + '</div><div class="addr">' + esc(m.addr) + "</div>" +
+    '<div class="body">' + esc(m.body) + "</div>" +
+    (m.note ? '<div class="note">' + esc(m.note) + "</div>" : "") + "</div>";
+  if (it.stage === "judge"){
+    h += '<div class="row">' +
+      '<button class="good judge-btn' + (it.judgeOff === "safe" ? " off" : "") + '" data-v="safe" onclick="phJudge(\'safe\')" ' + (it.judgeOff === "safe" ? "disabled" : "") + ">Safe</button>" +
+      '<button class="bad judge-btn' + (it.judgeOff === "phish" ? " off" : "") + '" data-v="phish" onclick="phJudge(\'phish\')" ' + (it.judgeOff === "phish" ? "disabled" : "") + ">Phish</button></div>";
+  } else if (it.stage === "flag"){
+    h += '<p class="small">It is a phish. What gives it away?</p><div class="row">';
+    m.opts.forEach(function(f){
+      var off = it.flagOff[f];
+      h += '<button class="flag-btn' + (off ? " off" : "") + '" data-f="' + f + '" onclick="phFlag(\'' + f + '\')" ' + (off ? "disabled" : "") + ">" + FLAGS[f] + "</button>";
+    });
+    h += "</div>";
+  } else {
+    h += '<div class="row"><button class="primary" onclick="phNext()">Next</button></div>';
+  }
+  h += '<div class="feedback ' + phFeedback.cls + '" id="phFeedback">' + phFeedback.text + "</div>";
+  return h;
+}
+function phJudge(v){
+  var it = phItem(), m = MSGS[S.phisher.idx];
+  var correct = (v === "phish") === m.phish;
+  if (!correct){
+    it.judgeOff = v; it.missed = true; streakReset();
+    phFeedback = { text:"Not that one. Look again.", cls:"bad" }; render(); return;
+  }
+  if (m.phish){
+    it.stage = "flag";
+    phFeedback = { text:"Right, it is a phish. What gives it away?", cls:"good" }; render(); return;
+  }
+  phSolve();
+}
+function phFlag(f){
+  var it = phItem(), m = MSGS[S.phisher.idx];
+  if (f !== m.flag){
+    it.flagOff[f] = true; it.missed = true; streakReset();
+    phFeedback = { text:"Not that flag. Look again.", cls:"bad" }; render(); return;
+  }
+  phSolve();
+}
+function phSolve(){
+  var it = phItem(), P = S.phisher;
+  it.solved = true; it.stage = "done";
+  if (!it.missed && !P.boss.clearedOnce){ award(10); streakUp(); }
+  if (P.items.every(function(i){ return i.solved; })){
+    defeatBoss("phisher");
+    phFeedback = { text:"Boss defeated! The Phisher is down.", cls:"good" };
+  } else {
+    phFeedback = { text:"Solved it.", cls:"good" };
+  }
+  render();
+}
+function phNext(){
+  var P = S.phisher;
+  for (var step = 1; step <= MSGS.length; step++){
+    var n = (P.idx + step) % MSGS.length;
+    if (!P.items[n].solved){ P.idx = n; phFeedback = { text:"", cls:"" }; render(); return; }
+  }
+  go("map");
+}
+function phSkip(){
+  var P = S.phisher, it = phItem();
+  if (!it.solved){ it.skipped = true; P.boss.anySkip = true; }
+  phFeedback = { text:"", cls:"" };
+  phNext();
+}
+
+/* ============ BOSS 2: THE REUSER ============ */
+var ruFeedback = { text:"", cls:"" };
+function viewReuser(){
+  var R = S.reuser;
+  var h = "<h2>The Reuser</h2>" +
+    '<p class="sub">Give each account a password. Then face the breach.</p>' +
+    listenBtn("Give each account a password. Then face the breach.") +
+    '<div class="wordcard">' + WORDS.reuser + "</div>" +
+    '<div class="talk">' + TALKS.reuser + "</div>";
+  ACCOUNTS.forEach(function(a){
+    var pw = R.assign[a.id], it = R.acct[a.id];
+    h += '<div class="acct"><span class="aname">' + a.name + "</span>";
+    if (R.last){
+      var fell = R.last.falls.indexOf(a.id) !== -1;
+      h += '<span class="chip ' + (fell ? "fell" : "safe") + '">' + (fell ? "Fell" : "Safe") + "</span>";
+    }
+    h += '<div class="row">';
+    CANDS.forEach(function(c){
+      h += '<button class="cand-btn' + (pw === c ? " picked" : "") + '" data-acct="' + a.id + '" data-pw="' + esc(c) + '" onclick="ruAssign(\'' + a.id + '\',\'' + esc(c) + '\')">' + esc(c) + "</button>";
+    });
+    h += "</div>";
+    if (pw){
+      var ci = crackInfo(pw);
+      h += '<div class="crack">Crack time: <b>' + ci.bucket + "</b></div>";
+    } else {
+      h += '<div class="crack">No password yet.</div>';
+    }
+    h += "</div>";
+  });
+  h += '<div class="card"><div class="aname" style="font-weight:700;">Predict: TuneBox gets breached. What happens?</div><div class="row">' +
+    '<button class="pred-btn' + (R.prediction === "only" ? " picked" : "") + '" data-pred="only" onclick="ruPredict(\'only\')">Only TuneBox falls</button>' +
+    '<button class="pred-btn' + (R.prediction === "same" ? " picked" : "") + '" data-pred="same" onclick="ruPredict(\'same\')">Accounts with the same password fall</button>' +
+    '<button class="pred-btn' + (R.prediction === "all" ? " picked" : "") + '" data-pred="all" onclick="ruPredict(\'all\')">Every account falls</button></div>' +
+    '<button class="primary" id="runBreach" onclick="ruRun()" ' + (ruReady() ? "" : "disabled") + ">" +
+    (R.runs === 0 ? "Run the breach" : "Run it again") + "</button></div>";
+  if (R.last){
+    h += '<p class="small">' + (R.last.outcome === "only" ? "The breach stopped at TuneBox." :
+      R.last.outcome === "same" ? "The reused password spread the breach." : "One password opened every account.") + "</p>";
+  }
+  if (R.boss.clearedOnce) h += '<div class="row"><button onclick="go(\'map\')">Boss Map</button></div>';
+  h += '<div class="feedback ' + ruFeedback.cls + '" id="ruFeedback">' + ruFeedback.text + "</div>";
+  return h;
+}
+function ruReady(){
+  var R = S.reuser;
+  return ACCOUNTS.every(function(a){ return R.assign[a.id]; }) && !!R.prediction;
+}
+function ruAssign(acct, pw){ S.reuser.assign[acct] = pw; S.reuser.last = null; render(); }
+function ruPredict(p){ S.reuser.prediction = p; S.reuser.last = null; render(); }
+function ruRun(){
+  var R = S.reuser;
+  if (!ruReady()) return;
+  R.runs += 1;
+  var falls = ["music"];
+  ACCOUNTS.forEach(function(a){
+    if (a.id !== "music" && R.assign[a.id] === R.assign.music) falls.push(a.id);
+  });
+  var outcome = falls.length === 1 ? "only" : (falls.length === 2 ? "same" : "all");
+  if (R.runs === 1){
+    if (R.prediction === outcome){ R.predSolved = true; if (!R.boss.clearedOnce){ award(10); streakUp(); } }
+    else { R.predMissed = true; streakReset(); }
+  }
+  ACCOUNTS.forEach(function(a){
+    var it = R.acct[a.id];
+    var ok = (a.id === "music") ? (outcome === "only") : (falls.indexOf(a.id) === -1);
+    if (ok){
+      if (!it.solved){
+        it.solved = true;
+        if (R.runs === 1 && !R.boss.clearedOnce){ award(10); streakUp(); }
+      }
+    } else { it.missed = true; }
+  });
+  R.last = { falls: falls, outcome: outcome };
+  if (outcome === "only"){
+    defeatBoss("reuser");
+    ruFeedback = { text:"The breach stopped at TuneBox. Boss defeated!", cls:"good" };
+  } else {
+    ruFeedback = { text:"The breach spread. Change the passwords and run it again.", cls:"warn" };
+  }
+  render();
+}
+
+/* ============ BOSS 3: THE SNIFFER ============ */
+var snFeedback = { text:"", cls:"" };
+function snRound(){ return S.sniffer.rounds[S.sniffer.round]; }
+function nodeMap(roundIdx){
+  var map = {};
+  ROUNDS[roundIdx].nodes.forEach(function(n){ map[n.id] = n; });
+  return map;
+}
+function viewSniffer(){
+  var N = S.sniffer, r = snRound(), rd = ROUNDS[N.round], nm = nodeMap(N.round);
+  var h = "<h2>The Sniffer</h2>" +
+    '<p class="sub">Tap a path. Get the packet to your friend.</p>' +
+    listenBtn("Tap a path. Get the packet to your friend.") +
+    '<div class="wordcard">' + WORDS.sniffer + "</div>" +
+    '<div class="talk">' + TALKS.sniffer + "</div>" +
+    '<p class="small">Round ' + (N.round + 1) + " of " + ROUNDS.length +
+    (r.exposed ? ' <span class="chip exposed">EXPOSED</span>' : "") + "</p>";
+  var lines = "";
+  Object.keys(rd.edges).forEach(function(from){
+    rd.edges[from].forEach(function(to){
+      lines += '<line x1="' + nm[from].x + '" y1="' + nm[from].y + '" x2="' + nm[to].x + '" y2="' + nm[to].y + '" stroke="#35508a" stroke-width="2"/>';
+    });
+  });
+  var last = r.path[r.path.length - 1];
+  var nodes = "";
+  rd.nodes.forEach(function(n){
+    var tappable = !r.delivered && last !== n.id && rd.edges[last].indexOf(n.id) !== -1 && r.path.indexOf(n.id) === -1;
+    var cls = "node " + n.kind + (r.path.indexOf(n.id) !== -1 ? " inpath" : "") + (tappable ? "" : " off");
+    nodes += '<g class="' + cls + '" data-node="' + n.id + '" ' + (tappable ? 'onclick="snTap(\'' + n.id + '\')"' : "") + ">" +
+      '<circle cx="' + n.x + '" cy="' + n.y + '" r="25"></circle>' +
+      '<text x="' + n.x + '" y="' + (n.y - 2) + '">' + n.label + "</text>" +
+      (n.tag ? '<text x="' + n.x + '" y="' + (n.y + 13) + '" style="font-size:10px;font-weight:700;">' + n.tag + "</text>" : "") +
+      "</g>";
+  });
+  h += '<svg viewBox="0 0 330 230" width="100%" style="max-width:520px;background:rgba(0,0,0,.18);border-radius:12px;">' + lines + nodes + "</svg>";
+  h += '<div class="pathline">Path: ' + r.path.map(function(id){ return nm[id].label; }).join(" > ") + "</div>";
+  if (r.delivered){
+    h += '<p class="small">' + (r.delivered === "clean" ? "Delivered clean." : "Delivered, but the sniffer copied it. EXPOSED.") + "</p>" +
+      '<div class="row"><button class="primary" onclick="snNext()">Next</button></div>';
+  } else {
+    var lastNode = nm[last];
+    var canSend = lastNode.kind === "down" || last === "Z";
+    h += '<div class="row">' +
+      '<button onclick="snUndo()">Undo</button><button onclick="snClear()">Clear</button>' +
+      '<button class="primary" id="sendBtn" onclick="snSend()" ' + (canSend ? "" : "disabled") + ">Send packet</button></div>";
+  }
+  h += '<div class="feedback ' + snFeedback.cls + '" id="snFeedback">' + snFeedback.text + "</div>";
+  return h;
+}
+function snTap(id){
+  var r = snRound(), rd = ROUNDS[S.sniffer.round];
+  if (r.delivered) return;
+  var last = r.path[r.path.length - 1];
+  if (rd.edges[last].indexOf(id) !== -1 && r.path.indexOf(id) === -1){ r.path.push(id); render(); }
+}
+function snUndo(){ var r = snRound(); if (!r.delivered && r.path.length > 1){ r.path.pop(); render(); } }
+function snClear(){ var r = snRound(); if (!r.delivered){ r.path = ["S"]; render(); } }
+function snSend(){
+  var N = S.sniffer, r = snRound(), nm = nodeMap(N.round);
+  if (r.delivered) return;
+  var seq = r.path.slice(1), di = -1, si = -1;
+  seq.forEach(function(id, i){
+    if (nm[id].kind === "down" && di === -1) di = i;
+    if (nm[id].kind === "sniffer" && si === -1) si = i;
+  });
+  r.sends += 1;
+  if (di !== -1){
+    r.failedSends += 1; r.missed = true; streakReset();
+    if (si !== -1 && si < di){
+      r.exposed = true;
+      snFeedback = { text:"Captured by a sniffer, then lost at the down relay. Round is EXPOSED.", cls:"warn" };
+    } else {
+      snFeedback = { text:"Packet lost at the down relay. Try another path.", cls:"bad" };
+    }
+    r.path = ["S"]; render(); return;
+  }
+  if (si !== -1) r.exposed = true;
+  r.delivered = r.exposed ? "exposed" : "clean";
+  if (!N.boss.clearedOnce){
+    if (r.delivered === "clean" && r.sends === 1){ award(10); streakUp(); }
+    else if (r.delivered === "clean"){ award(5); streakUp(); }
+    else { award(5); streakReset(); }
+  }
+  if (N.rounds.every(function(x){ return x.delivered; })){
+    defeatBoss("sniffer");
+    snFeedback = { text:"Boss defeated! The Sniffer is down.", cls:"good" };
+  } else {
+    snFeedback = { text: r.delivered === "clean" ? "Delivered clean." : "Delivered, but copied. Round stays EXPOSED.", cls: r.delivered === "clean" ? "good" : "warn" };
+  }
+  render();
+}
+function snNext(){
+  var N = S.sniffer;
+  for (var i = 0; i < N.rounds.length; i++){
+    if (!N.rounds[i].delivered && !N.rounds[i].skipped){ N.round = i; snFeedback = { text:"", cls:"" }; render(); return; }
+  }
+  go("map");
+}
+function snSkip(){
+  var N = S.sniffer, r = snRound();
+  if (!r.delivered){ r.skipped = true; N.boss.anySkip = true; }
+  snFeedback = { text:"", cls:"" };
+  snNext();
+}
+
+/* ============ FINISH ============ */
+function setName(v){
+  S.name = v;
+  var el = document.getElementById("champName");
+  if (el) el.textContent = v ? v : "Cyber Champion";
+}
+function finishLine(k, name){
+  var b = S[k].boss;
+  return '<div class="row" style="justify-content:space-between;"><span>' + name + "</span><span data-finish=\"" + k + "\">" +
+    bossStatus(k) + (b.clearedOnce && isStudent() ? " " + starStr(b.stars) : "") + "</span></div>";
+}
+function viewFinish(){
+  var d = defeatedCount(), all = d === 3;
+  var h = "<h2>Finish</h2>" +
+    '<p class="sub">Your results.</p>' + listenBtn("Your results.") +
+    '<div class="champ"><div class="ctitle">' + (all ? "CYBER BOSS RUSH CHAMPION" : "Bosses beaten: " + d + " of 3") + "</div>" +
+    '<div class="cname" id="champName">' + esc(S.name ? S.name : "Cyber Champion") + "</div>" +
+    (isStudent() ? '<div class="small">XP ' + S.xp + " / " + MAXXP + " &middot; Best streak " + S.best + "</div>" : "") +
+    "</div>" +
+    '<div class="card"><label class="small" for="nameInput">Name for your card</label><br>' +
+    '<input type="text" id="nameInput" maxlength="24" value="' + esc(S.name) + '" oninput="setName(this.value)"></div>' +
+    '<div class="card">' +
+    finishLine("phisher", "The Phisher") +
+    finishLine("reuser", "The Reuser") +
+    finishLine("sniffer", "The Sniffer") +
+    "</div>" +
+    '<div class="row"><button onclick="go(\'map\')">Boss Map</button></div>' + themeRow();
+  return h;
+}
+
+/* ============ TEACHER PANEL ============ */
+function togglePanel(open){
+  document.getElementById("panel").classList.toggle("open", !!open);
+  if (!open) document.getElementById("revealBox").style.display = "none";
+}
+function panelJump(screen){ go(screen); togglePanel(false); }
+function panelSkip(){
+  if (S.screen === "phisher") phSkip();
+  else if (S.screen === "reuser"){ if (!S.reuser.boss.clearedOnce){ S.reuser.boss.anySkip = true; } go("map"); }
+  else if (S.screen === "sniffer") snSkip();
+  else if (S.screen === "start" || S.screen === "map"){
+    if (!S.phisher.boss.clearedOnce) go("phisher");
+    else if (!S.reuser.boss.clearedOnce) go("reuser");
+    else if (!S.sniffer.boss.clearedOnce) go("sniffer");
+    else go("finish");
+  }
+  else if (S.screen === "finish") go("map");
+  render();
+}
+var REVEALS = {
+  start: "Beat each boss by playing. Skipping never defeats a boss.",
+  map: "A boss reads Defeated only when it was beaten by play. Skips and jumps earn nothing.",
+  phisher: "1. Lincoln Middle School Office: Safe\n2. Prize Center: Phish, too-good offer\n3. FastShip: Phish, link mismatch\n4. SocialBuzz: Phish, asks for password\n5. Lincoln School Portal: Phish, sender mismatch\n6. GameVault Security: Phish, urgency pressure\n7. School Library: Safe",
+  reuser: "Give every account its own password. The longest, strongest pick is correct-horse-battery. One password everywhere is the vulnerability the Reuser wants.",
+  finish: "The Champion card needs all three bosses beaten by play."
+};
+function panelReveal(){
+  var box = document.getElementById("revealBox");
+  var txt;
+  if (S.screen === "sniffer"){
+    txt = S.sniffer.round === 0 ? "Clean path: You > Relay A > Friend." : "Clean path: You > Relay A > Relay C > Friend.";
+  } else {
+    txt = REVEALS[S.screen] || REVEALS.map;
+  }
+  box.textContent = txt;
+  box.style.display = "block";
+}
+function panelReset(){
+  initState();
+  document.body.className = "";
+  togglePanel(false);
+  render();
+}
+
+/* ============ INIT ============ */
+initState();
+render();
+</script>
+</body>
+</html>
