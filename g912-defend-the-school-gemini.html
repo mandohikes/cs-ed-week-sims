@@ -231,6 +231,9 @@
       .feedback .verdict { font-family: "Archivo", sans-serif; font-size: 1.05rem; display: block; margin-bottom: 2px; }
       .feedback.good .verdict { color: var(--accent); }
       .feedback.bad .verdict { color: var(--danger); }
+      .feedback.warn { background: var(--warn-soft); color: var(--ink); }
+      .feedback.warn .verdict { color: var(--warn); }
+      .opt.revealed { border-color: var(--warn); background: var(--warn-soft); }
 
       /* ---------- teacher panel ---------- */
       .teacher-panel {
@@ -483,6 +486,11 @@
           <div id="breakResp"></div>
         </div>
 
+        <div class="card" id="reportReveal" hidden>
+          <h3>Teacher reveal — correct answers</h3>
+          <div id="reportRevealBody"></div>
+        </div>
+
         <div class="cert" id="certBox">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11C7.4 20.4 4 16 4 11V5l8-3z" fill="var(--accent)"/><path d="M8.5 12l2.4 2.4L15.6 9.7" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div class="c-title" id="certTitle">School Defender Certificate</div>
@@ -508,6 +516,7 @@
       <button class="bypass-item" id="bypassRespond" type="button">Incident cards</button>
       <button class="bypass-item" id="bypassReport" type="button">Final report</button>
       <div class="bypass-lbl">This item</div>
+      <button class="bypass-item" id="bypassReveal" type="button">Reveal answer (no points)</button>
       <button class="bypass-item" id="bypassSkip" type="button">Skip this item (counts as revealed)</button>
       <button class="bypass-item danger" id="bypassReset" type="button">Reset</button>
     </div>
@@ -689,15 +698,20 @@
       var state = {
         mode: null,            // 'teacher' | 'student'
         current: 0,            // inbox index
-        calls: {},             // msgIndex -> {picked, correct}
-        resp: {},              // incidentIndex -> pickedIndex
+        calls: {},             // msgIndex -> {picked, correct, skipped, revealed}
+        resp: {},              // incidentIndex -> pickedIndex (resolved only)
+        respMiss: {},          // incidentIndex -> true once a wrong try scores it as a miss
+        revealCalls: {},       // msgIndex -> true once the teacher reveals it (no point)
+        revealResp: {},        // incidentIndex -> true once the teacher reveals it (no point)
         votes: { legit: 0, phish: 0 }
       };
 
       function score() {
         var s = 0, k;
         for (k in state.calls) if (state.calls[k].correct) s++;
-        for (k in state.resp) if (state.resp[k] === INCIDENTS[k].answer) s++;
+        for (k in state.resp) {
+          if (state.resp[k] === INCIDENTS[k].answer && !state.respMiss[k] && !state.revealResp[k]) s++;
+        }
         return s;
       }
       function inboxDone() { return Object.keys(state.calls).length === MESSAGES.length; }
@@ -827,6 +841,22 @@
         });
       }
 
+      /* Standalone teacher reveal for the open inbox message: shows the
+         verdict and clue in place. It records the reveal (so the item can
+         no longer earn a point) but does NOT answer, advance, or end it —
+         the student still makes the call. */
+      function showInboxReveal(i) {
+        var box = $("revealBox");
+        if (!box) return;
+        var m = MESSAGES[i];
+        box.className = "feedback warn on";
+        box.innerHTML = "";
+        var v = document.createElement("span"); v.className = "verdict";
+        v.textContent = m.phish ? "Revealed — this one is phishing." : "Revealed — this one is legit.";
+        var cl = document.createElement("span"); cl.textContent = m.clue;
+        box.appendChild(v); box.appendChild(cl);
+      }
+
       function openMessage(i) {
         stopSpeaking();
         state.current = i;
@@ -881,7 +911,8 @@
           '</div>' +
           (state.mode === "student" ? '<button class="hint-btn" id="hintBtn" type="button">Need a hint?</button><div class="hint-line" id="hintLine"></div>' : "") +
           '</div>' +
-          '<div class="feedback" id="feedBox"></div>';
+          '<div class="feedback" id="feedBox"></div>' +
+          '<div class="feedback warn" id="revealBox"></div>';
 
         var pane = $("mailPane");
         pane.innerHTML = inner;
@@ -938,6 +969,8 @@
           var v = document.createElement("span"); v.className = "verdict";
           v.textContent = c.skipped
             ? (m.phish ? "Revealed — this one is phishing." : "Revealed — this one is legit.")
+            : c.revealed
+            ? (c.picked === m.phish ? "Revealed — that is the answer, so no point for this one." : (m.phish ? "Missed it — this one is phishing." : "Missed it — this one is legit."))
             : c.correct
             ? (m.phish ? "Correct — it's phishing." : "Correct — it's legit.")
             : (m.phish ? "Missed it — this one is phishing." : "Missed it — this one is legit.");
@@ -956,12 +989,18 @@
         }
         function decide(pickedPhish) {
           if (state.calls[i]) return;
-          state.calls[i] = { picked: pickedPhish, correct: pickedPhish === m.phish };
+          var revealed = !!state.revealCalls[i];
+          state.calls[i] = {
+            picked: pickedPhish,
+            correct: pickedPhish === m.phish && !revealed,
+            revealed: revealed
+          };
           renderFeedback(); renderList(); updateChrome();
           $("inboxProg").textContent = "Message " + (i + 1) + " of 8 · " + Object.keys(state.calls).length + " called";
         }
         $("callLegit").addEventListener("click", function () { decide(false); });
         $("callPhish").addEventListener("click", function () { decide(true); });
+        if (state.revealCalls[i]) showInboxReveal(i);
         if (call) renderFeedback();
       }
       function nextUncalled(from) {
@@ -1004,17 +1043,35 @@
             b.appendChild(k); b.appendChild(t);
             b.addEventListener("click", function () {
               if (state.resp[ii] !== undefined) return;
+              if (oi !== inc.answer) {
+                /* Wrong first move: scored as a miss, but the incident
+                   stays open — the student retries the SAME incident
+                   until they resolve it (or use Skip / Reveal). */
+                state.respMiss[ii] = true;
+                b.disabled = true;
+                b.classList.add("wrong");
+                feed.className = "feedback on bad";
+                feed.innerHTML = "";
+                var wv = document.createElement("span"); wv.className = "verdict";
+                wv.textContent = "Not the best first move — that try counts as a miss.";
+                var wc = document.createElement("span");
+                wc.textContent = "Try again — pick another move for this same incident.";
+                feed.appendChild(wv); feed.appendChild(wc);
+                updateChrome();
+                return;
+              }
               state.resp[ii] = oi;
               opts.querySelectorAll(".opt").forEach(function (o, oj) {
                 o.disabled = true;
                 if (oj === inc.answer) o.classList.add("right");
-                else if (oj === oi) o.classList.add("wrong");
               });
-              var right = oi === inc.answer;
-              feed.className = "feedback on " + (right ? "good" : "bad");
+              var noPoint = state.respMiss[ii] || state.revealResp[ii];
+              feed.className = "feedback on good";
               feed.innerHTML = "";
               var v = document.createElement("span"); v.className = "verdict";
-              v.textContent = right ? "Right first move." : "Not first — try the safer move.";
+              v.textContent = noPoint
+                ? "Resolved — that is the best first move. No point: an earlier try missed, or it was revealed."
+                : "Right first move.";
               var cl = document.createElement("span"); cl.textContent = inc.clue;
               feed.appendChild(v); feed.appendChild(cl);
               updateRespProg(); updateChrome();
@@ -1030,6 +1087,29 @@
         var n = Object.keys(state.resp).length;
         $("respProg").textContent = n + " of 4 done";
         $("toReport").disabled = !respDone();
+      }
+      /* Standalone teacher reveal for one incident card: marks the best
+         move and shows why, in place. Records the reveal (no point for
+         that incident) but does NOT resolve or end it — the student
+         still picks the move to finish the incident. */
+      function showIncidentReveal(ii) {
+        buildIncidents();
+        var inc = INCIDENTS[ii];
+        var card = $("incidentList").children[ii];
+        if (!card) return;
+        state.revealResp[ii] = true;
+        card.querySelectorAll(".opt").forEach(function (o, oj) {
+          if (oj === inc.answer) o.classList.add("revealed");
+        });
+        var feed = card.querySelector(".feedback");
+        feed.className = "feedback on warn";
+        feed.innerHTML = "";
+        var v = document.createElement("span"); v.className = "verdict";
+        v.textContent = "Revealed — best first move: " + inc.options[inc.answer];
+        var cl = document.createElement("span");
+        cl.textContent = inc.clue + " No point for this one — still pick the move to finish it.";
+        feed.appendChild(v); feed.appendChild(cl);
+        card.scrollIntoView({ block: "center" });
       }
       $("toReport").addEventListener("click", function () { renderReport(); show("view-report"); });
 
@@ -1062,7 +1142,7 @@
         });
         var br = $("breakResp"); br.innerHTML = "";
         INCIDENTS.forEach(function (inc, i) {
-          var right = state.resp[i] === inc.answer;
+          var right = state.resp[i] === inc.answer && !state.respMiss[i] && !state.revealResp[i];
           var row = document.createElement("div"); row.className = "b-row";
           var mk = document.createElement("span"); mk.className = "mark " + (right ? "ok" : "no");
           mk.textContent = right ? "✓" : "✗";
@@ -1084,17 +1164,58 @@
          Skipping marks the current item answered and revealed, with no
          point earned — the normal score rules are untouched. */
       var bypassPanel = $("bypassPanel");
-      function refreshBypassSkip() {
-        var can = false;
-        if ($("view-inbox").classList.contains("on")) can = !inboxDone();
-        else if ($("view-respond").classList.contains("on")) can = !respDone();
-        $("bypassSkip").disabled = !can;
+      function refreshBypass() {
+        var canSkip = false, canReveal = false;
+        if ($("view-inbox").classList.contains("on")) { canSkip = !inboxDone(); canReveal = true; }
+        else if ($("view-respond").classList.contains("on")) { canSkip = !respDone(); canReveal = !respDone(); }
+        else if ($("view-report").classList.contains("on")) { canReveal = true; }
+        $("bypassSkip").disabled = !canSkip;
+        $("bypassReveal").disabled = !canReveal;
       }
       function toggleBypass(open) {
         var willOpen = typeof open === "boolean" ? open : !bypassPanel.classList.contains("on");
         bypassPanel.classList.toggle("on", willOpen);
         $("bypassBtn").setAttribute("aria-expanded", willOpen ? "true" : "false");
-        if (willOpen) refreshBypassSkip();
+        if (willOpen) refreshBypass();
+      }
+      /* Standalone Reveal: works on every screen type. Shows the current
+         item's correct verdict/answer in place, earns no points, and
+         never advances or ends the item. On the final report it lists
+         every correct answer. */
+      function showReportReveal() {
+        var body = $("reportRevealBody");
+        body.innerHTML = "";
+        var h1 = document.createElement("p");
+        h1.style.fontWeight = "800"; h1.textContent = "Round 1 · Inbox";
+        body.appendChild(h1);
+        MESSAGES.forEach(function (m) {
+          var p = document.createElement("p");
+          p.textContent = m.subject + (m.phish ? " — phishing. " : " — legit. ") + m.clue;
+          body.appendChild(p);
+        });
+        var h2 = document.createElement("p");
+        h2.style.fontWeight = "800"; h2.textContent = "Round 2 · Best first moves";
+        body.appendChild(h2);
+        INCIDENTS.forEach(function (inc) {
+          var p = document.createElement("p");
+          p.textContent = inc.title + " — " + inc.options[inc.answer] + " " + inc.clue;
+          body.appendChild(p);
+        });
+        $("reportReveal").hidden = false;
+        $("reportReveal").scrollIntoView({ block: "center" });
+      }
+      function revealCurrent() {
+        if ($("view-inbox").classList.contains("on")) {
+          state.revealCalls[state.current] = true;
+          showInboxReveal(state.current);
+        } else if ($("view-respond").classList.contains("on")) {
+          for (var k = 0; k < INCIDENTS.length; k++) {
+            if (state.resp[k] === undefined) { showIncidentReveal(k); break; }
+          }
+        } else if ($("view-report").classList.contains("on")) {
+          showReportReveal();
+        }
+        updateChrome();
       }
       function ensureMode() { if (!state.mode) startMode("teacher"); }
       $("bypassBtn").addEventListener("click", function () { toggleBypass(); });
@@ -1114,10 +1235,15 @@
         renderReport(); show("view-report");
         toggleBypass(false);
       });
+      $("bypassReveal").addEventListener("click", function () {
+        ensureMode();
+        revealCurrent();
+        toggleBypass(false);
+      });
       $("bypassSkip").addEventListener("click", function () {
         if ($("view-inbox").classList.contains("on")) skipMessage();
         else if ($("view-respond").classList.contains("on")) skipIncident();
-        refreshBypassSkip();
+        refreshBypass();
       });
       $("bypassReset").addEventListener("click", function () { location.reload(); });
 
