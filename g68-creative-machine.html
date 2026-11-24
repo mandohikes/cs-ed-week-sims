@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Creative Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --raspberry:#CD2653;
+    --navy:#273791;
+    --sky:#00ADEF;
+    --magenta:#EC008C;
+    --teal:#13A89E;
+    --bg:#F4F7FF;
+    --ink:#1B2350;
+    --muted:#5A648C;
+    --line:#DCE3F5;
+    --card:#FFFFFF;
+    --soft:#EEF2FF;
+    --soft2:#F7F9FF;
+    --shadow:0 10px 30px rgba(39,55,145,.12);
+    --good:#0E7C6B;
+    --good-bg:#E2F5F1;
+    --warn-bg:#FDECEF;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10142E;
+      --ink:#EDF0FF;
+      --muted:#A7B0D6;
+      --line:#333C6E;
+      --card:#1B2148;
+      --soft:#262C5C;
+      --soft2:#20265A;
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+      --good:#5FE3C8;
+      --good-bg:#173F3A;
+      --warn-bg:#4A1E2E;
+    }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  button, input{ min-height:2.25rem; }
+
+  .wrap{ max-width:700px; margin:0 auto; padding:0 16px 96px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:18px 2px 12px;
+  }
+  .logo-badge{
+    width:46px; height:46px; flex:0 0 46px;
+    border-radius:13px;
+    background:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow);
+  }
+  .logo-badge svg{ display:block; }
+  .topbar h1{ font-size:1.45rem; font-weight:900; margin:0; line-height:1.1; letter-spacing:-.01em; }
+  .topbar .sub{ font-size:.82rem; font-weight:700; color:var(--muted); margin-top:2px; }
+  .progress-track{
+    height:6px; border-radius:99px; background:var(--line);
+    overflow:hidden; margin:2px 0 18px;
+  }
+  .progress-fill{
+    height:100%; width:5%; border-radius:99px;
+    background:linear-gradient(90deg, var(--sky), var(--magenta));
+    transition:width .45s ease;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .progress-fill{ transition:none; }
+  }
+
+  /* ---------- Screens / cards ---------- */
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    padding:26px 24px 28px;
+  }
+  .kicker{
+    display:inline-block;
+    font-size:.72rem; font-weight:900; letter-spacing:.09em; text-transform:uppercase;
+    color:#fff; background:var(--raspberry);
+    padding:6px 12px; border-radius:99px; margin-bottom:14px;
+  }
+  .kicker.navy{ background:var(--navy); }
+  .kicker.sky{ background:var(--sky); }
+  .kicker.magenta{ background:var(--magenta); }
+  .kicker.teal{ background:var(--teal); }
+  h2{ font-size:1.9rem; font-weight:900; line-height:1.15; margin:0 0 10px; letter-spacing:-.01em; }
+  .instruction{ font-size:1.05rem; font-weight:700; color:var(--muted); margin:0 0 18px; }
+  .goal{
+    background:var(--soft); border-radius:14px;
+    padding:14px 16px; font-weight:700; font-size:1rem; line-height:1.45;
+    margin:0 0 20px;
+  }
+
+  .hear-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .pill-quiet{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:.8rem; font-weight:800; color:var(--muted);
+    border:1.5px solid var(--line); border-radius:99px; padding:7px 12px;
+    background:var(--soft2);
+  }
+  .hear-btn{
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink);
+    font-size:.85rem; font-weight:800; border-radius:99px; padding:8px 14px;
+    min-height:38px;
+  }
+  .hear-btn:hover{ border-color:var(--sky); color:var(--navy); }
+  @media (prefers-color-scheme: dark){ .hear-btn:hover{ color:var(--sky); } }
+
+  /* ---------- Mode buttons ---------- */
+  .mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px){ .mode-grid{ grid-template-columns:1fr; } }
+  .mode-btn{
+    text-align:left; border:2px solid var(--line); background:var(--soft2);
+    border-radius:16px; padding:18px; color:var(--ink);
+  }
+  .mode-btn:hover{ border-color:var(--sky); }
+  .mode-btn .mode-name{ font-size:1.2rem; font-weight:900; display:block; margin-bottom:6px; }
+  .mode-btn .mode-desc{ font-size:.92rem; font-weight:600; color:var(--muted); line-height:1.45; display:block; }
+  .mode-btn.teacher-mode .mode-name{ color:var(--navy); }
+  .mode-btn.student-mode .mode-name{ color:var(--raspberry); }
+  @media (prefers-color-scheme: dark){
+    .mode-btn.teacher-mode .mode-name{ color:var(--sky); }
+  }
+
+  /* ---------- Talk box (teacher-led) ---------- */
+  .talk-box{
+    display:none;
+    margin-top:22px; border:2px dashed var(--teal); border-radius:14px;
+    padding:14px 16px 8px; background:var(--soft2);
+  }
+  body.mode-teacher .talk-box{ display:block; }
+  .talk-box h3{ margin:0 0 8px; font-size:.85rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; color:var(--teal); }
+  .talk-box ul{ margin:0 0 8px; padding-left:20px; }
+  .talk-box li{ font-weight:600; margin-bottom:6px; line-height:1.4; }
+
+  /* ---------- Rule groups ---------- */
+  .rule-group{ margin-bottom:20px; }
+  .rule-group h3{ font-size:1rem; font-weight:900; margin:0 0 10px; }
+  .options{ display:flex; flex-wrap:wrap; gap:10px; }
+  .opt-btn{
+    border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:14px; padding:10px 16px; font-size:1rem; font-weight:800;
+    min-height:48px; display:inline-flex; align-items:center; gap:8px;
+  }
+  .opt-btn:hover{ border-color:var(--sky); }
+  .opt-btn.selected{ border-color:var(--navy); background:var(--soft); box-shadow:inset 0 0 0 1px var(--navy); }
+  @media (prefers-color-scheme: dark){ .opt-btn.selected{ border-color:var(--sky); box-shadow:inset 0 0 0 1px var(--sky); } }
+  .dots{ display:inline-flex; gap:4px; }
+  .dot{ width:14px; height:14px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.15); }
+
+  /* ---------- Big buttons ---------- */
+  .big-btn{
+    display:block; width:100%;
+    border:none; border-radius:16px;
+    background:var(--raspberry); color:#fff;
+    font-size:1.25rem; font-weight:900; letter-spacing:.02em;
+    padding:16px; min-height:58px; margin-top:6px;
+  }
+  .big-btn:hover{ filter:brightness(1.07); }
+  .big-btn:disabled{ background:var(--line); color:var(--muted); cursor:not-allowed; filter:none; }
+  .row-btns{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .row-btns .big-btn{ flex:1 1 200px; margin-top:0; }
+  .btn-navy{ background:var(--navy); }
+  .btn-teal{ background:var(--teal); }
+  .btn-outline{
+    background:var(--card); color:var(--ink); border:2px solid var(--line);
+  }
+  .btn-outline:hover{ border-color:var(--navy); filter:none; }
+  @media (prefers-color-scheme: dark){ .btn-outline:hover{ border-color:var(--sky); } }
+
+  .hint{ font-weight:800; color:var(--muted); margin:10px 0 0; min-height:1.4em; }
+  .hint.warn{ color:var(--raspberry); }
+  .same-line{ font-weight:900; font-size:1.05rem; margin:16px 0 0; color:var(--navy); }
+  @media (prefers-color-scheme: dark){ .same-line{ color:var(--sky); } }
+
+  /* ---------- Art frame ---------- */
+  .art-frame{
+    border:3px solid var(--ink); border-radius:10px;
+    background:#fff; padding:8px; margin-top:18px;
+  }
+  .art-frame svg{ display:block; width:100%; height:auto; }
+  .art-frame.empty{ display:none; }
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px; }
+  @media (max-width:520px){ .compare-grid{ grid-template-columns:1fr; } }
+  .piece-label{ font-weight:900; font-size:.9rem; margin:0 0 6px; }
+  .compare-grid .art-frame{ margin-top:0; }
+  .chip{
+    display:inline-block; margin-top:16px;
+    background:var(--soft); border:1.5px solid var(--navy); color:var(--navy);
+    font-weight:900; font-size:.9rem; border-radius:99px; padding:7px 14px;
+  }
+  @media (prefers-color-scheme: dark){ .chip{ border-color:var(--sky); color:var(--sky); } }
+
+  /* ---------- Questions ---------- */
+  .q-prompt{ font-size:1.3rem; font-weight:900; margin:20px 0 12px; }
+  .q-options{ display:flex; flex-direction:column; gap:10px; }
+  .q-opt{
+    text-align:left; border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:14px; padding:14px 16px; font-size:1rem; font-weight:800; min-height:52px;
+  }
+  .q-opt:hover:not(:disabled){ border-color:var(--sky); }
+  .q-opt:disabled{ cursor:default; opacity:.85; }
+  .q-opt.correct{ border-color:var(--teal); background:var(--good-bg); color:var(--ink); opacity:1; }
+  .q-opt.wrong{ border-color:var(--raspberry); background:var(--warn-bg); opacity:1; }
+  .feedback{ display:none; margin-top:14px; font-weight:800; font-size:1rem; line-height:1.45; border-radius:12px; padding:12px 14px; }
+  .feedback.show{ display:block; }
+  .feedback.good{ background:var(--good-bg); color:var(--good); }
+  .feedback.bad{ background:var(--warn-bg); color:var(--raspberry); }
+  @media (prefers-color-scheme: dark){ .feedback.bad{ color:#FF8FA8; } }
+  .score-line{ font-weight:900; color:var(--muted); margin:0 0 6px; font-size:.9rem; }
+  body.mode-teacher .score-line{ display:none; }
+
+  /* ---------- Gallery ---------- */
+  .gallery-card{
+    border:3px solid var(--ink); border-radius:14px; background:var(--card);
+    padding:16px; margin-top:6px;
+  }
+  @media (prefers-color-scheme: dark){ .gallery-card{ background:#232A5E; } }
+  .gallery-card .art-frame{ margin-top:0; border-width:2px; }
+  .gallery-rules{ font-weight:800; margin:14px 0 4px; line-height:1.5; }
+  .signature{
+    font-size:1.5rem; font-weight:900; color:var(--navy);
+    min-height:1.6em; margin-top:8px; font-style:italic; word-break:break-word;
+  }
+  @media (prefers-color-scheme: dark){ .signature{ color:var(--sky); } }
+  .toggle-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .toggle-btn{
+    flex:1; border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:12px; font-weight:900; font-size:1rem; padding:10px; min-height:48px;
+  }
+  .toggle-btn.selected{ border-color:var(--magenta); background:var(--soft); box-shadow:inset 0 0 0 1px var(--magenta); }
+  .sign-label{ display:block; font-weight:900; margin:20px 0 8px; font-size:1rem; }
+  .sign-input{
+    width:100%; font-family:inherit; font-size:1.1rem; font-weight:700;
+    border:2px solid var(--line); border-radius:12px; padding:12px 14px;
+    background:var(--card); color:var(--ink); min-height:50px;
+  }
+  .sign-input:focus{ outline:none; border-color:var(--sky); }
+  .vote-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .vote-btn{
+    flex:1 1 120px; border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:14px; font-weight:900; font-size:1.05rem; padding:14px; min-height:54px;
+  }
+  .vote-btn:hover{ border-color:var(--sky); }
+  .vote-btn.selected{ border-color:var(--raspberry); background:var(--warn-bg); box-shadow:inset 0 0 0 1px var(--raspberry); }
+  .reflection{ display:none; margin-top:14px; font-weight:800; line-height:1.45; background:var(--soft); border-radius:12px; padding:12px 14px; }
+  .reflection.show{ display:block; }
+
+  /* ---------- Teacher button + panel ---------- */
+  .teacher-btn{
+    position:fixed; right:16px; bottom:16px; z-index:60;
+    border:1.5px solid var(--line); background:var(--card); color:var(--muted);
+    font-size:.82rem; font-weight:800; border-radius:99px; padding:9px 16px;
+    min-height:38px; box-shadow:var(--shadow);
+  }
+  .teacher-btn:hover{ color:var(--ink); border-color:var(--muted); }
+  .panel-overlay{
+    display:none; position:fixed; inset:0; z-index:70;
+    background:rgba(16,20,46,.55); padding:20px 14px;
+    overflow-y:auto;
+  }
+  .panel-overlay.open{ display:block; }
+  .panel{
+    max-width:520px; margin:4vh auto; background:var(--card); color:var(--ink);
+    border-radius:18px; border:1px solid var(--line); box-shadow:var(--shadow);
+    padding:22px;
+  }
+  .panel h2{ font-size:1.3rem; margin-bottom:6px; }
+  .panel .status{ font-weight:800; color:var(--muted); margin:0 0 16px; line-height:1.5; }
+  .panel h3{ font-size:.85rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:18px 0 10px; }
+  .panel .btn-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:440px){ .panel .btn-grid{ grid-template-columns:1fr; } }
+  .panel button{
+    border:2px solid var(--line); background:var(--soft2); color:var(--ink);
+    border-radius:12px; font-weight:800; font-size:.95rem; padding:11px 12px; min-height:48px;
+  }
+  .panel button:hover{ border-color:var(--navy); }
+  @media (prefers-color-scheme: dark){ .panel button:hover{ border-color:var(--sky); } }
+  .panel .wide{ grid-column:1 / -1; }
+  .panel .close-btn{ background:var(--navy); color:#fff; border-color:var(--navy); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="logo-badge" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2 L15.6 9.4 L23.4 9.7 L17.3 14.5 L19.4 22 L13 17.7 L6.6 22 L8.7 14.5 L2.6 9.7 L10.4 9.4 Z" fill="#FFC53D"/><circle cx="20.5" cy="19.5" r="3" fill="#00ADEF"/><circle cx="5.5" cy="5.5" r="2.4" fill="#EC008C"/></svg>
+    </div>
+    <div>
+      <h1>Creative Machine</h1>
+      <div class="sub">CS Education Week · Center for Cyber Education</div>
+    </div>
+  </header>
+  <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- ============ START ============ -->
+  <section class="screen active" id="screen-start" data-hear="You set the rules. The machine makes the art.">
+    <div class="card">
+      <span class="kicker">Grades 6–8 · AI &amp; Creativity</span>
+      <h2>You set the rules. The machine makes the art.</h2>
+      <p class="goal">Goal: Set rules for an art machine, watch it create — then decide: who is the artist?</p>
+      <div class="hear-row">
+        <span class="pill-quiet">No sound needed</span>
+        <button class="hear-btn" type="button" data-hear-btn>Hear it · optional</button>
+      </div>
+      <div class="mode-grid">
+        <button class="mode-btn teacher-mode" type="button" id="modeTeacher">
+          <span class="mode-name">Teacher-Led</span>
+          <span class="mode-desc">For the projector. Class votes on the rules. Talk it out together.</span>
+        </button>
+        <button class="mode-btn student-mode" type="button" id="modeStudent">
+          <span class="mode-name">Student-Led</span>
+          <span class="mode-desc">On your own. Set rules, make art, and score the quick check.</span>
+        </button>
+      </div>
+      <div class="talk-box">
+        <h3>Talk about it</h3>
+        <ul>
+          <li>Who is the artist when a machine makes the picture?</li>
+          <li>What rules could we give an art machine?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 1 ============ -->
+  <section class="screen" id="screen-step1" data-hear="Pick one of each, then press CREATE.">
+    <div class="card">
+      <span class="kicker navy">Step 1 · Set the Rules</span>
+      <h2>Pick the machine's rules</h2>
+      <p class="instruction">Pick one of each, then press CREATE.</p>
+      <div class="hear-row">
+        <span class="pill-quiet">No sound needed</span>
+        <button class="hear-btn" type="button" data-hear-btn>Hear it · optional</button>
+      </div>
+      <div id="rules1"></div>
+      <button class="big-btn" type="button" id="create1">CREATE</button>
+      <div class="art-frame empty" id="frame1"></div>
+      <div id="after1" style="display:none">
+        <p class="same-line">Same rules. New art every time.</p>
+        <div class="row-btns">
+          <button class="big-btn btn-outline" type="button" id="again1">Create Again — Same Rules</button>
+          <button class="big-btn btn-navy" type="button" id="next1">Next: Change One Rule</button>
+        </div>
+      </div>
+      <div class="talk-box">
+        <h3>Talk about it</h3>
+        <ul>
+          <li>Did the machine make exactly what you pictured?</li>
+          <li>What did the machine choose on its own?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2 ============ -->
+  <section class="screen" id="screen-step2" data-hear="Change exactly one rule, then press CREATE.">
+    <div class="card">
+      <span class="kicker sky">Step 2 · Change One Rule</span>
+      <h2>Change ONE rule</h2>
+      <p class="instruction">Change exactly one rule, then press CREATE.</p>
+      <div class="hear-row">
+        <span class="pill-quiet">No sound needed</span>
+        <button class="hear-btn" type="button" data-hear-btn>Hear it · optional</button>
+      </div>
+      <div id="rules2"></div>
+      <button class="big-btn" type="button" id="create2" disabled>CREATE</button>
+      <p class="hint" id="hint2">Change one rule to continue.</p>
+      <div id="compare2" style="display:none">
+        <div class="compare-grid">
+          <div>
+            <p class="piece-label">Piece 1</p>
+            <div class="art-frame" id="frameP1"></div>
+          </div>
+          <div>
+            <p class="piece-label">Piece 2</p>
+            <div class="art-frame" id="frameP2"></div>
+          </div>
+        </div>
+        <span class="chip" id="changedChip"></span>
+        <p class="q-prompt">What changed?</p>
+        <div class="q-options" id="whatChangedOpts">
+          <button class="q-opt" type="button" data-group="colors">The colors</button>
+          <button class="q-opt" type="button" data-group="shapes">The shapes</button>
+          <button class="q-opt" type="button" data-group="layout">The layout</button>
+        </div>
+        <div class="feedback" id="feedbackWC"></div>
+        <button class="big-btn btn-navy" type="button" id="next2" style="display:none; margin-top:16px;">Next: Who Is the Artist?</button>
+      </div>
+      <div class="talk-box">
+        <h3>Talk about it</h3>
+        <ul>
+          <li>How much did one rule change the whole piece?</li>
+          <li>Which rule changed the art the most?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3 ============ -->
+  <section class="screen" id="screen-step3" data-hear="">
+    <div class="card">
+      <span class="kicker magenta">Step 3 · Quick Check</span>
+      <h2>Who is the artist?</h2>
+      <p class="score-line" id="scoreLine">Score: 0 of 3</p>
+      <div class="hear-row">
+        <span class="pill-quiet">No sound needed</span>
+        <button class="hear-btn" type="button" data-hear-btn>Hear it · optional</button>
+      </div>
+      <p class="q-prompt" id="qPrompt" style="margin-top:4px;"></p>
+      <div class="q-options" id="qOpts"></div>
+      <div class="feedback" id="feedbackQ"></div>
+      <button class="big-btn btn-teal" type="button" id="nextQ" style="display:none; margin-top:16px;">Next</button>
+      <div class="talk-box">
+        <h3>Talk about it</h3>
+        <ul>
+          <li>Read the correct answer out loud together.</li>
+          <li>Does everyone agree? Why or why not?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALLERY ============ -->
+  <section class="screen" id="screen-gallery" data-hear="Pick your favorite piece, sign your card, then answer: who is the artist?">
+    <div class="card">
+      <span class="kicker teal">Gallery</span>
+      <h2>Your Gallery Card</h2>
+      <p class="instruction">Pick your favorite piece, then sign your card.</p>
+      <div class="hear-row">
+        <span class="pill-quiet">No sound needed</span>
+        <button class="hear-btn" type="button" data-hear-btn>Hear it · optional</button>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn selected" type="button" id="togP1">Piece 1</button>
+        <button class="toggle-btn" type="button" id="togP2">Piece 2</button>
+      </div>
+      <div class="gallery-card">
+        <div class="art-frame" id="galleryFrame"></div>
+        <p class="gallery-rules" id="galleryRules"></p>
+        <div class="signature" id="signature"></div>
+      </div>
+      <label class="sign-label" for="signInput">Sign your card</label>
+      <input class="sign-input" id="signInput" type="text" maxlength="40" placeholder="Your name" autocomplete="off" />
+      <p class="score-line" id="finalScore" style="margin-top:18px;"></p>
+      <p class="q-prompt">So — who is the artist?</p>
+      <div class="vote-row">
+        <button class="vote-btn" type="button" data-vote="me">Me</button>
+        <button class="vote-btn" type="button" data-vote="machine">The machine</button>
+        <button class="vote-btn" type="button" data-vote="both">Both</button>
+      </div>
+      <div class="reflection" id="reflection"></div>
+      <button class="big-btn" type="button" id="playAgain" style="margin-top:20px;">Play Again</button>
+      <div class="talk-box">
+        <h3>Talk about it</h3>
+        <ul>
+          <li>Take a class vote: Me, the machine, or both?</li>
+          <li>Did anyone change their mind from the start?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<button class="teacher-btn" type="button" id="teacherBtn">Teacher</button>
+
+<div class="panel-overlay" id="panelOverlay" role="dialog" aria-modal="true" aria-label="Teacher controls">
+  <div class="panel">
+    <h2>Teacher Controls</h2>
+    <p class="status" id="panelStatus"></p>
+    <h3>Jump to a stage</h3>
+    <div class="btn-grid">
+      <button type="button" data-jump="step1">1 · Set the Rules</button>
+      <button type="button" data-jump="step2">2 · Change One Rule</button>
+      <button type="button" data-jump="step3">3 · Quick Check</button>
+      <button type="button" data-jump="gallery">Gallery</button>
+    </div>
+    <h3>This screen</h3>
+    <div class="btn-grid">
+      <button type="button" id="skipBtn">Skip this step</button>
+      <button type="button" id="revealBtn">Reveal</button>
+      <button type="button" id="resetBtn">Reset</button>
+      <button type="button" class="close-btn" id="closePanel">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Data ---------------- */
+  var PALETTES = {
+    berry:  { label:"Berry Pop", colors:["#CD2653","#EC008C","#273791"] },
+    ocean:  { label:"Ocean Pop", colors:["#00ADEF","#13A89E","#273791"] },
+    fiesta: { label:"Fiesta",    colors:["#EC008C","#FFC53D","#00ADEF"] }
+  };
+  var SHAPES = { circles:"Circles", triangles:"Triangles", stars:"Stars" };
+  var LAYOUTS = { grid:"Grid", scattered:"Scattered", mirrored:"Mirrored" };
+  var GROUPS = [
+    { key:"colors", title:"Colors" },
+    { key:"shapes", title:"Shapes" },
+    { key:"layout", title:"Layout" }
+  ];
+  var QUESTIONS = [
+    {
+      q:"What did YOU decide?",
+      options:["The rules: colors, shapes, layout","Every exact spot on the page","Nothing — the machine did it all"],
+      correct:0,
+      why:"You set the rules. The machine followed them."
+    },
+    {
+      q:"What did the MACHINE decide?",
+      options:["The rules it had to follow","Whether to make art at all","The exact spots and sizes inside the rules"],
+      correct:2,
+      why:"Within your rules, the machine placed each shape."
+    },
+    {
+      q:"If you change the rules, does the art change?",
+      options:["No — the art stays the same","Yes — new rules, new art","Only if you change all three rules"],
+      correct:1,
+      why:"The art follows the rules. Change the rules, change the art."
+    }
+  ];
+  var REFLECTIONS = {
+    me:"You set every rule — the machine just followed them.",
+    machine:"It picked every spot and size — you never touched the canvas.",
+    both:"You wrote the rules; it made the choices inside them. A team effort."
+  };
+  var SCREEN_ORDER = ["start","step1","step2","step3","gallery"];
+  var SCREEN_NAMES = { start:"Start", step1:"Step 1 · Set the Rules", step2:"Step 2 · Change One Rule", step3:"Step 3 · Quick Check", gallery:"Gallery" };
+  var PROGRESS = { start:5, step1:25, step2:50, step3:75, gallery:100 };
+
+  /* ---------------- State ---------------- */
+  var state = {
+    mode: null,               // "teacher" | "student"
+    screen: "start",
+    rules1: { colors:"berry", shapes:"circles", layout:"grid" },
+    rules2: { colors:"berry", shapes:"circles", layout:"grid" },
+    piece1: null,             // { rules:{...}, svg:"..." }
+    piece2: null,
+    changedGroup: null,
+    wcAnswered: false,
+    qIndex: 0,
+    qAnswered: false,
+    score: 0,
+    galleryPick: 1,
+    seed: (Date.now() % 2147483646) + 1
+  };
+
+  /* ---------------- Seeded RNG ---------------- */
+  function nextSeed(){
+    state.seed = (state.seed * 48271) % 2147483647;
+    return state.seed;
+  }
+  function rngFrom(seed){
+    var s = seed;
+    return function(){
+      s = (s * 48271) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  }
+
+  /* ---------------- Art generation ---------------- */
+  function starPoints(cx, cy, r){
+    var pts = [];
+    for (var i = 0; i < 10; i++){
+      var rad = (i % 2 === 0) ? r : r * 0.45;
+      var a = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push((cx + rad * Math.cos(a)).toFixed(1) + "," + (cy + rad * Math.sin(a)).toFixed(1));
+    }
+    return pts.join(" ");
+  }
+  function shapeSVG(shape, cx, cy, size, color, rot){
+    if (shape === "circles"){
+      return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + size.toFixed(1) + '" fill="' + color + '"/>';
+    }
+    if (shape === "triangles"){
+      var p = (cx) + "," + (cy - size) + " " + (cx - size * 0.9) + "," + (cy + size * 0.75) + " " + (cx + size * 0.9) + "," + (cy + size * 0.75);
+      return '<polygon points="' + p + '" fill="' + color + '" transform="rotate(' + rot.toFixed(0) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"/>';
+    }
+    return '<polygon points="' + starPoints(cx, cy, size) + '" fill="' + color + '" transform="rotate(' + rot.toFixed(0) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"/>';
+  }
+  function generateArt(rules){
+    var rand = rngFrom(nextSeed());
+    var colors = PALETTES[rules.colors].colors;
+    var parts = ['<rect x="0" y="0" width="400" height="300" fill="#FFFFFF"/>'];
+    function pickColor(){ return colors[Math.floor(rand() * colors.length)]; }
+    if (rules.layout === "grid"){
+      for (var row = 0; row < 3; row++){
+        for (var col = 0; col < 4; col++){
+          var cx = 50 + col * 100 + (rand() * 16 - 8);
+          var cy = 50 + row * 100 + (rand() * 16 - 8);
+          var size = 20 + rand() * 10;
+          parts.push(shapeSVG(rules.shapes, cx, cy, size, pickColor(), rand() * 40 - 20));
+        }
+      }
+    } else if (rules.layout === "scattered"){
+      for (var i = 0; i < 14; i++){
+        parts.push(shapeSVG(rules.shapes, 35 + rand() * 330, 35 + rand() * 230, 12 + rand() * 22, pickColor(), rand() * 360));
+      }
+    } else { // mirrored
+      for (var j = 0; j < 7; j++){
+        var x = 30 + rand() * 150, y = 35 + rand() * 230, sz = 13 + rand() * 19, c = pickColor(), r = rand() * 360;
+        parts.push(shapeSVG(rules.shapes, x, y, sz, c, r));
+        parts.push(shapeSVG(rules.shapes, 400 - x, y, sz, c, -r));
+      }
+    }
+    return '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Art made by the machine">' + parts.join("") + "</svg>";
+  }
+  function rulesText(rules){
+    return "Rules: Colors — " + PALETTES[rules.colors].label + " · Shapes — " + SHAPES[rules.shapes] + " · Layout — " + LAYOUTS[rules.layout];
+  }
+
+  /* ---------------- Rule group UI ---------------- */
+  function dotsHTML(key){
+    return '<span class="dots">' + PALETTES[key].colors.map(function(c){
+      return '<span class="dot" style="background:' + c + '"></span>';
+    }).join("") + "</span>";
+  }
+  function buildRuleGroups(containerId, rulesObj, onChange){
+    var el = document.getElementById(containerId);
+    el.innerHTML = "";
+    GROUPS.forEach(function(g){
+      var wrap = document.createElement("div");
+      wrap.className = "rule-group";
+      var h = document.createElement("h3");
+      h.textContent = g.title;
+      wrap.appendChild(h);
+      var opts = document.createElement("div");
+      opts.className = "options";
+      var keys = (g.key === "colors") ? Object.keys(PALETTES) : (g.key === "shapes") ? Object.keys(SHAPES) : Object.keys(LAYOUTS);
+      keys.forEach(function(k){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "opt-btn" + (rulesObj[g.key] === k ? " selected" : "");
+        b.setAttribute("data-group", g.key);
+        b.setAttribute("data-value", k);
+        if (g.key === "colors"){
+          b.innerHTML = "";
+          b.appendChild(document.createTextNode(PALETTES[k].label + " "));
+          var d = document.createElement("span");
+          d.innerHTML = dotsHTML(k);
+          b.appendChild(d);
+        } else {
+          b.textContent = (g.key === "shapes") ? SHAPES[k] : LAYOUTS[k];
+        }
+        b.addEventListener("click", function(){
+          rulesObj[g.key] = k;
+          var siblings = opts.querySelectorAll(".opt-btn");
+          for (var i = 0; i < siblings.length; i++) siblings[i].classList.remove("selected");
+          b.classList.add("selected");
+          if (onChange) onChange();
+        });
+        opts.appendChild(b);
+      });
+      wrap.appendChild(opts);
+      el.appendChild(wrap);
+    });
+  }
+  function refreshRuleGroups(containerId, rulesObj){
+    var el = document.getElementById(containerId);
+    var btns = el.querySelectorAll(".opt-btn");
+    for (var i = 0; i < btns.length; i++){
+      var g = btns[i].getAttribute("data-group"), v = btns[i].getAttribute("data-value");
+      btns[i].classList.toggle("selected", rulesObj[g] === v);
+    }
+  }
+
+  /* ---------------- Navigation ---------------- */
+  function showScreen(name){
+    state.screen = name;
+    var screens = document.querySelectorAll(".screen");
+    for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
+    document.getElementById("screen-" + name).classList.add("active");
+    document.getElementById("progressFill").style.width = PROGRESS[name] + "%";
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------- Speech ---------------- */
+  function speak(text){
+    if (!text || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* page works fully in silence */ }
+  }
+  var hearBtns = document.querySelectorAll("[data-hear-btn]");
+  for (var hb = 0; hb < hearBtns.length; hb++){
+    hearBtns[hb].addEventListener("click", function(){
+      var sec = this.closest(".screen");
+      var text = sec.getAttribute("data-hear");
+      if (state.screen === "step3") text = QUESTIONS[state.qIndex].q;
+      speak(text);
+    });
+  }
+
+  /* ---------------- Mode select ---------------- */
+  function setMode(m){
+    state.mode = m;
+    document.body.classList.toggle("mode-teacher", m === "teacher");
+    document.body.classList.toggle("mode-student", m === "student");
+    showScreen("step1");
+  }
+  document.getElementById("modeTeacher").addEventListener("click", function(){ setMode("teacher"); });
+  document.getElementById("modeStudent").addEventListener("click", function(){ setMode("student"); });
+
+  /* ---------------- Step 1 ---------------- */
+  buildRuleGroups("rules1", state.rules1, null);
+  function doCreate1(){
+    state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1) };
+    var f = document.getElementById("frame1");
+    f.innerHTML = state.piece1.svg;
+    f.classList.remove("empty");
+    document.getElementById("after1").style.display = "block";
+  }
+  document.getElementById("create1").addEventListener("click", doCreate1);
+  document.getElementById("again1").addEventListener("click", doCreate1);
+  document.getElementById("next1").addEventListener("click", function(){ enterStep2(); });
+
+  /* ---------------- Step 2 ---------------- */
+  buildRuleGroups("rules2", state.rules2, updateStep2Gate);
+  function diffCount(){
+    var n = 0;
+    GROUPS.forEach(function(g){ if (state.rules2[g.key] !== state.rules1[g.key]) n++; });
+    return n;
+  }
+  function changedGroupKey(){
+    var found = null;
+    GROUPS.forEach(function(g){ if (state.rules2[g.key] !== state.rules1[g.key]) found = g.key; });
+    return found;
+  }
+  function updateStep2Gate(){
+    var n = diffCount();
+    var btn = document.getElementById("create2");
+    var hint = document.getElementById("hint2");
+    btn.disabled = (n !== 1);
+    if (n === 0){ hint.textContent = "Change one rule to continue."; hint.classList.remove("warn"); }
+    else if (n === 1){ hint.textContent = "One change — press CREATE."; hint.classList.remove("warn"); }
+    else { hint.textContent = "That's two changes — put one back."; hint.classList.add("warn"); }
+  }
+  function enterStep2(){
+    state.rules2.colors = state.rules1.colors;
+    state.rules2.shapes = state.rules1.shapes;
+    state.rules2.layout = state.rules1.layout;
+    refreshRuleGroups("rules2", state.rules2);
+    document.getElementById("compare2").style.display = "none";
+    state.wcAnswered = false;
+    updateStep2Gate();
+    showScreen("step2");
+  }
+  function doCreate2(){
+    state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2) };
+    state.changedGroup = changedGroupKey();
+    document.getElementById("frameP1").innerHTML = state.piece1.svg;
+    document.getElementById("frameP2").innerHTML = state.piece2.svg;
+    var label = { colors:"Colors", shapes:"Shapes", layout:"Layout" }[state.changedGroup];
+    document.getElementById("changedChip").textContent = "You changed: " + label;
+    document.getElementById("compare2").style.display = "block";
+    var fb = document.getElementById("feedbackWC");
+    fb.className = "feedback"; fb.textContent = "";
+    document.getElementById("next2").style.display = "none";
+    var opts = document.querySelectorAll("#whatChangedOpts .q-opt");
+    for (var i = 0; i < opts.length; i++){ opts[i].disabled = false; opts[i].classList.remove("correct","wrong"); }
+    state.wcAnswered = false;
+  }
+  document.getElementById("create2").addEventListener("click", function(){ if (diffCount() === 1) doCreate2(); });
+  var wcBtns = document.querySelectorAll("#whatChangedOpts .q-opt");
+  for (var w = 0; w < wcBtns.length; w++){
+    wcBtns[w].addEventListener("click", function(){
+      if (state.wcAnswered) return;
+      state.wcAnswered = true;
+      var ok = this.getAttribute("data-group") === state.changedGroup;
+      var all = document.querySelectorAll("#whatChangedOpts .q-opt");
+      for (var i = 0; i < all.length; i++){
+        all[i].disabled = true;
+        if (all[i].getAttribute("data-group") === state.changedGroup) all[i].classList.add("correct");
+      }
+      if (!ok) this.classList.add("wrong");
+      var fb = document.getElementById("feedbackWC");
+      fb.textContent = ok ? "Yes — look at the two pieces." : "Look again — compare the two pieces.";
+      fb.className = "feedback show " + (ok ? "good" : "bad");
+      document.getElementById("next2").style.display = "block";
+    });
+  }
+  document.getElementById("next2").addEventListener("click", function(){ enterStep3(); });
+
+  /* ---------------- Step 3 · Quick Check ---------------- */
+  function updateScoreLine(){
+    document.getElementById("scoreLine").textContent = "Score: " + state.score + " of 3";
+  }
+  function renderQuestion(){
+    var q = QUESTIONS[state.qIndex];
+    state.qAnswered = false;
+    document.getElementById("qPrompt").textContent = "Q" + (state.qIndex + 1) + ". " + q.q;
+    var box = document.getElementById("qOpts");
+    box.innerHTML = "";
+    q.options.forEach(function(text, idx){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "q-opt";
+      b.textContent = text;
+      b.setAttribute("data-idx", idx);
+      b.addEventListener("click", function(){ answerQuestion(idx, b, false); });
+      box.appendChild(b);
+    });
+    var fb = document.getElementById("feedbackQ");
+    fb.className = "feedback"; fb.textContent = "";
+    var nx = document.getElementById("nextQ");
+    nx.style.display = "none";
+    nx.textContent = (state.qIndex === QUESTIONS.length - 1) ? "Next: My Gallery Card" : "Next";
+    updateScoreLine();
+  }
+  function lockQuestion(revealIdx){
+    var btns = document.querySelectorAll("#qOpts .q-opt");
+    for (var i = 0; i < btns.length; i++){
+      btns[i].disabled = true;
+      if (i === QUESTIONS[state.qIndex].correct) btns[i].classList.add("correct");
+      else if (i === revealIdx) btns[i].classList.add("wrong");
+    }
+    document.getElementById("nextQ").style.display = "block";
+  }
+  function answerQuestion(idx, btn, viaReveal){
+    if (state.qAnswered) return;
+    state.qAnswered = true;
+    var q = QUESTIONS[state.qIndex];
+    var ok = (idx === q.correct);
+    if (ok && !viaReveal && state.mode === "student") state.score++;
+    var fb = document.getElementById("feedbackQ");
+    if (state.mode === "teacher"){
+      fb.textContent = q.why;
+      fb.className = "feedback show good";
+    } else if (ok){
+      fb.textContent = q.why;
+      fb.className = "feedback show good";
+    } else {
+      fb.textContent = "Not quite. " + q.why;
+      fb.className = "feedback show bad";
+    }
+    lockQuestion(ok ? -1 : idx);
+    updateScoreLine();
+  }
+  function enterStep3(){
+    state.qIndex = 0;
+    renderQuestion();
+    showScreen("step3");
+  }
+  document.getElementById("nextQ").addEventListener("click", function(){
+    if (state.qIndex < QUESTIONS.length - 1){
+      state.qIndex++;
+      renderQuestion();
+    } else {
+      enterGallery();
+    }
+  });
+
+  /* ---------------- Gallery ---------------- */
+  function currentGalleryPiece(){
+    return state.galleryPick === 1 ? state.piece1 : state.piece2;
+  }
+  function renderGallery(){
+    var p = currentGalleryPiece();
+    if (!p) return;
+    document.getElementById("galleryFrame").innerHTML = p.svg;
+    document.getElementById("galleryRules").textContent = rulesText(p.rules);
+    document.getElementById("togP1").classList.toggle("selected", state.galleryPick === 1);
+    document.getElementById("togP2").classList.toggle("selected", state.galleryPick === 2);
+    var fs = document.getElementById("finalScore");
+    if (state.mode === "student"){
+      fs.style.display = "block";
+      fs.textContent = "Quick check: " + state.score + " of 3 correct.";
+    } else {
+      fs.style.display = "none";
+    }
+  }
+  function enterGallery(){
+    ensurePieces();
+    renderGallery();
+    showScreen("gallery");
+  }
+  document.getElementById("togP1").addEventListener("click", function(){ state.galleryPick = 1; renderGallery(); });
+  document.getElementById("togP2").addEventListener("click", function(){ state.galleryPick = 2; renderGallery(); });
+  document.getElementById("signInput").addEventListener("input", function(){
+    document.getElementById("signature").textContent = this.value ? "— " + this.value : "";
+  });
+  var voteBtns = document.querySelectorAll(".vote-btn");
+  for (var v = 0; v < voteBtns.length; v++){
+    voteBtns[v].addEventListener("click", function(){
+      for (var i = 0; i < voteBtns.length; i++) voteBtns[i].classList.remove("selected");
+      this.classList.add("selected");
+      var r = document.getElementById("reflection");
+      r.textContent = REFLECTIONS[this.getAttribute("data-vote")];
+      r.classList.add("show");
+    });
+  }
+  document.getElementById("playAgain").addEventListener("click", function(){ location.reload(); });
+
+  /* ---------------- Setup helpers (teacher jumps / skips) ---------------- */
+  function ensurePieces(){
+    if (!state.piece1){
+      state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1) };
+      var f = document.getElementById("frame1");
+      f.innerHTML = state.piece1.svg;
+      f.classList.remove("empty");
+      document.getElementById("after1").style.display = "block";
+    }
+    if (!state.piece2){
+      state.rules2.colors = state.rules1.colors;
+      state.rules2.shapes = state.rules1.shapes;
+      state.rules2.layout = state.rules1.layout;
+      // change exactly one rule: pick a different color palette
+      state.rules2.colors = (state.rules1.colors === "ocean") ? "berry" : "ocean";
+      state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2) };
+      state.changedGroup = "colors";
+    }
+  }
+
+  /* ---------------- Teacher panel ---------------- */
+  var overlay = document.getElementById("panelOverlay");
+  function openPanel(){
+    var modeText = state.mode === "teacher" ? "Teacher-Led" : (state.mode === "student" ? "Student-Led" : "Not picked yet");
+    document.getElementById("panelStatus").textContent = "Now on: " + SCREEN_NAMES[state.screen] + " · Mode: " + modeText;
+    overlay.classList.add("open");
+  }
+  function closePanelFn(){ overlay.classList.remove("open"); }
+  document.getElementById("teacherBtn").addEventListener("click", openPanel);
+  document.getElementById("closePanel").addEventListener("click", closePanelFn);
+  overlay.addEventListener("click", function(e){ if (e.target === overlay) closePanelFn(); });
+
+  var jumpBtns = document.querySelectorAll("[data-jump]");
+  for (var jb = 0; jb < jumpBtns.length; jb++){
+    jumpBtns[jb].addEventListener("click", function(){
+      var target = this.getAttribute("data-jump");
+      if (!state.mode) setModeSilent("student");
+      if (target === "step1"){ showScreen("step1"); }
+      else if (target === "step2"){ ensurePieces(); enterStep2(); }
+      else if (target === "step3"){ ensurePieces(); enterStep3(); }
+      else if (target === "gallery"){ enterGallery(); }
+      closePanelFn();
+    });
+  }
+  function setModeSilent(m){
+    state.mode = m;
+    document.body.classList.toggle("mode-teacher", m === "teacher");
+    document.body.classList.toggle("mode-student", m === "student");
+  }
+
+  document.getElementById("skipBtn").addEventListener("click", function(){
+    if (!state.mode) setModeSilent("student");
+    var cur = state.screen;
+    if (cur === "start"){ showScreen("step1"); }
+    else if (cur === "step1"){ ensurePieces(); enterStep2(); }
+    else if (cur === "step2"){ ensurePieces(); enterStep3(); }
+    else if (cur === "step3"){ enterGallery(); }
+    closePanelFn();
+  });
+
+  document.getElementById("revealBtn").addEventListener("click", function(){
+    if (!state.mode) setModeSilent("student");
+    var cur = state.screen;
+    if (cur === "step1"){
+      state.rules1.colors = "ocean";
+      state.rules1.shapes = "stars";
+      state.rules1.layout = "mirrored";
+      refreshRuleGroups("rules1", state.rules1);
+      doCreate1();
+    } else if (cur === "step2"){
+      ensurePieces();
+      state.rules2.colors = state.rules1.colors;
+      state.rules2.shapes = state.rules1.shapes;
+      state.rules2.layout = state.rules1.layout;
+      state.rules2.colors = (state.rules1.colors === "ocean") ? "berry" : "ocean";
+      refreshRuleGroups("rules2", state.rules2);
+      updateStep2Gate();
+      doCreate2();
+    } else if (cur === "step3"){
+      if (!state.qAnswered){
+        state.qAnswered = true;
+        var q = QUESTIONS[state.qIndex];
+        var fb = document.getElementById("feedbackQ");
+        fb.textContent = q.why;
+        fb.className = "feedback show good";
+        lockQuestion(-1);
+      }
+    }
+    closePanelFn();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function(){ location.reload(); });
+})();
+</script>
+</body>
+</html>
