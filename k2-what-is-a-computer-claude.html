@@ -443,13 +443,37 @@
     font-size:.95rem; font-weight:900; text-align:left;
   }
   .bypass-jumps .num{display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%; color:#fff; font-family:"Baloo 2",sans-serif; font-weight:800; font-size:.9rem; flex:none}
-  .bypass-actions{display:flex; gap:7px; margin-top:10px}
+  .bypass-actions{display:flex; gap:7px; margin-top:10px; flex-wrap:wrap}
   .bypass-actions button{
     flex:1; min-height:44px; padding:8px 10px; border-radius:12px;
     border:2.5px solid var(--line); background:transparent; color:var(--ink);
     font-size:.92rem; font-weight:900;
   }
+  .bypass-actions #bypassReveal{flex:1 1 100%; background:var(--sun); border-color:var(--sun-dark); color:#4A3500; box-shadow:0 3px 0 var(--sun-dark)}
+  .bypass-actions #bypassReveal:active{transform:translateY(2px); box-shadow:0 1px 0 var(--sun-dark)}
   .bypass-actions #bypassReset{color:var(--coral-dark); border-color:var(--coral)}
+  .bypass-note{margin:8px 0 0; font-size:.8rem; font-weight:700; color:var(--ink-soft); line-height:1.4}
+
+  /* ---------- teacher reveal (only appears when teacher taps Reveal) ---------- */
+  .reveal-box{
+    display:none; margin-top:16px; border-radius:20px; padding:14px 18px;
+    background:#FFF3CF; border:3.5px solid var(--sun-dark); color:#4A3500;
+    font-weight:900; font-size:1.08rem; line-height:1.5; text-align:left;
+  }
+  @media (prefers-color-scheme: dark){ .reveal-box{background:#4A3A08; color:#FFE9A8; border-color:var(--sun)} }
+  .reveal-box.show{display:block; animation:pop .35s ease}
+  .reveal-box .reveal-label{
+    display:inline-block; background:var(--sun-dark); color:#fff; border-radius:999px;
+    padding:3px 11px; font-size:.8rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase; margin-right:8px; vertical-align:middle;
+  }
+  .reveal-box ul{margin:8px 0 0; padding-left:22px}
+  .reveal-box li{margin:3px 0}
+  .hotspot.reveal-glow .partshape{filter:brightness(1.14) drop-shadow(0 0 7px var(--sun-dark))}
+  .big-choice.revealed{box-shadow:0 0 0 5px var(--sun), 0 5px 0 var(--teal-dark); outline:4px solid var(--sun-dark); outline-offset:2px}
+  .big-choice.no.revealed{box-shadow:0 0 0 5px var(--sun), 0 5px 0 var(--coral-dark)}
+  .tray-btn.reveal-hint{box-shadow:0 0 0 5px var(--sun), 0 4px 0 var(--coral-dark)}
+  .quiz-opt.revealed{border-color:var(--sun-dark); background:#FFF3CF; box-shadow:0 0 0 4px var(--sun); color:#4A3500}
+  @media (prefers-color-scheme: dark){ .quiz-opt.revealed{background:#4A3A08; color:#FFE9A8} }
 </style>
 </head>
 <body class="mode-student">
@@ -681,6 +705,16 @@
       <span class="count" id="partsCount">0 / 5</span>
     </div>
     <div class="done-banner" id="partsDone">⭐ Yes! All 5!</div>
+    <div class="reveal-box" id="revealParts" role="status" aria-live="polite">
+      <span class="reveal-label">Answer</span> All 5 parts — tap each one on the picture:
+      <ul>
+        <li>Screen — it tells you 👀</li>
+        <li>Keyboard — you tell it ✋</li>
+        <li>Mouse — you tell it ✋</li>
+        <li>Brain — it thinks 🧠</li>
+        <li>Speakers — it tells you 👀</li>
+      </ul>
+    </div>
   </section>
 
   <!-- ACTIVITY 2 -->
@@ -728,6 +762,9 @@
       </div>
     </div>
     <div class="done-banner" id="sortDone">⭐ Yes! All 8!</div>
+    <div class="reveal-box" id="revealSort" role="status" aria-live="polite">
+      <span class="reveal-label">Answer</span> <span id="revealSortText"></span>
+    </div>
   </section>
 
   <!-- ACTIVITY 3 -->
@@ -838,6 +875,9 @@
       <button class="power-btn" id="powerBtn" type="button">⏻ POWER!</button>
     </div>
     <div class="done-banner" id="buildDone">⭐ It works!</div>
+    <div class="reveal-box" id="revealBuild" role="status" aria-live="polite">
+      <span class="reveal-label">Answer</span> <span id="revealBuildText">You need all 5 parts: Screen, Keyboard, Mouse, Brain, and Speakers — then tap POWER.</span>
+    </div>
   </section>
 
   <!-- ACTIVITY 4 -->
@@ -875,6 +915,9 @@
         <div class="dots" id="quizDots" aria-hidden="true"><i></i><i></i><i></i></div>
         <span class="count" id="quizCount">1 / 3</span>
       </div>
+    </div>
+    <div class="reveal-box" id="revealQuiz" role="status" aria-live="polite">
+      <span class="reveal-label">Answer</span> <span id="revealQuizText"></span>
     </div>
   </section>
 
@@ -966,9 +1009,11 @@
     <button type="button" data-bypass-jump="3"><span class="num n4" aria-hidden="true">4</span> Superstar Quiz</button>
   </div>
   <div class="bypass-actions">
+    <button type="button" id="bypassReveal">Reveal answer</button>
     <button type="button" id="bypassSkip">Skip this step</button>
     <button type="button" id="bypassReset">Reset</button>
   </div>
+  <p class="bypass-note">Reveal shows the correct answer for the activity you are on, without completing it. Tap Reveal again to hide it.</p>
 </div>
 
 <script>
@@ -1194,6 +1239,9 @@
   var sortIdx = 0, sortBusy = false, sortTimer = null;
   var sortFeedback = document.getElementById("sortFeedback");
   function renderSort(){
+    var revealSortBox = document.getElementById("revealSort");
+    if(revealSortBox) revealSortBox.classList.remove("show");
+    document.querySelectorAll(".big-choice.revealed").forEach(function(b){ b.classList.remove("revealed"); });
     var it = ITEMS[sortIdx];
     document.getElementById("sortIcon").innerHTML = ICONS[it.icon];
     document.getElementById("sortName").textContent = it.name;
@@ -1236,6 +1284,7 @@
       if(built[key]) return;
       built[key] = true; pop();
       document.getElementById("placed-" + key).classList.add("on");
+      btn.classList.remove("reveal-hint");
       btn.classList.add("used"); btn.textContent = "✓ " + btn.textContent.replace("+ ","");
       var n = Object.keys(built).length;
       setDots("buildDots", n);
@@ -1271,6 +1320,8 @@
   var quizIdx = 0, quizBusy = false, quizTimer = null;
   var quizFeedback = document.getElementById("quizFeedback");
   function renderQuiz(){
+    var revealQuizBox = document.getElementById("revealQuiz");
+    if(revealQuizBox) revealQuizBox.classList.remove("show");
     var item = QUIZ[quizIdx];
     document.getElementById("quizQ").textContent = item.q;
     document.getElementById("quizCount").textContent = (quizIdx + 1) + " / 3";
@@ -1284,6 +1335,7 @@
     order.forEach(function(optIdx, pos){
       var b = document.createElement("button");
       b.type = "button"; b.className = "quiz-opt";
+      b.setAttribute("data-is-right", optIdx === item.right ? "true" : "false");
       b.innerHTML = '<span class="abc" aria-hidden="true">' + letters[pos] + '</span><span></span>';
       b.querySelector("span:last-child").textContent = item.opts[optIdx];
       b.addEventListener("click", function(){ answerQuiz(b, optIdx === item.right); });
@@ -1350,6 +1402,7 @@
 
   function goToActivity(idx){
     openBypass(false);
+    if(typeof hideAllReveals === "function") hideAllReveals();
     if(currentMode === "teacher") showTeacherStep(idx);
     var el = document.getElementById(TEACHER_STEPS[idx].id);
     if(el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
@@ -1397,8 +1450,84 @@
       cel.classList.add("show"); confetti(cel);
     }
   }
+  /* ---------- teacher reveal: show (not complete) the correct answer ---------- */
+  var revealedKey = null;
+  function hideAllReveals(){
+    revealedKey = null;
+    ["revealParts","revealSort","revealBuild","revealQuiz"].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.classList.remove("show");
+    });
+    document.querySelectorAll(".hotspot.reveal-glow").forEach(function(h){ h.classList.remove("reveal-glow"); });
+    document.querySelectorAll(".big-choice.revealed").forEach(function(b){ b.classList.remove("revealed"); });
+    document.querySelectorAll(".tray-btn.reveal-hint").forEach(function(b){ b.classList.remove("reveal-hint"); });
+    document.querySelectorAll(".quiz-opt.revealed").forEach(function(b){ b.classList.remove("revealed"); });
+  }
+  function revealActivity(idx){
+    var key;
+    if(idx === 1) key = "1-" + sortIdx;
+    else if(idx === 3) key = "3-" + quizIdx;
+    else key = String(idx);
+    if(revealedKey === key){
+      hideAllReveals();
+      return false;
+    }
+    hideAllReveals();
+    revealedKey = key;
+    if(idx === 0){
+      document.getElementById("revealParts").classList.add("show");
+      document.querySelectorAll(".hotspot").forEach(function(h){ h.classList.add("reveal-glow"); });
+    } else if(idx === 1){
+      var sortText = document.getElementById("revealSortText");
+      if(sortIdx >= ITEMS.length){
+        if(sortText) sortText.textContent = "All 8 are sorted — this activity is done.";
+      } else {
+        var it = ITEMS[sortIdx];
+        if(sortText) sortText.textContent = it.name + (it.yes ? " — YES, it is a computer. It has a chip inside." : " — NO, it is not a computer. It has no chip inside.");
+        var btn = document.getElementById(it.yes ? "sortYes" : "sortNo");
+        if(btn) btn.classList.add("revealed");
+      }
+      document.getElementById("revealSort").classList.add("show");
+    } else if(idx === 2){
+      var names = { screen:"Screen", keyboard:"Keyboard", mouse:"Mouse", brain:"Brain", speakers:"Speakers" };
+      var missing = Object.keys(names).filter(function(k){ return !built[k]; });
+      var buildText = document.getElementById("revealBuildText");
+      if(missing.length === 0){
+        if(buildText) buildText.textContent = "All 5 parts are placed: Screen, Keyboard, Mouse, Brain, and Speakers — now tap POWER.";
+      } else {
+        if(buildText) buildText.textContent = "You need all 5 parts: Screen, Keyboard, Mouse, Brain, and Speakers — then tap POWER. Still needed: " + missing.map(function(k){ return names[k]; }).join(", ") + ".";
+        document.querySelectorAll("[data-build]").forEach(function(b){
+          if(!built[b.getAttribute("data-build")]) b.classList.add("reveal-hint");
+        });
+      }
+      document.getElementById("revealBuild").classList.add("show");
+    } else if(idx === 3){
+      var quizText = document.getElementById("revealQuizText");
+      if(quizIdx >= QUIZ.length){
+        if(quizText) quizText.textContent = "The quiz is done — all 3 questions answered.";
+      } else {
+        var q = QUIZ[quizIdx];
+        if(quizText) quizText.textContent = "Correct answer: " + q.opts[q.right];
+        document.querySelectorAll(".quiz-opt").forEach(function(b){
+          if(b.getAttribute("data-is-right") === "true") b.classList.add("revealed");
+        });
+      }
+      document.getElementById("revealQuiz").classList.add("show");
+    }
+    return true;
+  }
+  document.getElementById("bypassReveal").addEventListener("click", function(){
+    var idx = currentActivityIndex();
+    var shown = revealActivity(idx);
+    openBypass(false);
+    if(shown){
+      var el = document.getElementById(TEACHER_STEPS[idx].id);
+      if(el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
+  });
+
   document.getElementById("bypassSkip").addEventListener("click", function(){
     var idx = currentActivityIndex();
+    hideAllReveals();
     completeActivity(idx);
     if(idx < TEACHER_STEPS.length - 1){
       goToActivity(idx + 1);
@@ -1410,6 +1539,7 @@
   });
 
   document.getElementById("bypassReset").addEventListener("click", function(){
+    hideAllReveals();
     if(sortTimer) clearTimeout(sortTimer);
     if(quizTimer) clearTimeout(quizTimer);
     sortBusy = false; quizBusy = false;

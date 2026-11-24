@@ -186,6 +186,14 @@
         <button class="t-nav-btn" id="tNext" onclick="teacherStep(1)">Next &#9654;</button>
       </div>
     </div>
+    <div class="teacher-reveal mode-hidden" id="teacherReveal" role="status" aria-live="polite">
+      <div class="tr-head">
+        <span class="tr-label">Teacher Reveal — Answer</span>
+        <button class="tr-hide" onclick="hideTeacherReveal()" aria-label="Hide the revealed answer">Hide</button>
+      </div>
+      <div class="tr-title" id="teacherRevealTitle"></div>
+      <div class="tr-body" id="teacherRevealBody"></div>
+    </div>
     <div class="nosound-strip" role="note" aria-label="No sound needed">
       <div class="ns-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="#13A89E"/></svg></div>
       <div class="ns-text">No sound needed. <span>Read and tap — everything is on the screen.</span> Tap a Listen button only if you want to hear it.</div>
@@ -448,6 +456,7 @@
       document.getElementById('inout-desc').innerText = data.job;
       document.getElementById('inout-feedback').innerText = '';
       document.getElementById('inout-feedback').className = 'feedback-banner';
+      document.querySelectorAll('.btn-inout').forEach(function(b) { b.classList.remove('reveal-correct'); });
       /* No auto voice — picture, name, and job are all on the card. */
     }
     function answerInOut(typeChoice) {
@@ -526,6 +535,7 @@
     function teacherStep(dir) {
       var n = tStep + dir;
       if (n < 0 || n > 2) return;
+      if (typeof hideTeacherReveal === 'function') hideTeacherReveal();
       tStep = n;
       applyTeacherStep();
       document.getElementById('teacherBar').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -555,6 +565,22 @@
     .tb-half { flex: 1; }
     .tb-reset { background: #FFF8E1; border-color: var(--yellow); }
     .tb-reset:hover, .tb-reset:active { background: #FFF3C4; border-color: var(--yellow); }
+    .tb-reveal { background: #E6F7F7; border-color: var(--teal); color: #0A6B64; text-align: center; font-weight: 900; }
+    .tb-reveal:hover, .tb-reveal:active { background: #CFF5F0; border-color: var(--teal); }
+    /* Teacher Reveal banner: big enough for the whole class to read from the big screen. */
+    .teacher-reveal { background: #FFF8E1; border: 4px solid var(--yellow); border-radius: 20px; padding: 20px 22px; margin: 20px 0 24px; box-shadow: var(--card-shadow); }
+    .tr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .tr-label { font-size: 1rem; font-weight: 900; color: var(--raspberry); }
+    .tr-hide { background: var(--white); color: var(--navy); border: 2px solid #CBD5E1; border-radius: 50px; padding: 8px 18px; font-size: 0.95rem; font-weight: 800; cursor: pointer; min-height: 40px; flex-shrink: 0; }
+    .tr-hide:hover, .tr-hide:active { border-color: var(--navy); }
+    .tr-title { font-size: 1.6rem; font-weight: 900; color: var(--navy); margin-bottom: 6px; line-height: 1.2; }
+    .tr-body { font-size: 1.25rem; font-weight: 700; color: var(--navy); line-height: 1.5; }
+    .tr-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-top: 10px; }
+    @media (max-width: 640px) { .tr-list { grid-template-columns: 1fr; } }
+    .tr-list li b { color: var(--raspberry); }
+    .tr-answer-big { font-size: 2.4rem; font-weight: 900; color: var(--raspberry); line-height: 1.15; margin: 4px 0 6px; }
+    .reveal-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; min-width: 30px; border-radius: 50%; background: var(--raspberry); color: #fff; font-weight: 900; font-size: 1rem; flex-shrink: 0; margin-left: auto; }
+    .btn-inout.reveal-correct { outline: 6px solid var(--yellow); outline-offset: 3px; box-shadow: 0 0 0 9px var(--navy), 0 12px 24px rgba(0,0,0,0.25); transform: translateY(-4px) scale(1.03); }
   </style>
   <div class="teacher-bypass-panel tb-hidden" id="teacherBypassPanel" role="dialog" aria-label="Teacher bypass">
     <div class="tb-head">
@@ -565,6 +591,8 @@
     <button class="tb-btn" onclick="bypassJump(0)">1 &middot; Meet the Computer</button>
     <button class="tb-btn" onclick="bypassJump(1)">2 &middot; Match the Job</button>
     <button class="tb-btn" onclick="bypassJump(2)">3 &middot; Input or Output?</button>
+    <div class="tb-label">Show the answer for this activity</div>
+    <button class="tb-btn tb-reveal" id="tbRevealBtn" onclick="bypassReveal()">Reveal answer</button>
     <div class="tb-row">
       <button class="tb-btn tb-half" id="tbSkipBtn" onclick="bypassSkip()">Skip this step</button>
       <button class="tb-btn tb-half tb-reset" onclick="bypassReset()">Reset</button>
@@ -609,6 +637,7 @@
     }
     function bypassJump(i) {
       if (i < 0 || i > 2) return;
+      if (typeof hideTeacherReveal === 'function') hideTeacherReveal();
       bypassCurrent = i;
       if (!simMode) chooseMode('student');
       if (simMode === 'teacher') {
@@ -626,8 +655,97 @@
       var cur = bypassIndexNow();
       if (cur < 2) bypassJump(cur + 1);
     }
+    /* === Teacher Reveal (added) — shows the correct answer for the current activity === */
+    var revealForStep = null;
+    function hideTeacherReveal() {
+      var reveal = document.getElementById('teacherReveal');
+      if (reveal) reveal.classList.add('mode-hidden');
+      if (revealForStep === 0) {
+        /* Activity 1 reveal lit up every part; put the diagram back how it was. */
+        document.querySelectorAll('.part-group').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('sec1-title').innerText = 'Tap a Part Below!';
+        document.getElementById('sec1-text').innerText = 'Tap a part. Its job shows here.';
+        currentSpeechText = 'Tap a part. Its job shows here.';
+      }
+      if (revealForStep === 2) {
+        document.querySelectorAll('.btn-inout').forEach(function(b) { b.classList.remove('reveal-correct'); });
+      }
+      revealForStep = null;
+    }
+    function bypassReveal() {
+      var cur = bypassIndexNow();
+      if (!simMode) chooseMode('student');
+      if (simMode === 'teacher' && tStep !== cur) { tStep = cur; applyTeacherStep(); }
+      var reveal = document.getElementById('teacherReveal');
+      var titleEl = document.getElementById('teacherRevealTitle');
+      var bodyEl = document.getElementById('teacherRevealBody');
+      var keys = Object.keys(PARTS_DATA);
+      revealForStep = cur;
+      if (cur === 0) {
+        /* Activity 1 is explore-and-tap: the answer is every part and its job. */
+        titleEl.innerText = 'Meet the Computer — All the Parts and Their Jobs';
+        bodyEl.innerHTML = '<ul class="tr-list">' + keys.map(function(k) {
+          return '<li><b>' + PARTS_DATA[k].name + '</b> — ' + PARTS_DATA[k].job + '</li>';
+        }).join('') + '</ul>';
+        document.querySelectorAll('.part-group').forEach(function(el) { el.classList.add('active'); });
+        document.getElementById('sec1-title').innerText = 'All the Parts!';
+        document.getElementById('sec1-text').innerText = 'Monitor, Keyboard, Mouse, Computer Box, Speakers, and Printer. Tap one to read its job.';
+        currentSpeechText = 'All the parts. Monitor, Keyboard, Mouse, Computer Box, Speakers, and Printer.';
+      } else if (cur === 1) {
+        /* Activity 2: mark every correct pair and give each pair a matching number. */
+        titleEl.innerText = 'Match the Job — The Correct Matches';
+        bodyEl.innerHTML = '<ul class="tr-list">' + keys.map(function(k, i) {
+          return '<li><b>' + (i + 1) + '. ' + PARTS_DATA[k].name + '</b> — ' + PARTS_DATA[k].job + '</li>';
+        }).join('') + '</ul><div style="margin-top:8px;">On the cards below, the same number means a match.</div>';
+        keys.forEach(function(k, i) {
+          ['parts-column', 'jobs-column'].forEach(function(colId) {
+            var card = document.querySelector('#' + colId + ' .match-card[data-key="' + k + '"]');
+            if (!card) return;
+            card.classList.remove('selected', 'wrong');
+            card.classList.add('matched');
+            if (!card.querySelector('.reveal-badge')) {
+              var badge = document.createElement('span');
+              badge.className = 'reveal-badge';
+              badge.innerText = i + 1;
+              card.appendChild(badge);
+            }
+          });
+        });
+        matchedCount = keys.length;
+        selectedPartCard = null;
+        selectedJobCard = null;
+        var mf = document.getElementById('match-feedback');
+        mf.className = 'feedback-banner correct';
+        mf.innerText = 'Revealed! All ' + keys.length + ' matches — same number, same pair. ✓';
+      } else {
+        /* Activity 3: the correct IN / OUT answer for the card on screen right now. */
+        document.querySelectorAll('.btn-inout').forEach(function(b) { b.classList.remove('reveal-correct'); });
+        if (currentInOutIndex >= IN_OUT_ITEMS.length) {
+          titleEl.innerText = 'Input or Output? — All Done';
+          bodyEl.innerHTML = 'Every card has been answered. Tap Reset in the Teacher panel to play again.';
+        } else {
+          var key = IN_OUT_ITEMS[currentInOutIndex];
+          var data = PARTS_DATA[key];
+          var answerWord = data.type.toUpperCase();
+          titleEl.innerText = 'Input or Output? — The Correct Answer';
+          bodyEl.innerHTML = '<div class="tr-answer-big">' + data.name + ' = ' + answerWord + '</div><div>' + data.job + (data.type === 'input' ? ' — the info goes IN to the computer.' : ' — the info comes OUT of the computer.') + ' The right button is outlined below.</div>';
+          var fb = document.getElementById('inout-feedback');
+          fb.className = 'feedback-banner correct';
+          fb.innerText = 'Answer: ' + data.name + ' = ' + answerWord + ' ✓';
+          var btn = document.querySelector(data.type === 'input' ? '.btn-input' : '.btn-output');
+          if (btn) btn.classList.add('reveal-correct');
+        }
+      }
+      /* Park the banner right above the current activity so the class sees it with the activity. */
+      var section = document.getElementById(SEC_IDS[cur]);
+      if (section && section.parentNode) section.parentNode.insertBefore(reveal, section);
+      reveal.classList.remove('mode-hidden');
+      closeTeacherBypass();
+      reveal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     function bypassReset() {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (typeof hideTeacherReveal === 'function') hideTeacherReveal();
       /* Activity 1: clear the diagram selection and restore its starting words. */
       document.querySelectorAll('.part-group').forEach(function(el) { el.classList.remove('active'); });
       document.getElementById('sec1-title').innerText = 'Tap a Part Below!';

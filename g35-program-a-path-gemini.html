@@ -122,6 +122,18 @@
   @media (prefers-color-scheme: dark){
     .feedback.good{background:#14532d;color:#bbf7d0}.feedback.bad{background:#450a0a;color:#fecaca}
   }
+  .solution-banner{margin-top:12px;border:3px solid var(--gold);background:#fef9e7;border-radius:14px;padding:12px 14px}
+  @media (prefers-color-scheme: dark){.solution-banner{background:#2a2008}}
+  .solution-banner .sb-head{font-weight:900;font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .solution-banner .sb-head .sb-tag{background:var(--gold);color:#fff;border-radius:999px;padding:2px 10px;font-size:.8rem}
+  .solution-seq{margin-top:8px;font-size:1.35rem;line-height:1.5;letter-spacing:.12em;word-break:break-all;font-weight:900}
+  .solution-words{margin-top:4px;font-weight:800;color:var(--muted);font-size:.92rem;line-height:1.45}
+  .solution-note{margin-top:8px;font-weight:800;font-size:.92rem}
+  .solution-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .solution-actions button{flex:1;min-width:120px;border-radius:12px;font-weight:900;padding:9px 10px;font-size:.95rem}
+  .sb-run{border:none;background:var(--green);color:#fff}
+  .sb-hide{border:2px solid var(--line);background:var(--card);color:var(--ink)}
+  .board.revealed .grid{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,.35)}
 
   /* commands */
   .cmds{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -189,6 +201,9 @@
     padding:8px 6px;font-weight:900;font-size:.85rem}
   .bp-btn:hover{border-color:var(--blue)}
   .bp-btn.wide{width:100%;margin-top:6px}
+  .bp-btn.reveal{border-color:var(--gold);background:#fef3c7;color:#92400e}
+  @media (prefers-color-scheme: dark){.bp-btn.reveal{background:#33270f;color:#fcd34d}}
+  .bp-btn.reveal:hover{border-color:var(--gold);background:var(--gold);color:#fff}
 </style>
 </head>
 <body>
@@ -240,8 +255,18 @@
     <div>
       <div class="card">
         <h2>🖍️ Your Picture <span class="tag" id="stepTag">Start: top-left corner</span></h2>
-        <div class="board"><div class="grid" id="mainGrid" aria-label="Your 8 by 8 grid"></div></div>
+        <div class="board" id="boardWrap"><div class="grid" id="mainGrid" aria-label="Your 8 by 8 grid"></div></div>
         <div class="feedback" id="feedback"><span class="fe">👀</span><span id="feedbackText">Copy the picture!</span></div>
+        <div class="solution-banner hidden" id="solutionBanner" role="status" aria-live="polite">
+          <div class="sb-head">👁️ Solution <span class="sb-tag" id="solutionName">Picture 1</span> <span id="solutionCount"></span></div>
+          <div class="solution-seq" id="solutionSeq" aria-label="Solution steps as arrows"></div>
+          <div class="solution-words" id="solutionWords"></div>
+          <p class="solution-note">This is one correct way. The grid above shows the finished picture and Your Program shows the same steps. Press Run to watch the robot draw it, Step to walk through it together, or Hide to clear it and let the class try.</p>
+          <div class="solution-actions">
+            <button class="sb-run" id="btnSolutionRun" type="button">▶ Run Solution</button>
+            <button class="sb-hide" id="btnHideSolution" type="button">Hide Solution</button>
+          </div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:16px">
@@ -328,6 +353,8 @@
     <button class="bp-btn" data-jump="2" type="button">💎 Picture 3</button>
     <button class="bp-btn" data-jump="free" type="button">🎨 Free Draw</button>
   </div>
+  <div class="bp-label">Solution</div>
+  <button class="bp-btn wide reveal" id="btnReveal" type="button">👁️ Reveal solution</button>
   <button class="bp-btn wide" id="btnSkip" type="button">Skip this picture →</button>
   <button class="bp-btn wide" id="btnBypassReset" type="button">↺ Reset all</button>
 </div>
@@ -343,6 +370,7 @@
     { name:"Picture 3", filled:[[3,1],[2,2],[3,2],[4,2],[1,3],[2,3],[3,3],[4,3],[5,3],[2,4],[3,4],[4,4],[3,5]], hint:"Start at the top point." }
   ];
   var ARROWS = { L:"←", U:"↑", D:"↓", R:"→", F:"■" };
+  var WORDS = { L:"Left", U:"Up", D:"Down", R:"Right", F:"Fill" };
   var DIRS = { L:[-1,0], U:[0,-1], D:[0,1], R:[1,0] };
 
   var mode = "student";
@@ -355,6 +383,7 @@
   var timer = null;
   var done = {}; // target index -> true
   var bonkCell = null;
+  var revealed = false;
 
   var $ = function(id){ return document.getElementById(id); };
   var mainGrid = $("mainGrid"), targetGrid = $("targetGrid");
@@ -414,7 +443,7 @@
       var html = "";
       program.forEach(function(c,i){
         var cls = "chip" + (c==="F" ? " f" : "");
-        if(running || execIdx>0){
+        if(!revealed && (running || execIdx>0)){
           if(i === execIdx) cls += " now";
           else if(i < execIdx) cls += " done";
         }
@@ -442,10 +471,76 @@
     if(kind) f.classList.add(kind);
   }
 
+  /* ---------- solution / reveal ---------- */
+  function buildSolution(idx){
+    if(idx === "free") return null;
+    var cells = TARGETS[idx].filled.slice().sort(function(a,b){
+      return (a[1]-b[1]) || (a[0]-b[0]);
+    });
+    var prog = [], cx = 0, cy = 0;
+    cells.forEach(function(p){
+      var tx = p[0], ty = p[1];
+      while(cx < tx){ prog.push("R"); cx++; }
+      while(cx > tx){ prog.push("L"); cx--; }
+      while(cy < ty){ prog.push("D"); cy++; }
+      while(cy > ty){ prog.push("U"); cy--; }
+      prog.push("F");
+    });
+    return { program: prog, cells: cells };
+  }
+  function hideSolution(){
+    revealed = false;
+    var b = $("solutionBanner");
+    if(b) b.classList.add("hidden");
+    var bw = $("boardWrap");
+    if(bw) bw.classList.remove("revealed");
+  }
+  function showSolutionBanner(sol){
+    $("solutionName").textContent = TARGETS[targetIdx].name;
+    $("solutionCount").textContent = "· " + sol.program.length + (sol.program.length===1 ? " step" : " steps");
+    $("solutionSeq").textContent = sol.program.map(function(c){ return ARROWS[c]; }).join(" ");
+    $("solutionWords").textContent = sol.program.map(function(c){ return WORDS[c]; }).join(" · ");
+    $("solutionBanner").classList.remove("hidden");
+    $("boardWrap").classList.add("revealed");
+  }
+  function revealSolution(){
+    if(targetIdx === "free"){
+      setBypass(false);
+      if(!$("simScreen").classList.contains("hidden")){
+        setFeedback("🎨","Free Draw has no answer — draw anything!","");
+      }
+      return;
+    }
+    if($("simScreen").classList.contains("hidden")) enterMode(mode);
+    var sol = buildSolution(targetIdx);
+    stopTimer(); running = false;
+    program = sol.program.slice();
+    filled = {};
+    sol.cells.forEach(function(p){ filled[key(p[0],p[1])] = true; });
+    var last = sol.cells[sol.cells.length-1];
+    pos = {x:last[0], y:last[1]};
+    execIdx = program.length;
+    bonkCell = null;
+    revealed = true;
+    renderGrid(); renderProgram();
+    showSolutionBanner(sol);
+    setFeedback("👁️","Solution shown! Finished picture + correct program.","good");
+    setBypass(false);
+    var banner = $("solutionBanner");
+    if(banner && banner.scrollIntoView){
+      try{ banner.scrollIntoView({block:"nearest", behavior:"smooth"}); }catch(e){}
+    }
+  }
+
   /* ---------- execution ---------- */
-  function resetRun(){
+  function solutionVisible(){
+    var b = $("solutionBanner");
+    return !!(b && !b.classList.contains("hidden"));
+  }
+  function resetRun(keepSolution){
     stopTimer();
     running = false;
+    if(!keepSolution) hideSolution(); else revealed = false;
     pos = {x:0,y:0}; filled = {}; execIdx = 0; bonkCell = null;
     renderGrid(); renderProgram();
   }
@@ -549,7 +644,8 @@
   $("btnRun").addEventListener("click", function(){
     if(running) return;
     if(program.length === 0){ setFeedback("👆","Tap an arrow first!",""); return; }
-    resetRun();
+    var keepSol = solutionVisible();
+    resetRun(keepSol);
     running = true;
     renderProgram();
     setFeedback("🤖","Watch the robot!","");
@@ -562,7 +658,8 @@
   $("btnStep").addEventListener("click", function(){
     if(running) return;
     if(program.length === 0){ setFeedback("👆","Tap an arrow first!",""); return; }
-    if(execIdx >= program.length){ resetRun(); return; }
+    if(execIdx >= program.length){ resetRun(solutionVisible()); return; }
+    if(revealed){ resetRun(true); }
     stepOnce();
   });
 
@@ -619,7 +716,7 @@
   $("btnTeacher").addEventListener("click", function(){ enterMode("teacher"); });
   $("btnStudent").addEventListener("click", function(){ enterMode("student"); });
   $("btnSwitch").addEventListener("click", function(){
-    stopTimer(); running = false;
+    stopTimer(); running = false; hideSolution();
     $("simScreen").classList.add("hidden");
     $("startScreen").classList.remove("hidden");
     window.scrollTo(0,0);
@@ -643,6 +740,15 @@
   $("btnBypassClose").addEventListener("click", function(){ setBypass(false); });
   document.querySelectorAll("[data-jump]").forEach(function(b){
     b.addEventListener("click", function(){ jumpTo(b.getAttribute("data-jump")); });
+  });
+  $("btnReveal").addEventListener("click", function(){ revealSolution(); });
+  $("btnHideSolution").addEventListener("click", function(){
+    if(running) return;
+    program = []; resetRun(); renderProgram();
+    setFeedback("👀","Solution hidden. Copy the picture!","");
+  });
+  $("btnSolutionRun").addEventListener("click", function(){
+    $("btnRun").click();
   });
   $("btnSkip").addEventListener("click", function(){
     if(targetIdx !== "free"){ done[targetIdx] = true; renderStars(); }
