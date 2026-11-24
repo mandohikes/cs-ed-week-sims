@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en" data-cosmetic="sky">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>App Design Studio</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --acc:#1971c2; --acc-dark:#14588f; --bg:#f2f8ff; --surface:#ffffff; --ink:#17324e; --muted:#54708c; --line:#c9dcee;
+        --good:#1e9e6a; --bad:#d64545; --gold:#f2b01e;
+        --soft: color-mix(in srgb, var(--acc) 12%, var(--surface));
+      }
+      html[data-cosmetic="sunset"]{ --acc:#e8590c; --acc-dark:#b44508; --bg:#fff7ee; --line:#f0d9c4; }
+      html[data-cosmetic="mint"]{ --acc:#0ca678; --acc-dark:#087f5b; --bg:#f0faf5; --line:#c2e8d8; }
+      @media (prefers-color-scheme: dark){
+        :root{ --bg:#0f1620; --surface:#1a2635; --ink:#edf4fb; --muted:#a7bdd1; --line:#33506e; }
+        html[data-cosmetic="sunset"]{ --bg:#1d130c; --surface:#2b1c12; --line:#5e4028; }
+        html[data-cosmetic="mint"]{ --bg:#0b1a14; --surface:#14291f; --line:#2c5545; }
+      }
+      body{ margin:0; background:var(--bg); color:var(--ink); font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif; }
+      .wrap{ max-width:980px; margin:0 auto; padding:16px 16px 90px; }
+      h1{ font-size:2rem; margin:.2em 0 .1em; letter-spacing:.2px; }
+      h2{ font-size:1.35rem; margin:.4em 0 .2em; }
+      h3{ font-size:1.05rem; margin:.6em 0 .3em; }
+      p{ line-height:1.45; }
+      .instruction{ font-size:1.08rem; font-weight:600; margin:6px 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .hear{ background:var(--surface); color:var(--acc-dark); border:2px solid var(--line); border-radius:999px; padding:4px 14px; font-weight:700; cursor:pointer; font-size:.9rem; }
+      .hear:hover{ border-color:var(--acc); }
+      .card{ background:var(--surface); border:2px solid var(--line); border-radius:16px; padding:16px; margin:12px 0; }
+      .btn{ background:var(--acc); color:#fff; border:0; border-radius:12px; padding:10px 20px; font-size:1rem; font-weight:700; cursor:pointer; }
+      .btn:hover{ background:var(--acc-dark); }
+      .btn:disabled{ opacity:.45; cursor:default; }
+      .btn.ghost{ background:var(--surface); color:var(--acc-dark); border:2px solid var(--line); }
+      .btn.ghost:hover{ border-color:var(--acc); background:var(--soft); }
+      .btn.big{ font-size:1.1rem; padding:12px 26px; }
+      .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+      .modegrid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+      @media (max-width:560px){ .modegrid{ grid-template-columns:1fr; } }
+      .modecard{ text-align:left; background:var(--surface); border:3px solid var(--line); border-radius:16px; padding:18px; cursor:pointer; color:var(--ink); }
+      .modecard:hover{ border-color:var(--acc); }
+      .modecard b{ font-size:1.2rem; display:block; margin-bottom:4px; }
+      .modecard span{ color:var(--muted); font-size:.95rem; }
+      .themegrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px; }
+      @media (max-width:640px){ .themegrid{ grid-template-columns:1fr; } }
+      .themecard{ text-align:left; background:var(--surface); border:3px solid var(--line); border-radius:16px; padding:16px; cursor:pointer; color:var(--ink); }
+      .themecard:hover{ border-color:var(--acc); }
+      .themecard b{ font-size:1.1rem; display:block; }
+      .themecard span{ color:var(--muted); font-size:.92rem; }
+      .hud{ background:var(--surface); border:2px solid var(--line); border-radius:14px; padding:10px 14px; margin:12px 0; }
+      .xpbar{ height:14px; background:var(--soft); border-radius:999px; overflow:hidden; border:1px solid var(--line); }
+      .xpfill{ height:100%; background:var(--acc); width:0%; transition:width .5s ease; }
+      .hudrow{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-weight:700; margin-bottom:6px; }
+      .taskcard{ background:var(--soft); border:2px solid var(--acc); border-radius:16px; padding:14px 16px; margin:12px 0; }
+      .taskcard .jobtag{ font-size:.8rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--acc-dark); }
+      .taskcard .tasktext{ font-size:1.2rem; font-weight:700; margin-top:2px; }
+      .smallnote{ font-size:.9rem; color:var(--muted); margin:4px 0; }
+      .phone{ border:3px solid var(--ink); border-radius:26px; padding:12px 12px 16px; background:var(--surface); margin:12px 0; }
+      .phonebar{ text-align:center; font-weight:800; padding:4px 0 10px; border-bottom:2px solid var(--line); margin-bottom:12px; }
+      .phonebar .notch{ display:block; width:70px; height:6px; border-radius:99px; background:var(--line); margin:0 auto 8px; }
+      .flowwrap{ position:relative; padding-top:52px; }
+      .flow{ display:flex; gap:10px; flex-wrap:wrap; align-items:stretch; }
+      .flowempty{ color:var(--muted); padding:18px 8px; font-weight:600; }
+      .scard{ width:128px; min-height:132px; border:3px solid var(--line); border-radius:14px; background:var(--surface); padding:8px; text-align:center; position:relative; }
+      .scard .slabel{ font-weight:800; font-size:.92rem; margin:4px 0 6px; line-height:1.2; }
+      .scard .mini{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
+      .minichip{ font-size:.68rem; font-weight:700; background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:2px 7px; }
+      .minichip.none{ background:transparent; color:var(--muted); border-style:dashed; }
+      button.scard{ cursor:pointer; color:var(--ink); font-family:inherit; }
+      button.scard:hover{ border-color:var(--acc); }
+      .scard.selected{ border-color:var(--acc); box-shadow:0 0 0 3px var(--soft); }
+      .scard.current{ border-color:var(--gold); box-shadow:0 0 0 4px color-mix(in srgb, var(--gold) 35%, transparent); }
+      .scard.stuck{ border-color:var(--bad); box-shadow:0 0 0 4px color-mix(in srgb, var(--bad) 30%, transparent); }
+      .scard.passed{ border-color:var(--good); }
+      .arrow{ align-self:center; font-weight:900; color:var(--muted); font-size:1.1rem; }
+      .tray{ display:flex; gap:10px; flex-wrap:wrap; }
+      .tray .scard{ min-height:104px; }
+      .chips{ display:flex; gap:8px; flex-wrap:wrap; }
+      .chip{ border:2px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:.95rem; }
+      .chip[aria-pressed="true"]{ background:var(--acc); border-color:var(--acc); color:#fff; }
+      .token{ position:absolute; width:38px; height:46px; margin-left:-19px; top:0; transition:left .62s ease, top .62s ease; z-index:5; pointer-events:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+      .token.celebrate{ animation:bounce .5s ease 3; }
+      @keyframes bounce{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-12px);} }
+      @media (prefers-reduced-motion: reduce){ .token{ transition:none; } .token.celebrate{ animation:none; } .xpfill{ transition:none; } }
+      .bubble{ background:var(--surface); border:3px solid var(--ink); border-radius:16px; padding:12px 16px; font-size:1.12rem; font-weight:700; margin:12px 0; position:relative; }
+      .bubble.bad{ border-color:var(--bad); }
+      .bubble.good{ border-color:var(--good); }
+      .bubble .who{ display:block; font-size:.78rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+      .opt{ display:block; width:100%; text-align:left; margin:8px 0; background:var(--surface); border:2px solid var(--line); border-radius:12px; padding:12px 14px; font-size:1rem; font-weight:600; cursor:pointer; color:var(--ink); }
+      .opt:hover:not(:disabled){ border-color:var(--acc); }
+      .opt:disabled{ opacity:.45; cursor:default; text-decoration:line-through; }
+      .opt.right{ border-color:var(--good); background:color-mix(in srgb, var(--good) 14%, var(--surface)); text-decoration:none; opacity:1; }
+      .designer{ border:3px solid var(--acc); border-radius:20px; padding:22px; text-align:center; background:var(--surface); }
+      .designer .dtitle{ font-size:.85rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--acc-dark); }
+      .designer .dname{ font-size:1.7rem; font-weight:900; margin:6px 0; min-height:2.2rem; }
+      .wordchips{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+      .wordchips span{ background:var(--soft); border:2px solid var(--line); border-radius:999px; padding:6px 14px; font-weight:800; }
+      .stars{ font-size:1.5rem; letter-spacing:4px; }
+      .stars svg{ vertical-align:-4px; }
+      input[type="text"]{ font:inherit; padding:10px 12px; border:2px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); width:min(320px,100%); }
+      #teacherBtn{ position:fixed; right:12px; bottom:12px; z-index:40; background:var(--surface); color:var(--muted); border:2px solid var(--line); border-radius:999px; padding:6px 16px; font-weight:700; cursor:pointer; font-size:.88rem; }
+      #teacherBtn:hover{ color:var(--ink); border-color:var(--acc); }
+      #teacherPanel{ position:fixed; right:12px; bottom:64px; z-index:41; width:min(340px, calc(100vw - 24px)); max-height:76vh; overflow:auto; background:var(--surface); color:var(--ink); border:2px solid var(--line); border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+      #teacherPanel h3{ margin-top:0; }
+      #teacherPanel .btn, #teacherPanel .chip{ margin:3px 2px; }
+      .revealbox{ background:var(--soft); border:2px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px; font-size:.94rem; line-height:1.5; }
+      .hidden{ display:none !important; }
+      .themeswitch{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:10px 0; }
+      .themeswitch .chip{ padding:5px 13px; font-size:.85rem; }
+      .resultnote{ font-weight:700; margin:8px 0; }
+      .resultnote.good{ color:var(--good); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="hud"></div>
+      <main id="view"></main>
+    </div>
+
+    <button id="teacherBtn" type="button">Teacher</button>
+    <div id="teacherPanel" class="hidden" role="dialog" aria-label="Teacher panel">
+      <h3>Teacher panel</h3>
+      <p class="smallnote">Jumps and skips give no points.</p>
+      <div>
+        <b>Jump to</b><br />
+        <button class="btn ghost" type="button" data-jump="start">Start</button>
+        <button class="btn ghost" type="button" data-jump="theme">Theme Pick</button>
+        <button class="btn ghost" type="button" data-jump="job1">Job 1 Build</button>
+        <button class="btn ghost" type="button" data-jump="job2">Job 2 Build</button>
+        <button class="btn ghost" type="button" data-jump="finish">Finish</button>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn ghost" type="button" id="skipBtn">Skip current step</button>
+        <button class="btn ghost" type="button" id="revealBtn">Reveal</button>
+        <button class="btn ghost" type="button" id="resetBtn">Reset</button>
+        <button class="btn ghost" type="button" id="closePanelBtn">Close</button>
+      </div>
+      <div id="revealBox" class="revealbox hidden"></div>
+    </div>
+
+    <script>
+      "use strict";
+      /* ---------- Data ---------- */
+      var SCREEN_TYPES = ["search", "results", "item", "action", "done"];
+      var BUTTON_TYPES = ["search", "tap", "action", "back", "confirm"];
+      var THEMES = {
+        game: {
+          pick: "Game Companion app", app: "GameVault",
+          screens: { search: "Game Search", results: "Games", item: "Game Page", action: "My List", done: "Done", distractor: "Store Ads" },
+          buttons: { search: "Search", tap: "Tap a game", action: "Add to List", back: "Back", confirm: "Confirm" },
+          job1: "Find a space game and add it to your list.",
+          job2: "Open the first game, go back, and add the racing game instead.",
+          actionBubble: "No Add button. I cannot save it."
+        },
+        music: {
+          pick: "Music app", app: "TuneBox",
+          screens: { search: "Song Search", results: "Songs", item: "Song Page", action: "My Playlist", done: "Done", distractor: "News Page" },
+          buttons: { search: "Search", tap: "Tap a song", action: "Save Song", back: "Back", confirm: "Confirm" },
+          job1: "Find a calm song and save it to your playlist.",
+          job2: "Open the first song, go back, and save the upbeat song instead.",
+          actionBubble: "No Save button. I cannot save it."
+        },
+        team: {
+          pick: "Team app", app: "TeamUp",
+          screens: { search: "Team Search", results: "Teams", item: "Team Page", action: "My Team", done: "Done", distractor: "Shop Page" },
+          buttons: { search: "Search", tap: "Tap a team", action: "Join Team", back: "Back", confirm: "Confirm" },
+          job1: "Find a soccer team and join it.",
+          job2: "Open the first team, go back, and join the running team instead.",
+          actionBubble: "No Join button. I cannot join it."
+        }
+      };
+      var NEEDED = {
+        1: { search: ["search"], results: ["tap"], item: ["action"], action: ["confirm"], done: [] },
+        2: { search: ["search"], results: ["tap"], item: ["back", "action"], action: ["confirm"], done: [] }
+      };
+      var MAXXP = 80;
+
+      /* ---------- State ---------- */
+      function freshJob() { return { runs: 0, passed: false, firstRunPass: false, buttonsReady: false, xpGiven: false, reflGiven: false, skipped: false }; }
+      var S;
+      function resetState() {
+        S = {
+          mode: null, themeKey: null, phase: "start", job: 1,
+          flows: { 1: [], 2: [] }, selected: -1,
+          xp: 0, streak: 0,
+          jobs: { 1: freshJob(), 2: freshJob() },
+          unlocked: { sky: true, sunset: false, mint: false },
+          cosmetic: "sky",
+          test: null, designerName: ""
+        };
+      }
+      resetState();
+
+      function T() { return THEMES[S.themeKey || "game"]; }
+      function flow() { return S.flows[S.job]; }
+      function trayTypes(job) {
+        var placed = S.flows[job].map(function (c) { return c.type; });
+        var all = SCREEN_TYPES.slice();
+        if (job === 2) all.push("distractor");
+        return all.filter(function (t) { return placed.indexOf(t) < 0; });
+      }
+      function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+      /* ---------- Audio ---------- */
+      function speak(text) {
+        try {
+          if (!("speechSynthesis" in window)) return;
+          window.speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance(text);
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+        } catch (e) { /* audio is optional */ }
+      }
+      function hearBtn(text) {
+        return '<button type="button" class="hear" data-speak="' + esc(text) + '">Hear it</button>';
+      }
+
+      /* ---------- The honest walk ---------- */
+      function computeWalk(job) {
+        var fl = S.flows[job], th = T(), steps = [];
+        function fail(idx, bubble, cause) { return { pass: false, stuckIdx: idx, bubble: bubble, cause: cause, steps: steps }; }
+        function advance(from, expected) {
+          var n = from + 1;
+          if (n >= fl.length) return { fail: fail(from, "There is no next screen.", { kind: "missingScreen", screen: expected }) };
+          steps.push(n);
+          if (fl[n].type !== expected) return { fail: fail(n, "This screen does not help.", { kind: "wrongScreen", screen: fl[n].type }) };
+          return { idx: n };
+        }
+        if (!fl.length) return { pass: false, stuckIdx: -1, bubble: "I need to start at Search.", cause: { kind: "start" }, steps: steps };
+        var i = 0, r;
+        steps.push(0);
+        if (fl[0].type !== "search") return fail(0, "I need to start at Search.", { kind: "start" });
+        if (fl[0].buttons.indexOf("search") < 0) return fail(0, "No Search button here.", { kind: "missingButton", button: "search", screen: "search" });
+        r = advance(0, "results"); if (r.fail) return r.fail; i = r.idx;
+        if (fl[i].buttons.indexOf("tap") < 0) return fail(i, "Nothing to tap here.", { kind: "missingButton", button: "tap", screen: "results" });
+        r = advance(i, "item"); if (r.fail) return r.fail; i = r.idx;
+        if (job === 2) {
+          if (fl[i].buttons.indexOf("back") < 0) return fail(i, "No Back button. I am stuck here.", { kind: "missingButton", button: "back", screen: "item" });
+          var backIdx = i - 1;
+          steps.push(backIdx);
+          if (fl[backIdx].buttons.indexOf("tap") < 0) return fail(backIdx, "Nothing to tap here.", { kind: "missingButton", button: "tap", screen: "results" });
+          r = advance(backIdx, "item"); if (r.fail) return r.fail; i = r.idx;
+        }
+        if (fl[i].buttons.indexOf("action") < 0) return fail(i, th.actionBubble, { kind: "missingButton", button: "action", screen: "item" });
+        r = advance(i, "action"); if (r.fail) return r.fail; i = r.idx;
+        if (fl[i].buttons.indexOf("confirm") < 0) return fail(i, "No Confirm button.", { kind: "missingButton", button: "confirm", screen: "action" });
+        r = advance(i, "done"); if (r.fail) return r.fail; i = r.idx;
+        var visited = {};
+        steps.forEach(function (s) { visited[s] = true; });
+        var unusedPlaced = fl.some(function (c, ix) { return !visited[ix]; });
+        var unused = unusedPlaced || trayTypes(job).length > 0;
+        return { pass: true, stuckIdx: i, bubble: "Done. That worked.", cause: null, steps: steps, unused: unused };
+      }
+      function checkNeededButtons(job) {
+        var fl = S.flows[job], need = NEEDED[job];
+        for (var k = 0; k < SCREEN_TYPES.length; k++) {
+          var type = SCREEN_TYPES[k], req = need[type];
+          if (!req.length) continue;
+          var card = null;
+          for (var j = 0; j < fl.length; j++) if (fl[j].type === type) { card = fl[j]; break; }
+          if (!card) return false;
+          for (var b = 0; b < req.length; b++) if (card.buttons.indexOf(req[b]) < 0) return false;
+        }
+        return true;
+      }
+
+      /* ---------- Reflection options ---------- */
+      function causeText(cause) {
+        var th = T();
+        if (!cause) return "";
+        if (cause.kind === "start") return "The flow did not start with the " + th.screens.search + " screen.";
+        if (cause.kind === "missingButton") return "The " + th.screens[cause.screen] + " screen had no " + th.buttons[cause.button] + " button.";
+        if (cause.kind === "wrongScreen") return "The " + th.screens[cause.screen] + " screen was in the way.";
+        if (cause.kind === "missingScreen") return "The " + th.screens[cause.screen] + " screen was missing.";
+        return "";
+      }
+      function buildReflection(cause) {
+        var th = T(), correct = causeText(cause), pool = [];
+        var fl = flow();
+        var placedButtons = {};
+        fl.forEach(function (c) { c.buttons.forEach(function (b) { placedButtons[b] = true; }); });
+        BUTTON_TYPES.forEach(function (b) {
+          if (placedButtons[b]) pool.push("The " + th.buttons[b] + " button was missing.");
+        });
+        fl.forEach(function (c) { pool.push("The " + th.screens[c.type] + " screen was missing."); });
+        pool.push("The app name was wrong.");
+        pool.push("The screen colors were wrong.");
+        pool = pool.filter(function (p, ix) { return p !== correct && pool.indexOf(p) === ix; });
+        var seed = S.jobs[S.job].runs * 7 + fl.length;
+        pool.sort(function (a, b) { return ((a.length * 31 + seed) % 13) - ((b.length * 31 + seed) % 13); });
+        var opts = pool.slice(0, 2);
+        opts.splice(seed % 3, 0, correct);
+        return { options: opts, correct: correct, tries: 0, done: false, picked: [] };
+      }
+
+      /* ---------- Icons ---------- */
+      function icon(type) {
+        var s = 'width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+        if (type === "search") return '<svg ' + s + '><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>';
+        if (type === "results") return '<svg ' + s + '><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>';
+        if (type === "item") return '<svg ' + s + '><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/></svg>';
+        if (type === "action") return '<svg ' + s + '><path d="M12 3l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.3 6.8 19l1-5.8L3.6 9.1l5.8-.8z"/></svg>';
+        if (type === "done") return '<svg ' + s + '><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.5"/></svg>';
+        return '<svg ' + s + '><path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="8" cy="8" r="1.6"/></svg>';
+      }
+      function personSVG() {
+        return '<svg width="38" height="46" viewBox="0 0 38 46" aria-hidden="true"><circle cx="19" cy="8" r="6" fill="#f2b01e" stroke="#17324e" stroke-width="2"/><path d="M19 14v12M19 18l-8 5M19 18l8 5M19 26l-6 14M19 26l6 14" stroke="#17324e" stroke-width="3" stroke-linecap="round" fill="none"/></svg>';
+      }
+      function starSVG(filled) {
+        return '<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.3l-5.8 3.1 1.1-6.5L2.6 9.3l6.5-.9z" fill="' + (filled ? "#f2b01e" : "none") + '" stroke="#b8860b" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      }
+
+      /* ---------- Shared HTML builders ---------- */
+      function cardInner(c) {
+        var th = T();
+        var chips = c.buttons.length
+          ? c.buttons.map(function (b) { return '<span class="minichip">' + esc(th.buttons[b]) + "</span>"; }).join("")
+          : '<span class="minichip none">No buttons yet</span>';
+        return icon(c.type) + '<div class="slabel">' + esc(th.screens[c.type]) + '</div><div class="mini">' + chips + "</div>";
+      }
+      function flowHTML(opts) {
+        opts = opts || {};
+        var fl = flow(), out = '<div class="phone"><div class="phonebar"><span class="notch"></span>' + esc(T().app) + '</div><div class="flowwrap" id="flowwrap">';
+        out += '<div class="token hidden" id="token">' + personSVG() + "</div>";
+        out += '<div class="flow" id="flowrow">';
+        if (!fl.length) out += '<div class="flowempty">Your flow is empty. Add a screen from the tray.</div>';
+        fl.forEach(function (c, ix) {
+          var cls = "scard";
+          if (opts.interactive && ix === S.selected) cls += " selected";
+          if (opts.current === ix) cls += S.test && S.test.result && !S.test.result.pass && S.test.finished ? " stuck" : " current";
+          if (opts.interactive) out += '<button type="button" class="' + cls + '" data-place="' + ix + '">' + cardInner(c) + "</button>";
+          else out += '<div class="' + cls + '" data-card="' + ix + '">' + cardInner(c) + "</div>";
+          if (ix < fl.length - 1) out += '<span class="arrow" aria-hidden="true">&#8594;</span>';
+        });
+        out += "</div></div></div>";
+        return out;
+      }
+      function starsFor(job) {
+        var j = S.jobs[job];
+        if (!j.passed) return 0;
+        return 1 + (j.firstRunPass ? 1 : 0) + (j.buttonsReady ? 1 : 0);
+      }
+      function jobStatusText(job) {
+        var j = S.jobs[job];
+        if (j.passed) return "Passed";
+        if (j.runs > 0) return "Not passed yet";
+        return "Not played yet";
+      }
+
+      /* ---------- HUD ---------- */
+      function renderHud() {
+        var hud = document.getElementById("hud"), out = "";
+        if (S.mode === "student" && S.phase !== "start") {
+          var pct = Math.min(100, Math.round(S.xp / MAXXP * 100));
+          out += '<div class="hud"><div class="hudrow"><span>XP: ' + S.xp + '</span><span>Streak: ' + S.streak + '</span></div><div class="xpbar"><div class="xpfill" style="width:' + pct + '%"></div></div>';
+          if (S.unlocked.sunset || S.unlocked.mint) {
+            out += '<div class="themeswitch"><span class="smallnote" style="margin:0">Page color:</span>';
+            ["sky", "sunset", "mint"].forEach(function (k) {
+              if (S.unlocked[k]) out += '<button type="button" class="chip" data-cosmetic="' + k + '" aria-pressed="' + (S.cosmetic === k) + '">' + k.charAt(0).toUpperCase() + k.slice(1) + "</button>";
+            });
+            out += "</div>";
+          }
+          out += "</div>";
+        }
+        hud.innerHTML = out;
+      }
+
+      /* ---------- Views ---------- */
+      var view = document.getElementById("view");
+      function render() {
+        renderHud();
+        if (S.phase === "start") renderStart();
+        else if (S.phase === "theme") renderThemePick();
+        else if (S.phase === "build") renderBuild();
+        else if (S.phase === "test") renderTest();
+        else if (S.phase === "finish") renderFinish();
+        window.scrollTo(0, 0);
+      }
+      function instructionLine(text) {
+        return '<p class="instruction"><span>' + esc(text) + "</span>" + hearBtn(text) + "</p>";
+      }
+      function renderStart() {
+        view.innerHTML =
+          "<h1>App Design Studio</h1>" +
+          instructionLine("Pick a mode to start.") +
+          '<div class="modegrid">' +
+          '<button type="button" class="modecard" data-mode="teacher"><b>Teacher-Led</b><span>The class designs together. The teacher taps for the class.</span></button>' +
+          '<button type="button" class="modecard" data-mode="student"><b>Student-Led</b><span>You design on your own and earn XP and stars.</span></button>' +
+          "</div>";
+        view.querySelectorAll("[data-mode]").forEach(function (b) {
+          b.addEventListener("click", function () { S.mode = b.getAttribute("data-mode"); S.phase = "theme"; render(); });
+        });
+      }
+      function renderThemePick() {
+        var out = "<h2>Pick your app</h2>" + instructionLine("Pick the app you want to design.") + '<div class="themegrid">';
+        Object.keys(THEMES).forEach(function (k) {
+          var th = THEMES[k];
+          out += '<button type="button" class="themecard" data-theme="' + k + '"><b>' + esc(th.pick) + '</b><span>App name: ' + esc(th.app) + "<br />Job: " + esc(th.job1) + "</span></button>";
+        });
+        out += "</div>";
+        view.innerHTML = out;
+        view.querySelectorAll("[data-theme]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            S.themeKey = b.getAttribute("data-theme"); S.job = 1; S.phase = "build"; S.selected = -1; render();
+          });
+        });
+      }
+      function renderBuild() {
+        var th = T(), job = S.job, j = S.jobs[job];
+        var instr = S.mode === "teacher" ? "Vote: where does this screen go? Teacher taps to place it." : "Tap a screen to add it to your flow.";
+        var out = "<h2>Job " + job + ": Design " + esc(th.app) + "</h2>" + instructionLine(instr);
+        out += '<div class="taskcard"><span class="jobtag">The job</span><div class="tasktext">' + esc(job === 1 ? th.job1 : th.job2) + "</div></div>";
+        if (job === 2) out += '<p class="smallnote">One tray screen does not belong.</p>';
+        if (j.passed) out += '<p class="resultnote good">This job already passed. More tests give no more XP.</p>';
+        out += flowHTML({ interactive: true });
+        out += "<h3>Screen tray</h3>";
+        var tray = trayTypes(job);
+        if (!tray.length) out += '<p class="smallnote">Every screen is in your flow.</p>';
+        out += '<div class="tray">';
+        tray.forEach(function (t) {
+          out += '<button type="button" class="scard" data-tray="' + t + '">' + cardInner({ type: t, buttons: [] }) + "</button>";
+        });
+        out += "</div>";
+        var fl = flow();
+        if (S.selected >= 0 && fl[S.selected]) {
+          var c = fl[S.selected];
+          out += '<div class="card"><h3>Selected: ' + esc(th.screens[c.type]) + '</h3><div class="row">' +
+            '<button type="button" class="btn ghost" id="moveL">&#8592; Move left</button>' +
+            '<button type="button" class="btn ghost" id="moveR">Move right &#8594;</button>' +
+            '<button type="button" class="btn ghost" id="removeCard">Remove screen</button></div>' +
+            "<h3>Buttons on this screen</h3><p class=\"smallnote\">Tap a button chip to add or remove it.</p><div class=\"chips\">";
+          BUTTON_TYPES.forEach(function (b) {
+            out += '<button type="button" class="chip" data-btn="' + b + '" aria-pressed="' + (c.buttons.indexOf(b) >= 0) + '">' + esc(th.buttons[b]) + "</button>";
+          });
+          out += "</div></div>";
+        } else if (fl.length) {
+          out += '<p class="smallnote">Tap a screen in your flow to pick its buttons.</p>';
+        }
+        out += '<div class="row" style="margin-top:14px"><button type="button" class="btn big" id="runTest">Run the user test</button></div>';
+        view.innerHTML = out;
+        view.querySelectorAll("[data-tray]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            fl.push({ type: b.getAttribute("data-tray"), buttons: [] });
+            S.selected = fl.length - 1;
+            renderBuildRefresh();
+          });
+        });
+        view.querySelectorAll("[data-place]").forEach(function (b) {
+          b.addEventListener("click", function () { S.selected = parseInt(b.getAttribute("data-place"), 10); renderBuildRefresh(); });
+        });
+        var ml = document.getElementById("moveL"), mr = document.getElementById("moveR"), rm = document.getElementById("removeCard");
+        if (ml) ml.addEventListener("click", function () { if (S.selected > 0) { var t = fl[S.selected - 1]; fl[S.selected - 1] = fl[S.selected]; fl[S.selected] = t; S.selected--; renderBuildRefresh(); } });
+        if (mr) mr.addEventListener("click", function () { if (S.selected < fl.length - 1) { var t = fl[S.selected + 1]; fl[S.selected + 1] = fl[S.selected]; fl[S.selected] = t; S.selected++; renderBuildRefresh(); } });
+        if (rm) rm.addEventListener("click", function () { fl.splice(S.selected, 1); S.selected = -1; renderBuildRefresh(); });
+        view.querySelectorAll("[data-btn]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var bt = b.getAttribute("data-btn"), card = fl[S.selected], ix = card.buttons.indexOf(bt);
+            if (ix >= 0) card.buttons.splice(ix, 1); else card.buttons.push(bt);
+            renderBuildRefresh();
+          });
+        });
+        document.getElementById("runTest").addEventListener("click", function () {
+          S.test = null; S.phase = "test"; render();
+        });
+      }
+      function renderBuildRefresh() { renderHud(); renderBuild(); }
+
+      function renderTest() {
+        var th = T(), job = S.job;
+        var out = "<h2>Job " + job + ": User test</h2>" + instructionLine("Watch the user try the job.");
+        out += '<div class="taskcard"><span class="jobtag">The job</span><div class="tasktext">' + esc(job === 1 ? th.job1 : th.job2) + "</div></div>";
+        out += '<div id="testflow">' + flowHTML({}) + "</div>";
+        out += '<div id="testzone">';
+        if (S.mode === "teacher") out += '<div class="card"><b>Talk first:</b> Where will our user get stuck?</div>';
+        out += '<button type="button" class="btn big" id="startTest">Start the test</button>';
+        out += "</div>";
+        view.innerHTML = out;
+        document.getElementById("startTest").addEventListener("click", runTestAnimation);
+      }
+
+      function runTestAnimation() {
+        var job = S.job, j = S.jobs[job];
+        j.runs++;
+        if (j.runs === 1) j.buttonsReady = checkNeededButtons(job);
+        var result = computeWalk(job);
+        S.test = { result: result, finished: false, reflection: null };
+        var zone = document.getElementById("testzone");
+        zone.innerHTML = '<p class="smallnote">Testing. The build is locked.</p>';
+        var steps = result.steps.slice();
+        if (!steps.length) steps = [-1];
+        var pos = 0;
+        function showStep() {
+          var ix = steps[pos];
+          var wrap = document.getElementById("flowwrap");
+          var token = document.getElementById("token");
+          var cards = view.querySelectorAll("[data-card]");
+          cards.forEach(function (c) { c.classList.remove("current", "stuck"); });
+          if (ix >= 0 && cards[ix]) {
+            cards[ix].classList.add("current");
+            if (token && wrap) {
+              token.classList.remove("hidden");
+              var cardEl = cards[ix];
+              token.style.left = (cardEl.offsetLeft + cardEl.offsetWidth / 2) + "px";
+              token.style.top = Math.max(0, cardEl.offsetTop - 50) + "px";
+            }
+          } else if (token) {
+            token.classList.remove("hidden");
+            token.style.left = "30px"; token.style.top = "0px";
+          }
+          pos++;
+          if (pos < steps.length) setTimeout(showStep, 700);
+          else setTimeout(finishTest, 750);
+        }
+        function finishTest() {
+          S.test.finished = true;
+          var cards = view.querySelectorAll("[data-card]");
+          cards.forEach(function (c) { c.classList.remove("current"); });
+          if (result.stuckIdx >= 0 && cards[result.stuckIdx]) cards[result.stuckIdx].classList.add(result.pass ? "passed" : "stuck");
+          var token = document.getElementById("token");
+          if (token && result.pass) token.classList.add("celebrate");
+          var gained = 0;
+          if (result.pass) {
+            S.streak++;
+            if (!j.xpGiven) {
+              gained = 20 + (j.runs === 1 ? 10 : 0);
+              if (S.mode === "student") S.xp += gained;
+              j.xpGiven = true;
+              j.passed = true;
+              if (j.runs === 1) j.firstRunPass = true;
+              if (job === 1 && !S.unlocked.sunset) S.unlocked.sunset = true;
+              if (job === 2 && !S.unlocked.mint) S.unlocked.mint = true;
+            } else {
+              j.passed = true;
+            }
+          } else {
+            S.streak = 0;
+            if (S.mode === "student") S.test.reflection = buildReflection(result.cause);
+          }
+          renderHud();
+          showTestResult(result, gained);
+        }
+        showStep();
+      }
+
+      function showTestResult(result, gained) {
+        var zone = document.getElementById("testzone"), job = S.job, out = "";
+        out += '<div class="bubble ' + (result.pass ? "good" : "bad") + '"><span class="who">The user says</span>' + esc(result.bubble) + "</div>";
+        if (result.pass) {
+          if (S.mode === "student" && gained > 0) out += '<p class="resultnote good">You earned ' + gained + " XP.</p>";
+          if (S.mode === "student" && gained === 0) out += '<p class="smallnote">This job already passed, so no new XP.</p>';
+          if (result.unused) out += '<p class="resultnote">One screen was never used.</p>';
+          out += '<div class="row">';
+          if (job === 1) out += '<button type="button" class="btn big" id="nextJob">Start Job 2</button>';
+          else out += '<button type="button" class="btn big" id="toFinish">See my card</button>';
+          out += '<button type="button" class="btn ghost" id="fixBtn">Keep fixing</button></div>';
+        } else {
+          if (S.mode === "teacher") {
+            out += '<div class="card"><b>Talk about it:</b> What does this screen need?</div>';
+          } else if (S.test.reflection) {
+            var r = S.test.reflection;
+            out += '<div class="card" id="reflCard"><h3>What stopped the user?</h3><div id="reflOpts">';
+            r.options.forEach(function (o, ix) {
+              out += '<button type="button" class="opt" data-opt="' + ix + '">' + esc(o) + "</button>";
+            });
+            out += '</div><p class="smallnote" id="reflMsg"></p></div>';
+          }
+          out += '<div class="row"><button type="button" class="btn big" id="fixBtn">Fix the design</button></div>';
+        }
+        zone.innerHTML = out;
+        var fix = document.getElementById("fixBtn");
+        if (fix) fix.addEventListener("click", function () { S.phase = "build"; S.selected = -1; render(); });
+        var nj = document.getElementById("nextJob");
+        if (nj) nj.addEventListener("click", function () { S.job = 2; S.phase = "build"; S.selected = -1; S.test = null; render(); });
+        var tf = document.getElementById("toFinish");
+        if (tf) tf.addEventListener("click", function () { S.phase = "finish"; render(); });
+        zone.querySelectorAll("[data-opt]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var r = S.test.reflection; if (!r || r.done) return;
+            var ix = parseInt(b.getAttribute("data-opt"), 10), msg = document.getElementById("reflMsg");
+            if (r.options[ix] === r.correct) {
+              r.done = true;
+              b.classList.add("right");
+              zone.querySelectorAll("[data-opt]").forEach(function (o) { o.disabled = true; });
+              b.disabled = false;
+              if (r.tries === 0) {
+                S.streak++;
+                var j = S.jobs[S.job];
+                if (!j.reflGiven) { S.xp += 10; j.reflGiven = true; msg.textContent = "Right, first try. Plus 10 XP."; }
+                else msg.textContent = "Right, first try.";
+              } else {
+                msg.textContent = "Right. Now fix the design.";
+              }
+              renderHud();
+            } else {
+              r.tries++;
+              b.disabled = true;
+              msg.textContent = "Not that one. Try again.";
+            }
+          });
+        });
+      }
+
+      function renderFinish() {
+        var th = T();
+        var out = "<h2>Your App Designer card</h2>" + instructionLine("Type your name on your card.");
+        out += '<div class="designer"><div class="dtitle">App Designer</div><div class="dname" id="cardName">' + esc(S.designerName || "Your name") + '</div>' +
+          '<div class="smallnote">Designed the app ' + esc(th.app) + "</div>";
+        if (S.mode === "student") {
+          out += '<p style="font-size:1.15rem;font-weight:800;margin:10px 0 2px">Total XP: ' + S.xp + "</p>";
+          [1, 2].forEach(function (job) {
+            var n = starsFor(job);
+            out += '<p style="margin:8px 0 0">Job ' + job + ': <span class="stars">' + starSVG(n >= 1) + starSVG(n >= 2) + starSVG(n >= 3) + "</span> " + (S.jobs[job].passed ? "" : '<span class="smallnote">' + jobStatusText(job) + "</span>") + "</p>";
+          });
+        } else {
+          [1, 2].forEach(function (job) {
+            out += '<p style="margin:8px 0 0;font-weight:700">Job ' + job + ": " + jobStatusText(job) + "</p>";
+          });
+        }
+        out += '<div class="wordchips"><span>screen</span><span>button</span><span>flow</span><span>user test</span></div></div>';
+        out += '<div class="card"><label for="nameInput"><b>Your name</b></label><br /><input type="text" id="nameInput" maxlength="30" placeholder="Type your name" value="' + esc(S.designerName) + '" /></div>';
+        out += '<div class="row"><button type="button" class="btn big" id="playAgain">Play again</button></div>';
+        view.innerHTML = out;
+        var inp = document.getElementById("nameInput");
+        inp.addEventListener("input", function () {
+          S.designerName = inp.value;
+          document.getElementById("cardName").textContent = inp.value.trim() || "Your name";
+        });
+        document.getElementById("playAgain").addEventListener("click", function () {
+          var keepMode = null;
+          resetState();
+          document.documentElement.setAttribute("data-cosmetic", "sky");
+          S.mode = keepMode; S.phase = "start"; render();
+        });
+      }
+
+      /* ---------- Global clicks: hear buttons and cosmetic switcher ---------- */
+      document.addEventListener("click", function (e) {
+        var sp = e.target.closest ? e.target.closest("[data-speak]") : null;
+        if (sp) { speak(sp.getAttribute("data-speak")); return; }
+        var cs = e.target.closest ? e.target.closest("[data-cosmetic]") : null;
+        if (cs) {
+          var k = cs.getAttribute("data-cosmetic");
+          if (S.unlocked[k]) { S.cosmetic = k; document.documentElement.setAttribute("data-cosmetic", k); renderHud(); }
+        }
+      });
+
+      /* ---------- Teacher panel ---------- */
+      var panel = document.getElementById("teacherPanel");
+      document.getElementById("teacherBtn").addEventListener("click", function () { panel.classList.toggle("hidden"); });
+      document.getElementById("closePanelBtn").addEventListener("click", function () { panel.classList.add("hidden"); });
+      function ensureTheme() { if (!S.themeKey) S.themeKey = "game"; }
+      function markSkipped(job) { if (!S.jobs[job].passed) S.jobs[job].skipped = true; }
+      panel.querySelectorAll("[data-jump]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var d = b.getAttribute("data-jump");
+          document.getElementById("revealBox").classList.add("hidden");
+          if (d === "start") S.phase = "start";
+          else if (d === "theme") S.phase = "theme";
+          else if (d === "job1") { ensureTheme(); S.job = 1; S.phase = "build"; S.selected = -1; S.test = null; }
+          else if (d === "job2") { ensureTheme(); markSkipped(1); S.job = 2; S.phase = "build"; S.selected = -1; S.test = null; }
+          else if (d === "finish") { ensureTheme(); markSkipped(1); markSkipped(2); S.phase = "finish"; }
+          panel.classList.add("hidden");
+          render();
+        });
+      });
+      document.getElementById("skipBtn").addEventListener("click", function () {
+        document.getElementById("revealBox").classList.add("hidden");
+        if (S.phase === "start") S.phase = "theme";
+        else if (S.phase === "theme") { ensureTheme(); S.job = 1; S.phase = "build"; S.selected = -1; }
+        else if (S.phase === "build" || S.phase === "test") {
+          if (S.job === 1) { markSkipped(1); S.job = 2; S.phase = "build"; S.selected = -1; S.test = null; }
+          else { markSkipped(2); S.phase = "finish"; }
+        }
+        panel.classList.add("hidden");
+        render();
+      });
+      document.getElementById("revealBtn").addEventListener("click", function () {
+        var box = document.getElementById("revealBox"), th = T(), job = S.job, need = NEEDED[job];
+        var lines = SCREEN_TYPES.map(function (t) {
+          var btns = need[t].map(function (b) { return th.buttons[b] + " button"; }).join(", ");
+          return "<b>" + esc(th.screens[t]) + "</b>" + (btns ? ": " + esc(btns) : ": no buttons needed");
+        });
+        box.innerHTML = "<b>One flow that works</b> (Job " + job + ", " + esc(th.app) + ")<br />" + lines.join("<br />") + "<br /><span class=\"smallnote\">For looking only. It changes nothing in the student build.</span>";
+        box.classList.remove("hidden");
+      });
+      document.getElementById("resetBtn").addEventListener("click", function () {
+        resetState();
+        document.documentElement.setAttribute("data-cosmetic", "sky");
+        document.getElementById("revealBox").classList.add("hidden");
+        panel.classList.add("hidden");
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

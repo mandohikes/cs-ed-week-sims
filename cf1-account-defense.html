@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Account Defense</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#ffffff; --panel2:#e3e8f2; --ink:#17203a; --muted:#4c5875;
+    --accent:#0f766e; --accent2:#b45309; --good:#15803d; --bad:#b91c1c; --line:#c6cede;
+    --tile:#ffffff; --tile-on:#0f766e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0d1220; --panel:#171f36; --panel2:#1f2a49; --ink:#eef2ff; --muted:#a9b4d0;
+      --accent:#2dd4bf; --accent2:#fbbf24; --good:#4ade80; --bad:#f87171; --line:#33406b; --tile:#1f2a49; --tile-on:#0f766e; }
+  }
+  body.theme-forest{ --accent:#16a34a; --accent2:#65a30d; --tile-on:#16a34a; }
+  body.theme-ember{ --accent:#ea580c; --accent2:#dc2626; --tile-on:#ea580c; }
+  @media (prefers-color-scheme: dark){
+    body.theme-forest{ --accent:#4ade80; --accent2:#a3e635; --tile-on:#15803d; }
+    body.theme-ember{ --accent:#fb923c; --accent2:#f87171; --tile-on:#c2410c; }
+  }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height:1.45; }
+  button{ font:inherit; cursor:pointer; min-height:44px; }
+  .wrap{ max-width:880px; margin:0 auto; padding:16px 16px 96px; }
+  h1{ font-size:2rem; margin:.2em 0 .1em; letter-spacing:.01em; }
+  h2{ font-size:1.45rem; margin:.1em 0 .3em; }
+  h3{ font-size:1.05rem; margin:.6em 0 .3em; }
+  .instr{ font-size:1.08rem; font-weight:600; margin:.2em 0 .8em; }
+  .small{ font-size:.9rem; color:var(--muted); }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin:14px 0; }
+  .hud{ display:none; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px 14px; margin-bottom:12px; }
+  .hud.on{ display:block; }
+  .hudrow{ display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; }
+  .xpbar{ flex:1 1 200px; height:14px; background:var(--panel2); border-radius:99px; overflow:hidden; border:1px solid var(--line); }
+  .xpfill{ height:100%; width:0%; background:var(--accent); transition:width .4s ease; }
+  .pill{ background:var(--panel2); border:1px solid var(--line); border-radius:99px; padding:4px 12px; font-weight:700; font-size:.92rem; }
+  .screen{ display:none; }
+  .screen.on{ display:block; }
+  .modegrid{ display:grid; grid-template-columns:1fr; gap:12px; }
+  @media (min-width:640px){ .modegrid{ grid-template-columns:1fr 1fr; } }
+  .bigbtn{ background:var(--panel); border:2px solid var(--accent); color:var(--ink); border-radius:14px; padding:18px; text-align:left; width:100%; }
+  .bigbtn b{ font-size:1.2rem; display:block; margin-bottom:4px; }
+  .bigbtn span{ color:var(--muted); font-size:.95rem; }
+  .primary{ background:var(--accent); color:#fff; border:2px solid var(--accent); border-radius:12px; padding:12px 22px; font-weight:800; font-size:1.05rem; }
+  @media (prefers-color-scheme: dark){ .primary{ color:#06231f; } body.theme-forest .primary, body.theme-ember .primary{ color:#fff; } }
+  .primary:disabled{ opacity:.45; cursor:not-allowed; }
+  .ghost{ background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:10px 18px; font-weight:700; }
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .tab{ border:1px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:99px; padding:8px 16px; font-weight:700; }
+  .tab.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  @media (prefers-color-scheme: dark){ .tab.on{ color:#06231f; } body.theme-forest .tab.on, body.theme-ember .tab.on{ color:#fff; } }
+  .tiles{ display:flex; flex-wrap:wrap; gap:8px; }
+  .tile{ background:var(--tile); border:2px solid var(--line); color:var(--ink); border-radius:12px; padding:10px 16px; font-weight:700; font-size:1.02rem; }
+  .tile:active{ transform:scale(.97); }
+  .tile.used{ opacity:.35; }
+  .built{ display:flex; flex-wrap:wrap; gap:8px; min-height:52px; background:var(--panel2); border:1px dashed var(--line); border-radius:12px; padding:10px; align-items:center; }
+  .built .tile{ background:var(--tile-on); color:#fff; border-color:var(--tile-on); }
+  .passline{ font-size:1.25rem; font-weight:800; word-break:break-all; margin:6px 0; }
+  .meter{ margin-top:12px; }
+  .bucket{ font-size:1.6rem; font-weight:900; }
+  .meterbar{ height:16px; background:var(--panel2); border:1px solid var(--line); border-radius:99px; overflow:hidden; margin:8px 0; }
+  .meterfill{ height:100%; width:0%; background:var(--bad); transition:width .35s ease, background .35s ease; }
+  .feedback{ font-weight:800; min-height:1.4em; margin:8px 0; }
+  .feedback.good{ color:var(--good); } .feedback.bad{ color:var(--bad); }
+  .choice{ display:block; width:100%; text-align:left; background:var(--panel); border:2px solid var(--line); color:var(--ink); border-radius:14px; padding:14px 16px; margin:10px 0; font-weight:700; }
+  .choice small{ display:block; color:var(--muted); font-weight:600; margin-top:2px; }
+  .choice:disabled{ opacity:.5; }
+  .choice.wrong{ border-color:var(--bad); background:color-mix(in srgb, var(--bad) 10%, var(--panel)); }
+  .choice.right{ border-color:var(--good); background:color-mix(in srgb, var(--good) 12%, var(--panel)); }
+  .discuss{ display:none; border-left:5px solid var(--accent2); background:var(--panel2); border-radius:0 12px 12px 0; padding:10px 14px; margin:12px 0; font-weight:600; }
+  .discuss.on{ display:block; }
+  .acct{ border:2px solid var(--line); border-radius:14px; padding:14px; margin:10px 0; background:var(--panel); }
+  .acct.fallen{ border-color:var(--bad); background:color-mix(in srgb, var(--bad) 10%, var(--panel)); }
+  .acct.stood{ border-color:var(--good); }
+  .acct .nm{ font-weight:900; font-size:1.08rem; }
+  .pwchips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .pwchip{ border:2px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:99px; padding:8px 14px; font-weight:700; }
+  .pwchip.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  @media (prefers-color-scheme: dark){ .pwchip.on{ color:#06231f; } body.theme-forest .pwchip.on, body.theme-ember .pwchip.on{ color:#fff; } }
+  .hackbar{ height:22px; background:var(--panel2); border:1px solid var(--line); border-radius:99px; overflow:hidden; }
+  .hackfill{ height:100%; width:0%; background:var(--bad); transition:width .12s linear; }
+  .shieldfill{ height:100%; width:0%; background:var(--good); transition:width .12s linear; }
+  .clock{ font-size:2rem; font-weight:900; text-align:center; margin:6px 0; }
+  .hear{ background:none; border:1px solid var(--line); color:var(--muted); border-radius:99px; padding:4px 12px; font-size:.85rem; font-weight:700; min-height:36px; vertical-align:middle; margin-left:8px; }
+  .teacherbtn{ position:fixed; right:12px; bottom:12px; z-index:40; background:var(--panel); color:var(--muted); border:1px solid var(--line); border-radius:99px; padding:8px 16px; font-size:.88rem; font-weight:700; min-height:40px; box-shadow:0 2px 10px rgba(0,0,0,.18); }
+  .tpanel{ position:fixed; inset:auto 0 0 0; z-index:50; background:var(--panel); border-top:2px solid var(--line); padding:16px; max-height:78vh; overflow:auto; display:none; }
+  .tpanel.on{ display:block; }
+  .tpanel .row{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .tbtn{ border:1px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:10px; padding:8px 14px; font-weight:700; }
+  .revealbox{ background:var(--panel2); border-radius:10px; padding:12px; margin-top:8px; white-space:pre-wrap; }
+  .defcard{ text-align:center; border:3px solid var(--accent); border-radius:18px; padding:22px 16px; background:var(--panel); }
+  .defcard .shield{ font-size:3rem; }
+  .defname{ font-size:1.7rem; font-weight:900; margin:4px 0; word-break:break-word; }
+  input[type="text"]{ font:inherit; padding:12px; border:2px solid var(--line); border-radius:12px; background:var(--panel); color:var(--ink); width:100%; min-height:48px; }
+  .stars{ font-size:1.5rem; letter-spacing:.2em; }
+  .sumrow{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .sumrow:last-child{ border-bottom:none; }
+  .themebtn{ border:2px solid var(--line); background:var(--panel); color:var(--ink); border-radius:12px; padding:10px 16px; font-weight:800; }
+  .themebtn:disabled{ opacity:.45; }
+  .swatch{ display:inline-block; width:14px; height:14px; border-radius:50%; margin-right:6px; vertical-align:-2px; }
+  .navrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hud" id="hud">
+    <div class="hudrow">
+      <span class="pill">Level <span id="hudLevel">1</span></span>
+      <div class="xpbar" role="img" aria-label="Experience progress"><div class="xpfill" id="xpFill"></div></div>
+      <span class="pill"><span id="hudXP">0</span> / 120 XP</span>
+      <span class="pill">Streak <span id="hudStreak">0</span></span>
+      <span class="pill">Stars <span id="hudStars">0</span> / 4</span>
+    </div>
+  </div>
+
+  <!-- START -->
+  <section class="screen on" id="screen-start">
+    <h1>Account Defense</h1>
+    <p class="instr">A hacker wants your gaming account. Build passwords that keep him out.<button class="hear" data-speak="A hacker wants your gaming account. Build passwords that keep him out.">Hear it</button></p>
+    <div class="modegrid">
+      <button class="bigbtn" id="modeStudent"><b>Student-Led</b><span>Play solo. Earn XP, streaks, and stars.</span></button>
+      <button class="bigbtn" id="modeTeacher"><b>Teacher-Led</b><span>Whole class together. No scores, just discussion.</span></button>
+    </div>
+    <p class="small">Cyber Foundations I, Unit 6. Every account and password here is made up.</p>
+  </section>
+
+  <!-- STATION 1 -->
+  <section class="screen" id="screen-s1">
+    <h2>Station 1: Build a Passphrase</h2>
+    <p class="instr">Tap 3 or 4 word tiles, then lock it in.<button class="hear" data-speak="Tap 3 or 4 word tiles, then lock it in. Words plus a number or symbol is even better.">Hear it</button></p>
+    <div class="discuss" data-discuss>Discuss: Why does a longer password beat a fancier short one?</div>
+    <div class="card">
+      <h3>Your passphrase</h3>
+      <div class="built" id="s1Built"><span class="small">Nothing yet. Tap words below.</span></div>
+      <p class="passline" id="s1Pass"></p>
+      <div class="meter">
+        <div class="small">Hacker crack time at 10 billion guesses per second</div>
+        <div class="bucket" id="s1Bucket">Pick some words</div>
+        <div class="meterbar"><div class="meterfill" id="s1MeterFill"></div></div>
+        <div class="small" id="s1Detail">Guesses needed = character set size ^ length. Length counts the letters, numbers, and symbols you placed.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tabs" id="s1Tabs">
+        <button class="tab on" data-set="gaming">Gaming</button>
+        <button class="tab" data-set="sports">Sports</button>
+        <button class="tab" data-set="music">Music</button>
+      </div>
+      <div class="tiles" id="s1Words"></div>
+      <h3>Extras (optional)</h3>
+      <div class="tiles" id="s1Extras"></div>
+      <div class="feedback" id="s1Feedback"></div>
+      <div class="navrow">
+        <button class="ghost" id="s1Clear">Clear</button>
+        <button class="primary" id="s1Lock" disabled>Lock it in</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATION 2 -->
+  <section class="screen" id="screen-s2">
+    <h2>Station 2: Passphrase vs Complex</h2>
+    <p class="instr">Which password lasts longer against the hacker? Pick one.<button class="hear" data-speak="Which password lasts longer against the hacker? Pick one.">Hear it</button></p>
+    <div class="discuss" data-discuss>Discuss: The short one looks tricky. Why does it fall first?</div>
+    <div id="s2Choices">
+      <button class="choice" id="s2PickComplex">Xq7!zv<small>Short and complex. 6 characters, letters, a number, and a symbol.</small></button>
+      <button class="choice" id="s2PickPhrase">dragon pixel quest victory<small>A passphrase. 4 plain words, 23 letters.</small></button>
+    </div>
+    <div class="feedback" id="s2Feedback"></div>
+    <div class="card" id="s2Reveal" hidden>
+      <h3>The race result</h3>
+      <p><b>Xq7!zv</b>: <span id="s2TimeComplex"></span></p>
+      <div class="meterbar"><div class="meterfill" id="s2BarComplex"></div></div>
+      <p><b>dragon pixel quest victory</b>: <span id="s2TimePhrase"></span></p>
+      <div class="meterbar"><div class="meterfill" id="s2BarPhrase" style="background:var(--good)"></div></div>
+      <p><b>Length beats symbols.</b> More characters means far more guesses.</p>
+      <div class="navrow"><button class="primary" id="s2Next">Next station</button></div>
+    </div>
+  </section>
+
+  <!-- STATION 3 -->
+  <section class="screen" id="screen-s3">
+    <h2>Station 3: The Reuse Trap</h2>
+    <p class="instr">Give each account a password. Reuse one, or give each its own.<button class="hear" data-speak="Give each account a password. Reuse one, or give each its own. Then predict what a breach would do.">Hear it</button></p>
+    <div class="discuss" data-discuss>Discuss: What happens to your other accounts when one password leaks?</div>
+
+    <div id="s3StepAssign">
+      <div id="s3Accounts"></div>
+      <div class="feedback" id="s3AssignFeedback"></div>
+      <div class="navrow"><button class="primary" id="s3ToPredict" disabled>Next: make a prediction</button></div>
+    </div>
+
+    <div id="s3StepPredict" hidden>
+      <div class="card">
+        <h3>Prediction</h3>
+        <p>Word is out: <b>TuneWave</b> is about to get breached and its passwords will leak. Before it happens, call it: what falls?</p>
+        <div id="s3PredictChoices">
+          <button class="choice" data-pred="only">Only TuneWave falls, even if passwords match.</button>
+          <button class="choice" data-pred="shared">Every account using the same password as TuneWave falls.</button>
+          <button class="choice" data-pred="all">All three accounts fall, even with different passwords.</button>
+        </div>
+        <div class="feedback" id="s3Feedback"></div>
+        <div class="navrow"><button class="primary" id="s3Run" disabled>Lock prediction and run the breach</button></div>
+      </div>
+    </div>
+
+    <div id="s3StepResult" hidden>
+      <div class="card" style="border-color:var(--bad)">
+        <h3>Breach alert: TuneWave</h3>
+        <p>TuneWave passwords just leaked. Watch what falls.</p>
+      </div>
+      <div id="s3ResultAccounts"></div>
+      <p class="feedback" id="s3ResultText"></p>
+      <p><b>Same password means same key everywhere.</b></p>
+      <div class="navrow">
+        <button class="ghost" id="s3Again">Try a new setup</button>
+        <button class="primary" id="s3Next">Face the boss</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOSS -->
+  <section class="screen" id="screen-boss">
+    <h2>Boss: Hold the Line</h2>
+    <p class="instr">Build a passphrase in the centuries zone, then start the attack.<button class="hear" data-speak="Build a passphrase in the centuries zone, then start the attack. Your account must hold for 60 seconds.">Hear it</button></p>
+    <div class="discuss" data-discuss>Discuss: What made the winning build strong enough to hold?</div>
+    <div class="card">
+      <h3>Your boss passphrase</h3>
+      <div class="built" id="bossBuilt"><span class="small">Nothing yet. Tap words below.</span></div>
+      <p class="passline" id="bossPass"></p>
+      <div class="meter">
+        <div class="small">Hacker crack time</div>
+        <div class="bucket" id="bossBucket">Pick some words</div>
+        <div class="meterbar"><div class="meterfill" id="bossMeterFill"></div></div>
+        <div class="small" id="bossDetail">Goal: reach the centuries zone or better.</div>
+      </div>
+    </div>
+    <div class="card" id="bossBuildCard">
+      <div class="tabs" id="bossTabs">
+        <button class="tab on" data-set="gaming">Gaming</button>
+        <button class="tab" data-set="sports">Sports</button>
+        <button class="tab" data-set="music">Music</button>
+      </div>
+      <div class="tiles" id="bossWords"></div>
+      <h3>Extras (optional)</h3>
+      <div class="tiles" id="bossExtras"></div>
+      <div class="feedback" id="bossBuildFeedback"></div>
+      <div class="navrow">
+        <button class="ghost" id="bossClear">Clear</button>
+        <button class="primary" id="bossStart" disabled>Start the attack</button>
+      </div>
+    </div>
+    <div class="card" id="bossArena" hidden>
+      <div class="small">Time your account has held</div>
+      <div class="clock"><span id="bossClock">0</span> / 60 sec</div>
+      <div class="small">Hacker progress</div>
+      <div class="hackbar"><div class="hackfill" id="bossHackFill"></div></div>
+      <div class="small" style="margin-top:10px">Your shield</div>
+      <div class="hackbar"><div class="shieldfill" id="bossShieldFill"></div></div>
+      <div class="feedback" id="bossFeedback"></div>
+      <div class="navrow" id="bossAfter" hidden>
+        <button class="ghost" id="bossRetry">Rebuild and retry</button>
+        <button class="primary" id="bossNext">See your defender card</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINISH -->
+  <section class="screen" id="screen-finish">
+    <h2>Mission Report</h2>
+    <p class="instr">Name your defender card and pick a theme you unlocked.<button class="hear" data-speak="Name your defender card and pick a theme you unlocked.">Hear it</button></p>
+    <div class="discuss" data-discuss>Discuss: Which habit from today protects the most accounts?</div>
+    <div class="card">
+      <div id="finishSummary"></div>
+    </div>
+    <div class="defcard">
+      <div class="shield" aria-hidden="true">&#128737;</div>
+      <div class="small">ACCOUNT DEFENDER</div>
+      <div class="defname" id="defName">Rookie Defender</div>
+      <div class="stars" id="defStars"></div>
+      <div class="small" id="defLine">Cyber Foundations I, Unit 6</div>
+    </div>
+    <div class="card">
+      <h3>Your defender name</h3>
+      <input type="text" id="nameInput" maxlength="24" placeholder="Type a display name" autocomplete="off" />
+      <h3>Themes</h3>
+      <div class="row" style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="themebtn" data-theme=""><span class="swatch" style="background:#0f766e"></span>Shield Teal (starter)</button>
+        <button class="themebtn" data-theme="forest" id="themeForest"><span class="swatch" style="background:#16a34a"></span>Forest (2 stars)</button>
+        <button class="themebtn" data-theme="ember" id="themeEmber"><span class="swatch" style="background:#ea580c"></span>Ember (3 stars)</button>
+      </div>
+      <p class="small" id="themeNote"></p>
+      <div class="navrow"><button class="ghost" id="playAgain">Play again</button></div>
+    </div>
+  </section>
+</div>
+
+<button class="teacherbtn" id="teacherBtn">Teacher</button>
+<div class="tpanel" id="tpanel" role="dialog" aria-label="Teacher panel">
+  <div class="hudrow">
+    <b>Teacher panel</b>
+    <button class="tbtn" id="tClose">Close</button>
+  </div>
+  <h3>Jump to</h3>
+  <div class="row">
+    <button class="tbtn" data-jump="start">Start</button>
+    <button class="tbtn" data-jump="s1">Station 1</button>
+    <button class="tbtn" data-jump="s2">Station 2</button>
+    <button class="tbtn" data-jump="s3">Station 3</button>
+    <button class="tbtn" data-jump="boss">Boss</button>
+    <button class="tbtn" data-jump="finish">Finish</button>
+  </div>
+  <div class="row">
+    <button class="tbtn" id="tSkip">Skip current step (no points)</button>
+    <button class="tbtn" id="tRevealBtn">Reveal</button>
+    <button class="tbtn" id="tReset">Reset everything</button>
+  </div>
+  <div class="revealbox" id="tReveal" hidden></div>
+  <p class="small">Reveal is display only. It never changes answers, scores, or unlocks.</p>
+</div>
+
+<script>
+"use strict";
+/* ---------- Crack time math (honest) ----------
+   guesses = charset^length ; rate = 10 billion guesses per second.
+   Worked in log10 so huge numbers never overflow. */
+var RATE_LOG = 10; /* log10(1e10) */
+var YEAR_SEC = 31557600;
+var UNIVERSE_SEC_LOG = Math.log10(13.8e9 * YEAR_SEC);
+function crackFromLog(secLog){
+  var bucket, meterPct, label;
+  if (secLog < Math.log10(60)) { bucket = "instant"; meterPct = 4; }
+  else if (secLog < Math.log10(YEAR_SEC)) { bucket = "minutes"; meterPct = 22; }
+  else if (secLog < Math.log10(100 * YEAR_SEC)) { bucket = "years"; meterPct = 45; }
+  else if (secLog < UNIVERSE_SEC_LOG) { bucket = "centuries"; meterPct = 72; }
+  else { bucket = "universe"; meterPct = 100; }
+  if (bucket === "instant") label = "Instant";
+  else if (bucket === "minutes") label = "Minutes";
+  else if (bucket === "years") label = "Years";
+  else if (bucket === "centuries") label = "Centuries";
+  else label = "Longer than the universe";
+  return { secLog: secLog, bucket: bucket, meterPct: meterPct, label: label, detail: humanDetail(secLog, bucket) };
+}
+function fmtNum(n){
+  if (n >= 1000) return Math.round(n).toLocaleString("en-US");
+  if (n >= 100) return String(Math.round(n));
+  if (n >= 10) return n.toFixed(1).replace(/\.0$/, "");
+  return n.toFixed(1).replace(/\.0$/, "");
+}
+function humanDetail(secLog, bucket){
+  if (bucket === "instant") return "Cracked in under a minute of guessing.";
+  var sec = Math.pow(10, secLog);
+  if (bucket === "minutes"){
+    if (sec < 3600) return "About " + fmtNum(sec / 60) + " minutes of guessing.";
+    if (sec < 86400) return "About " + fmtNum(sec / 3600) + " hours of guessing.";
+    return "About " + fmtNum(sec / 86400) + " days of guessing.";
+  }
+  var yearsLog = secLog - Math.log10(YEAR_SEC);
+  if (yearsLog < 6){
+    var y = Math.pow(10, yearsLog);
+    return "About " + fmtNum(y) + " years of guessing.";
+  }
+  var exp = Math.floor(yearsLog);
+  var mant = Math.pow(10, yearsLog - exp);
+  if (bucket === "universe") return "About " + mant.toFixed(1) + " x 10^" + exp + " years. The universe is about 13.8 billion years old.";
+  return "About " + mant.toFixed(1) + " x 10^" + exp + " years of guessing.";
+}
+function crackFor(str, charset){
+  var secLog = str.length * Math.log10(charset) - RATE_LOG;
+  return crackFromLog(secLog);
+}
+function charsetFor(hasDigit, hasSymbol){
+  var c = 26;
+  if (hasDigit) c += 10;
+  if (hasSymbol) c += 33;
+  return c;
+}
+
+/* ---------- Word tile data ---------- */
+var WORD_SETS = {
+  gaming: ["dragon","pixel","quest","victory","ninja","castle","rocket","wizard"],
+  sports: ["soccer","champion","sprint","trophy","stadium","goalie","turbo","medal"],
+  music: ["guitar","rhythm","melody","concert","trumpet","lyrics","tempo","violin"]
+};
+var NUMBERS = ["7","12","42","99"];
+var SYMBOLS = ["!","#","*","?"];
+
+/* ---------- Game state ---------- */
+var MAXXP = 120;
+var state;
+function freshState(){
+  return {
+    mode: null, screen: "start",
+    xp: 0, streak: 0, misses: 0,
+    s1Done: false, s1Skipped: false,
+    s2Done: false, s2Skipped: false, s2FirstTry: false, s2Missed: false,
+    s3Done: false, s3Skipped: false, s3FirstTry: false, s3Missed: false,
+    bossDone: false, bossSkipped: false,
+    theme: ""
+  };
+}
+state = freshState();
+function starCount(){
+  var n = 0;
+  if (state.s1Done) n++;
+  if (state.s2FirstTry) n++;
+  if (state.s3FirstTry) n++;
+  if (state.bossDone) n++;
+  return n;
+}
+function studentMode(){ return state.mode === "student"; }
+function award(xp){
+  if (!studentMode()) return;
+  state.xp = Math.min(MAXXP, state.xp + xp);
+  renderHUD();
+}
+function renderHUD(){
+  var hud = document.getElementById("hud");
+  hud.classList.toggle("on", studentMode());
+  document.getElementById("hudXP").textContent = state.xp;
+  document.getElementById("xpFill").style.width = (state.xp / MAXXP * 100) + "%";
+  document.getElementById("hudLevel").textContent = 1 + Math.floor(state.xp / 40);
+  document.getElementById("hudStreak").textContent = state.streak;
+  document.getElementById("hudStars").textContent = starCount();
+  document.querySelectorAll("[data-discuss]").forEach(function(el){
+    el.classList.toggle("on", state.mode === "teacher");
+  });
+}
+
+/* ---------- Screen navigation ---------- */
+var ORDER = ["start","s1","s2","s3","boss","finish"];
+function show(name){
+  state.screen = name;
+  ORDER.forEach(function(n){
+    document.getElementById("screen-" + n).classList.toggle("on", n === name);
+  });
+  if (name === "finish") renderFinish();
+  window.scrollTo(0, 0);
+}
+function nextOf(name){
+  var i = ORDER.indexOf(name);
+  return ORDER[Math.min(i + 1, ORDER.length - 1)];
+}
+
+/* ---------- Hear it (speechSynthesis, on tap only) ---------- */
+document.querySelectorAll(".hear").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(btn.getAttribute("data-speak"));
+      u.rate = 1;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* speech is optional */ }
+  });
+});
+
+/* ---------- Passphrase builder (used by Station 1 and Boss) ---------- */
+function makeBuilder(prefix, onChange){
+  var b = { words: [], extras: [], set: "gaming" };
+  var builtEl = document.getElementById(prefix + "Built");
+  var passEl = document.getElementById(prefix + "Pass");
+  var wordsEl = document.getElementById(prefix + "Words");
+  var extrasEl = document.getElementById(prefix + "Extras");
+  var tabsEl = document.getElementById(prefix + "Tabs");
+  function str(){ return b.words.join("") + b.extras.join(""); }
+  function display(){ return b.words.concat(b.extras).join(" "); }
+  function info(){
+    var hasDigit = b.extras.some(function(x){ return NUMBERS.indexOf(x) >= 0; });
+    var hasSymbol = b.extras.some(function(x){ return SYMBOLS.indexOf(x) >= 0; });
+    return crackFor(str(), charsetFor(hasDigit, hasSymbol));
+  }
+  function renderWords(){
+    wordsEl.innerHTML = "";
+    WORD_SETS[b.set].forEach(function(w){
+      var t = document.createElement("button");
+      t.className = "tile" + (b.words.indexOf(w) >= 0 ? " used" : "");
+      t.textContent = w;
+      t.addEventListener("click", function(){
+        if (b.words.indexOf(w) >= 0) return;
+        if (b.words.length >= 4) { onChange(b, "max"); return; }
+        b.words.push(w); render(); onChange(b, "add");
+      });
+      wordsEl.appendChild(t);
+    });
+    extrasEl.innerHTML = "";
+    NUMBERS.concat(SYMBOLS).forEach(function(x){
+      var t = document.createElement("button");
+      t.className = "tile" + (b.extras.indexOf(x) >= 0 ? " used" : "");
+      t.textContent = x;
+      t.addEventListener("click", function(){
+        if (b.extras.indexOf(x) >= 0) return;
+        if (b.extras.length >= 2) { onChange(b, "maxextra"); return; }
+        b.extras.push(x); render(); onChange(b, "add");
+      });
+      extrasEl.appendChild(t);
+    });
+  }
+  function render(){
+    builtEl.innerHTML = "";
+    if (!b.words.length && !b.extras.length){
+      builtEl.innerHTML = '<span class="small">Nothing yet. Tap words below.</span>';
+    }
+    b.words.forEach(function(w, i){
+      var t = document.createElement("button");
+      t.className = "tile"; t.textContent = w; t.title = "Tap to remove";
+      t.addEventListener("click", function(){ b.words.splice(i, 1); render(); onChange(b, "remove"); });
+      builtEl.appendChild(t);
+    });
+    b.extras.forEach(function(x, i){
+      var t = document.createElement("button");
+      t.className = "tile"; t.textContent = x; t.title = "Tap to remove";
+      t.addEventListener("click", function(){ b.extras.splice(i, 1); render(); onChange(b, "remove"); });
+      builtEl.appendChild(t);
+    });
+    passEl.textContent = b.words.length || b.extras.length ? display() : "";
+    renderWords();
+  }
+  tabsEl.querySelectorAll(".tab").forEach(function(tab){
+    tab.addEventListener("click", function(){
+      b.set = tab.getAttribute("data-set");
+      tabsEl.querySelectorAll(".tab").forEach(function(t){ t.classList.toggle("on", t === tab); });
+      renderWords();
+    });
+  });
+  render();
+  return {
+    state: b, str: str, display: display, info: info,
+    clear: function(){ b.words = []; b.extras = []; render(); onChange(b, "clear"); },
+    refresh: render
+  };
+}
+function paintMeter(prefix, info, empty){
+  var bucketEl = document.getElementById(prefix + "Bucket");
+  var fillEl = document.getElementById(prefix + "MeterFill");
+  var detailEl = document.getElementById(prefix + "Detail");
+  if (empty){
+    bucketEl.textContent = "Pick some words";
+    fillEl.style.width = "0%";
+    return;
+  }
+  bucketEl.textContent = info.label;
+  fillEl.style.width = info.meterPct + "%";
+  fillEl.style.background = (info.bucket === "centuries" || info.bucket === "universe") ? "var(--good)"
+    : (info.bucket === "years" ? "var(--accent2)" : "var(--bad)");
+  detailEl.textContent = info.detail;
+}
+
+/* ---------- Station 1 ---------- */
+var s1LockBtn = document.getElementById("s1Lock");
+var s1Feedback = document.getElementById("s1Feedback");
+var s1 = makeBuilder("s1", function(b, ev){
+  var empty = !b.words.length && !b.extras.length;
+  paintMeter("s1", s1.info(), empty);
+  if (ev === "max") { s1Feedback.textContent = "Four words max here."; s1Feedback.className = "feedback bad"; }
+  else if (ev === "maxextra") { s1Feedback.textContent = "Two extras max."; s1Feedback.className = "feedback bad"; }
+  else { s1Feedback.textContent = ""; s1Feedback.className = "feedback"; }
+  s1LockBtn.disabled = !(b.words.length >= 3 && b.words.length <= 4);
+});
+document.getElementById("s1Clear").addEventListener("click", function(){ s1.clear(); });
+s1LockBtn.addEventListener("click", function(){
+  if (!state.s1Done){
+    state.s1Done = true;
+    award(20);
+  }
+  show("s2");
+});
+
+/* ---------- Station 2 ---------- */
+var COMPLEX = crackFor("Xq7!zv", charsetFor(true, true));
+var PHRASE = (function(){
+  var s = "dragonpixelquestvictory";
+  return crackFor(s, 26);
+})();
+document.getElementById("s2TimeComplex").textContent = COMPLEX.label + ". " + COMPLEX.detail;
+document.getElementById("s2TimePhrase").textContent = PHRASE.label + ". " + PHRASE.detail;
+document.getElementById("s2BarComplex").style.width = COMPLEX.meterPct + "%";
+document.getElementById("s2BarPhrase").style.width = PHRASE.meterPct + "%";
+var s2Feedback = document.getElementById("s2Feedback");
+function s2Pick(correct, btn){
+  if (state.s2Done) return;
+  if (!correct){
+    btn.disabled = true;
+    btn.classList.add("wrong");
+    state.s2Missed = true;
+    state.misses++;
+    state.streak = 0;
+    renderHUD();
+    s2Feedback.textContent = "Not that one. Try the other.";
+    s2Feedback.className = "feedback bad";
+    return;
+  }
+  btn.classList.add("right");
+  document.getElementById("s2Reveal").hidden = false;
+  if (!state.s2Done){
+    state.s2Done = true;
+    if (!state.s2Missed){
+      state.s2FirstTry = true;
+      state.streak++;
+      award(30);
+    }
+  }
+  renderHUD();
+  s2Feedback.textContent = "Correct. Here is the proof.";
+  s2Feedback.className = "feedback good";
+  document.getElementById("s2PickComplex").disabled = true;
+  document.getElementById("s2PickPhrase").disabled = true;
+}
+document.getElementById("s2PickComplex").addEventListener("click", function(){ s2Pick(false, this); });
+document.getElementById("s2PickPhrase").addEventListener("click", function(){ s2Pick(true, this); });
+document.getElementById("s2Next").addEventListener("click", function(){ show("s3"); });
+
+/* ---------- Station 3: assign, predict, breach ---------- */
+var ACCOUNTS = [
+  { id: "game", name: "Pixel Realms", kind: "Game account" },
+  { id: "music", name: "TuneWave", kind: "Music app" },
+  { id: "school", name: "School Portal", kind: "School account" }
+];
+var PASSWORDS = [
+  { id: "A", text: "SunnyDay42" },
+  { id: "B", text: "BlueTiger7" },
+  { id: "C", text: "PizzaTime9" }
+];
+var s3Assign = { game: null, music: null, school: null };
+var s3Prediction = null;
+function pwText(id){
+  for (var i = 0; i < PASSWORDS.length; i++) if (PASSWORDS[i].id === id) return PASSWORDS[i].text;
+  return "";
+}
+function renderS3Accounts(){
+  var host = document.getElementById("s3Accounts");
+  host.innerHTML = "";
+  ACCOUNTS.forEach(function(a){
+    var div = document.createElement("div");
+    div.className = "acct";
+    var head = document.createElement("div");
+    head.innerHTML = '<span class="nm">' + a.name + '</span> <span class="small">' + a.kind + "</span>";
+    div.appendChild(head);
+    var chips = document.createElement("div");
+    chips.className = "pwchips";
+    PASSWORDS.forEach(function(p){
+      var c = document.createElement("button");
+      c.className = "pwchip" + (s3Assign[a.id] === p.id ? " on" : "");
+      c.textContent = p.text;
+      c.addEventListener("click", function(){
+        s3Assign[a.id] = p.id;
+        renderS3Accounts();
+      });
+      chips.appendChild(c);
+    });
+    div.appendChild(chips);
+    var cur = document.createElement("div");
+    cur.className = "small";
+    cur.textContent = s3Assign[a.id] ? "Uses: " + pwText(s3Assign[a.id]) : "No password picked yet.";
+    div.appendChild(cur);
+    host.appendChild(div);
+  });
+  var all = ACCOUNTS.every(function(a){ return !!s3Assign[a.id]; });
+  document.getElementById("s3ToPredict").disabled = !all;
+  var fb = document.getElementById("s3AssignFeedback");
+  if (all){
+    var shared = s3Assign.game === s3Assign.music || s3Assign.game === s3Assign.school || s3Assign.music === s3Assign.school;
+    fb.textContent = shared ? "Setup saved. Some accounts share a password." : "Setup saved. Every account has its own password.";
+    fb.className = "feedback";
+  } else { fb.textContent = ""; }
+}
+renderS3Accounts();
+document.getElementById("s3ToPredict").addEventListener("click", function(){
+  document.getElementById("s3StepAssign").hidden = true;
+  document.getElementById("s3StepPredict").hidden = false;
+  window.scrollTo(0, 0);
+});
+var s3Feedback = document.getElementById("s3Feedback");
+document.querySelectorAll("#s3PredictChoices .choice").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    if (state.s3Done) return;
+    var pred = btn.getAttribute("data-pred");
+    if (pred !== "shared"){
+      btn.disabled = true;
+      btn.classList.add("wrong");
+      state.s3Missed = true;
+      state.misses++;
+      state.streak = 0;
+      renderHUD();
+      s3Feedback.textContent = "Not quite. Think about shared passwords.";
+      s3Feedback.className = "feedback bad";
+      return;
+    }
+    document.querySelectorAll("#s3PredictChoices .choice").forEach(function(b){ b.disabled = true; });
+    btn.classList.add("right");
+    s3Prediction = pred;
+    if (!state.s3Done){
+      state.s3Done = true;
+      if (!state.s3Missed){
+        state.s3FirstTry = true;
+        state.streak++;
+        award(30);
+      }
+    }
+    renderHUD();
+    s3Feedback.textContent = "Prediction locked. Now run it.";
+    s3Feedback.className = "feedback good";
+    document.getElementById("s3Run").disabled = false;
+  });
+});
+function s3Fallen(){
+  var breachedPw = s3Assign.music;
+  return ACCOUNTS.filter(function(a){ return s3Assign[a.id] === breachedPw; }).map(function(a){ return a.id; });
+}
+document.getElementById("s3Run").addEventListener("click", function(){
+  document.getElementById("s3StepPredict").hidden = true;
+  var res = document.getElementById("s3StepResult");
+  res.hidden = false;
+  var fallen = s3Fallen();
+  var host = document.getElementById("s3ResultAccounts");
+  host.innerHTML = "";
+  ACCOUNTS.forEach(function(a, i){
+    var div = document.createElement("div");
+    div.className = "acct";
+    div.innerHTML = '<span class="nm">' + a.name + '</span> <span class="small">' + a.kind + " · Uses: " + pwText(s3Assign[a.id]) + '</span><div class="small" data-fate>Checking...</div>';
+    host.appendChild(div);
+    setTimeout(function(){
+      var isFallen = fallen.indexOf(a.id) >= 0;
+      div.classList.add(isFallen ? "fallen" : "stood");
+      div.querySelector("[data-fate]").textContent = isFallen ? "FALLEN. The leaked password opens it." : "SAFE. Different password, still locked.";
+      if (i === ACCOUNTS.length - 1){
+        var names = ACCOUNTS.filter(function(x){ return fallen.indexOf(x.id) >= 0; }).map(function(x){ return x.name; });
+        var rt = document.getElementById("s3ResultText");
+        if (fallen.length === 1) rt.textContent = "Only TuneWave fell. Its password was used nowhere else.";
+        else rt.textContent = names.join(" and ") + " fell. They shared the leaked password.";
+        rt.className = "feedback " + (fallen.length === 1 ? "good" : "bad");
+      }
+    }, 500 * (i + 1));
+  });
+  window.scrollTo(0, 0);
+});
+document.getElementById("s3Again").addEventListener("click", function(){
+  document.getElementById("s3StepResult").hidden = true;
+  document.getElementById("s3StepAssign").hidden = false;
+  renderS3Accounts();
+  window.scrollTo(0, 0);
+});
+document.getElementById("s3Next").addEventListener("click", function(){ show("boss"); });
+
+/* ---------- Boss ---------- */
+var bossStartBtn = document.getElementById("bossStart");
+var boss = makeBuilder("boss", function(b, ev){
+  var empty = !b.words.length && !b.extras.length;
+  paintMeter("boss", boss.info(), empty);
+  var fb = document.getElementById("bossBuildFeedback");
+  if (ev === "max") { fb.textContent = "Four words max here."; fb.className = "feedback bad"; }
+  else if (ev === "maxextra") { fb.textContent = "Two extras max."; fb.className = "feedback bad"; }
+  else { fb.textContent = ""; fb.className = "feedback"; }
+  bossStartBtn.disabled = !(b.words.length >= 1);
+});
+document.getElementById("bossClear").addEventListener("click", function(){ boss.clear(); });
+var bossTimer = null;
+document.getElementById("bossStart").addEventListener("click", function(){
+  var info = boss.info();
+  var win = info.bucket === "centuries" || info.bucket === "universe";
+  document.getElementById("bossBuildCard").hidden = true;
+  document.getElementById("bossArena").hidden = false;
+  document.getElementById("bossAfter").hidden = true;
+  var fb = document.getElementById("bossFeedback");
+  fb.textContent = "The hacker is guessing...";
+  fb.className = "feedback";
+  var clockEl = document.getElementById("bossClock");
+  var hackEl = document.getElementById("bossHackFill");
+  var shieldEl = document.getElementById("bossShieldFill");
+  /* Attack speed scaled from the meter math, compressed for play.
+     Weak builds crack at a virtual second drawn from their bucket. */
+  var crackAt = info.bucket === "instant" ? 2 : info.bucket === "minutes" ? 9 : info.bucket === "years" ? 26 : Infinity;
+  var start = Date.now();
+  var realMs = win ? 6000 : Math.max(1500, crackAt / 60 * 6000);
+  if (bossTimer) clearInterval(bossTimer);
+  bossTimer = setInterval(function(){
+    var t = (Date.now() - start) / realMs; /* 0 to 1 over the attack */
+    var virtual = t * 60;
+    if (win){
+      clockEl.textContent = Math.min(60, Math.floor(virtual));
+      hackEl.style.width = (t * 14) + "%";
+      shieldEl.style.width = Math.min(100, t * 100) + "%";
+      if (t >= 1){
+        clearInterval(bossTimer);
+        clockEl.textContent = "60";
+        fb.textContent = "Your account held for 60 seconds. Boss beaten.";
+        fb.className = "feedback good";
+        document.getElementById("bossAfter").hidden = false;
+        if (!state.bossDone){
+          state.bossDone = true;
+          state.streak++;
+          award(40);
+        }
+        renderHUD();
+      }
+    } else {
+      var vt = t * crackAt;
+      clockEl.textContent = Math.floor(vt);
+      hackEl.style.width = Math.min(100, t * 100) + "%";
+      shieldEl.style.width = Math.min(100, (vt / 60) * 100) + "%";
+      if (t >= 1){
+        clearInterval(bossTimer);
+        fb.textContent = "Cracked. Build longer and retry.";
+        fb.className = "feedback bad";
+        document.getElementById("bossAfter").hidden = false;
+        document.getElementById("bossNext").textContent = "See your defender card";
+      }
+    }
+  }, 100);
+});
+document.getElementById("bossRetry").addEventListener("click", function(){
+  if (bossTimer) clearInterval(bossTimer);
+  document.getElementById("bossArena").hidden = true;
+  document.getElementById("bossBuildCard").hidden = false;
+  document.getElementById("bossHackFill").style.width = "0%";
+  document.getElementById("bossShieldFill").style.width = "0%";
+  document.getElementById("bossClock").textContent = "0";
+});
+document.getElementById("bossNext").addEventListener("click", function(){ show("finish"); });
+
+/* ---------- Finish ---------- */
+function statusLine(done, skipped){
+  if (done) return "Cleared";
+  if (skipped) return "Skipped";
+  return "Not played yet";
+}
+function renderFinish(){
+  var rows = [
+    ["Station 1: Build a Passphrase", statusLine(state.s1Done, state.s1Skipped), state.s1Done],
+    ["Station 2: Passphrase vs Complex", state.s2Done ? (state.s2FirstTry ? "Cleared, first try" : "Cleared") : statusLine(false, state.s2Skipped), state.s2FirstTry],
+    ["Station 3: The Reuse Trap", state.s3Done ? (state.s3FirstTry ? "Cleared, first try" : "Cleared") : statusLine(false, state.s3Skipped), state.s3FirstTry],
+    ["Boss: Hold the Line", statusLine(state.bossDone, state.bossSkipped), state.bossDone]
+  ];
+  var host = document.getElementById("finishSummary");
+  host.innerHTML = "";
+  rows.forEach(function(r){
+    var d = document.createElement("div");
+    d.className = "sumrow";
+    d.innerHTML = "<span>" + r[0] + "</span><b>" + r[1] + "</b>";
+    host.appendChild(d);
+  });
+  if (studentMode()){
+    var xp = document.createElement("div");
+    xp.className = "sumrow";
+    xp.innerHTML = "<span>Total XP</span><b>" + state.xp + " / " + MAXXP + "</b>";
+    host.appendChild(xp);
+  }
+  var stars = starCount();
+  document.getElementById("defStars").textContent = stars ? "\u2605".repeat(stars) + "\u2606".repeat(4 - stars) : "\u2606\u2606\u2606\u2606";
+  document.getElementById("defLine").textContent = studentMode()
+    ? stars + " of 4 stars · " + state.xp + " XP · Best streak " + state.streak
+    : "Teacher-Led run · Cyber Foundations I, Unit 6";
+  document.getElementById("themeForest").disabled = stars < 2;
+  document.getElementById("themeEmber").disabled = stars < 3;
+  document.getElementById("themeNote").textContent = stars < 2
+    ? "Earn 2 stars to unlock Forest, 3 stars for Ember. Stars come from first clears."
+    : "Themes are cosmetic only. They change colors, nothing else.";
+}
+document.getElementById("nameInput").addEventListener("input", function(){
+  var v = this.value.trim();
+  document.getElementById("defName").textContent = v ? v : "Rookie Defender";
+});
+document.querySelectorAll(".themebtn").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    state.theme = btn.getAttribute("data-theme");
+    document.body.classList.remove("theme-forest", "theme-ember");
+    if (state.theme) document.body.classList.add("theme-" + state.theme);
+  });
+});
+document.getElementById("playAgain").addEventListener("click", function(){ resetAll(); });
+
+/* ---------- Mode choice ---------- */
+document.getElementById("modeStudent").addEventListener("click", function(){
+  state.mode = "student"; renderHUD(); show("s1");
+});
+document.getElementById("modeTeacher").addEventListener("click", function(){
+  state.mode = "teacher"; renderHUD(); show("s1");
+});
+
+/* ---------- Teacher panel ---------- */
+var tpanel = document.getElementById("tpanel");
+var tReveal = document.getElementById("tReveal");
+document.getElementById("teacherBtn").addEventListener("click", function(){
+  tpanel.classList.toggle("on");
+});
+document.getElementById("tClose").addEventListener("click", function(){
+  tpanel.classList.remove("on");
+  tReveal.hidden = true;
+});
+tpanel.querySelectorAll("[data-jump]").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    show(btn.getAttribute("data-jump"));
+    tpanel.classList.remove("on");
+  });
+});
+document.getElementById("tSkip").addEventListener("click", function(){
+  var cur = state.screen;
+  if (cur === "s1") state.s1Skipped = state.s1Skipped || !state.s1Done;
+  if (cur === "s2") state.s2Skipped = state.s2Skipped || !state.s2Done;
+  if (cur === "s3") state.s3Skipped = state.s3Skipped || !state.s3Done;
+  if (cur === "boss") state.bossSkipped = state.bossSkipped || !state.bossDone;
+  if (bossTimer) clearInterval(bossTimer);
+  show(nextOf(cur));
+  tpanel.classList.remove("on");
+});
+function revealText(){
+  var s = state.screen;
+  if (s === "start") return "Reveal: Pick a mode to begin. Student-Led scores XP and stars. Teacher-Led shows a discussion prompt at each station.";
+  if (s === "s1") return "Reveal (display only): A strong build uses 3 or 4 words. Current build: \"" + (s1.display() || "empty") + "\" · Bucket: " + (s1.state.words.length || s1.state.extras.length ? s1.info().label : "none yet") + ". Numbers and symbols help a little. Length helps most.";
+  if (s === "s2") return "Reveal (display only): The passphrase wins. Xq7!zv: " + COMPLEX.label + " (" + COMPLEX.detail + ") The passphrase: " + PHRASE.label + " (" + PHRASE.detail + ") One line why: length beats symbols.";
+  if (s === "s3"){
+    var fallen = (s3Assign.game && s3Assign.music && s3Assign.school) ? s3Fallen().map(function(id){
+      return ACCOUNTS.filter(function(a){ return a.id === id; })[0].name;
+    }).join(", ") : "assign all three passwords first";
+    return "Reveal (display only): Correct prediction: every account using the same password as TuneWave falls. With the current setup, a TuneWave breach would drop: " + fallen + ". The result is computed from the setup on screen, never preset.";
+  }
+  if (s === "boss") return "Reveal (display only): A build reaches the centuries zone with 3 long words or 4 words, with or without extras. Current build bucket: " + (boss.state.words.length ? boss.info().label : "none yet") + ".";
+  if (s === "finish") return "Reveal (display only): Stars earned: " + starCount() + " of 4. XP: " + state.xp + ". Stations not played show as not played yet. Skipped stations earn nothing.";
+  return "";
+}
+document.getElementById("tRevealBtn").addEventListener("click", function(){
+  tReveal.textContent = revealText();
+  tReveal.hidden = false;
+});
+function resetAll(){
+  if (bossTimer) clearInterval(bossTimer);
+  state = freshState();
+  document.body.classList.remove("theme-forest", "theme-ember");
+  s1.clear(); boss.clear();
+  s3Assign = { game: null, music: null, school: null };
+  s3Prediction = null;
+  renderS3Accounts();
+  document.getElementById("s3StepAssign").hidden = false;
+  document.getElementById("s3StepPredict").hidden = true;
+  document.getElementById("s3StepResult").hidden = true;
+  document.querySelectorAll("#s3PredictChoices .choice").forEach(function(b){
+    b.disabled = false; b.classList.remove("wrong", "right");
+  });
+  document.getElementById("s3Run").disabled = true;
+  document.getElementById("s2Reveal").hidden = true;
+  ["s2PickComplex", "s2PickPhrase"].forEach(function(id){
+    var el = document.getElementById(id);
+    el.disabled = false; el.classList.remove("wrong", "right");
+  });
+  document.getElementById("bossBuildCard").hidden = false;
+  document.getElementById("bossArena").hidden = true;
+  document.getElementById("bossBuildFeedback").textContent = "";
+  document.getElementById("bossFeedback").textContent = "";
+  document.getElementById("bossClock").textContent = "0";
+  document.getElementById("bossHackFill").style.width = "0%";
+  document.getElementById("bossShieldFill").style.width = "0%";
+  s1Feedback.textContent = ""; s1Feedback.className = "feedback";
+  s2Feedback.textContent = ""; s2Feedback.className = "feedback";
+  s3Feedback.textContent = ""; s3Feedback.className = "feedback";
+  document.getElementById("s3ResultText").textContent = "";
+  document.getElementById("nameInput").value = "";
+  document.getElementById("defName").textContent = "Rookie Defender";
+  tReveal.hidden = true;
+  tpanel.classList.remove("on");
+  renderHUD();
+  show("start");
+}
+document.getElementById("tReset").addEventListener("click", resetAll);
+renderHUD();
+</script>
+</body>
+</html>

@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Stream Saver</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#eef4f8; --panel:#ffffff; --ink:#14232e; --muted:#4a6070;
+        --accent:#0e7c86; --accent-ink:#ffffff; --accent2:#f2a007;
+        --line:#c3d3dd; --good:#1c7c3c; --bad:#b3261e; --warn:#8a5a00;
+        --node:#ffffff; --node-line:#33566b; --track:#dbe7ee;
+        --chip:#e3eef4;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0d1620; --panel:#16242f; --ink:#e8f1f6; --muted:#a7bcc9;
+          --accent:#2bb3c0; --accent-ink:#06222a; --accent2:#ffb020;
+          --line:#2e4757; --good:#5fd68a; --bad:#ff8a80; --warn:#ffcf6e;
+          --node:#1d303e; --node-line:#9fc3d6; --track:#22384a;
+          --chip:#1d3444;
+        }
+      }
+      html[data-theme="violet"]{ --accent:#7c4dbd; --accent2:#ff5d8f; }
+      html[data-theme="violet"]{ }
+      @media (prefers-color-scheme: dark){
+        html[data-theme="violet"]{ --accent:#b388ff; --accent-ink:#221040; --accent2:#ff8fb5; }
+      }
+      html[data-theme="solar"]{ --accent:#c2570a; --accent2:#0e7c86; }
+      @media (prefers-color-scheme: dark){
+        html[data-theme="solar"]{ --accent:#ff9a3d; --accent-ink:#2a1500; --accent2:#2bb3c0; }
+      }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+        -webkit-text-size-adjust:100%; }
+      main{ max-width:880px; margin:0 auto; padding:14px 14px 90px; }
+      h1{ font-size:2rem; margin:6px 0 4px; letter-spacing:.2px; }
+      h2{ font-size:1.3rem; margin:4px 0; }
+      p{ line-height:1.45; }
+      .instr{ font-size:1.08rem; font-weight:600; margin:6px 0 10px; }
+      .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin:12px 0; }
+      .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .spacer{ flex:1; }
+      button{ font:inherit; font-weight:700; border-radius:10px; border:1px solid var(--line);
+        background:var(--panel); color:var(--ink); padding:8px 16px; cursor:pointer; min-width:44px; }
+      button:disabled{ opacity:.45; cursor:not-allowed; }
+      .primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-size:1.05rem; padding:10px 22px; }
+      .mode-btn{ flex:1 1 220px; text-align:left; padding:16px; border-radius:14px; border:2px solid var(--line); background:var(--panel); }
+      .mode-btn strong{ display:block; font-size:1.15rem; margin-bottom:4px; }
+      .mode-btn span{ font-weight:400; color:var(--muted); font-size:.95rem; }
+      .mode-btn.sel{ border-color:var(--accent); outline:3px solid var(--accent); outline-offset:1px; }
+      .quiet{ font-size:.85rem; font-weight:600; padding:6px 12px; }
+      .hear{ font-size:.85rem; padding:6px 12px; }
+      /* HUD */
+      .hud{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .xpwrap{ flex:1 1 200px; }
+      .xptrack{ height:14px; background:var(--track); border-radius:7px; overflow:hidden; border:1px solid var(--line); }
+      .xpfill{ height:100%; width:0%; background:var(--accent); transition:width .5s ease; }
+      .hudnum{ font-weight:800; }
+      .stars{ font-size:1.15rem; letter-spacing:2px; color:var(--accent2); }
+      .chip{ background:var(--chip); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:.9rem; font-weight:700; }
+      .legend{ font-size:.98rem; background:var(--chip); border:1px solid var(--line); border-radius:10px; padding:9px 12px; margin:8px 0; }
+      .prompt{ border:2px dashed var(--accent); border-radius:10px; padding:10px 12px; margin:8px 0; font-weight:600; }
+      .feedback{ min-height:1.6em; font-size:1.08rem; font-weight:800; margin:10px 0 2px; }
+      .feedback.good{ color:var(--good); } .feedback.bad{ color:var(--bad); } .feedback.warn{ color:var(--warn); }
+      .boardwrap{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:8px; }
+      svg.board{ width:100%; height:auto; display:block; }
+      .node{ cursor:pointer; }
+      .node.disabled{ cursor:default; }
+      .node circle, .node polygon, .node rect{ fill:var(--node); stroke:var(--node-line); stroke-width:3; }
+      .node.inpath circle, .node.inpath polygon, .node.inpath rect{ stroke:var(--accent); stroke-width:5; }
+      .node text{ fill:var(--ink); font-weight:800; pointer-events:none; }
+      .nlabel{ font-size:15px; } .ntype{ font-size:11px; letter-spacing:.5px; }
+      .edge{ stroke:var(--line); stroke-width:3; }
+      .edge.active{ stroke:var(--accent); stroke-width:5; }
+      .endlabel{ font-size:14px; font-weight:800; fill:var(--ink); }
+      .packet{ fill:var(--accent2); stroke:var(--ink); stroke-width:1; }
+      .packet.captured{ fill:var(--bad); }
+      .pathlist{ font-weight:700; }
+      /* Teacher */
+      #teacherBtn{ position:fixed; right:12px; bottom:12px; z-index:40; font-size:.85rem; opacity:.85;
+        background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:8px 16px; min-height:2.5rem; }
+      #teacherPanel{ position:fixed; inset:auto 10px 64px 10px; z-index:50; max-width:520px; margin-left:auto;
+        background:var(--panel); border:2px solid var(--line); border-radius:14px; padding:14px;
+        box-shadow:0 10px 30px rgba(0,0,0,.25); max-height:75vh; overflow:auto; }
+      #teacherPanel h2{ font-size:1.05rem; margin-top:0; }
+      #teacherPanel .row{ margin:6px 0; }
+      #revealOut{ background:var(--chip); border-radius:8px; padding:8px 10px; font-weight:700; min-height:1.4em; }
+      .hidden{ display:none !important; }
+      /* Finish */
+      .savecard{ border:3px solid var(--accent); border-radius:16px; padding:18px; text-align:center; background:var(--panel); }
+      .savecard .big{ font-size:1.6rem; font-weight:900; }
+      .rlist{ list-style:none; padding:0; margin:8px 0; }
+      .rlist li{ display:flex; justify-content:space-between; gap:10px; padding:8px 4px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+      input[type="text"]{ font:inherit; padding:8px 12px; border-radius:10px; border:1px solid var(--line);
+        background:var(--panel); color:var(--ink); width:100%; max-width:340px; }
+      .theme-btn.sel{ outline:3px solid var(--accent); outline-offset:1px; }
+      .small{ font-size:.9rem; color:var(--muted); }
+      @media (max-width:560px){ h1{ font-size:1.6rem; } main{ padding:10px 10px 90px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- START SCREEN -->
+      <section id="screenStart">
+        <h1>Stream Saver</h1>
+        <p class="instr" id="startInstr">Route every packet to the server. Lose none. Let none get captured.</p>
+        <div class="row">
+          <button class="hear" data-say="startInstr" type="button">Hear it</button>
+        </div>
+        <div class="card">
+          <div class="row" role="group" aria-label="Choose a mode">
+            <button class="mode-btn" id="modeTeacher" type="button">
+              <strong>Teacher-Led</strong>
+              <span>One screen for the whole class. No individual scores. Talk through each round together.</span>
+            </button>
+            <button class="mode-btn" id="modeStudent" type="button">
+              <strong>Student-Led</strong>
+              <span>Play on your own. Earn XP, stars, and streaks. Beat the boss round.</span>
+            </button>
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="primary" id="startBtn" type="button" disabled>Start Round 1</button>
+          </div>
+          <p class="small">Cyber Foundations I, Unit 6. All streamers, servers, and packets here are made up.</p>
+        </div>
+      </section>
+
+      <!-- GAME SCREEN -->
+      <section id="screenGame" class="hidden">
+        <div class="hud card" id="hudStudent">
+          <div class="xpwrap">
+            <div class="row" style="gap:8px"><span class="hudnum">XP</span><span id="xpNum">0</span><span class="small" id="xpNext"></span></div>
+            <div class="xptrack"><div class="xpfill" id="xpFill"></div></div>
+          </div>
+          <span class="chip">Streak: <span id="streakNum">0</span></span>
+          <span class="chip">Best streak: <span id="bestStreakNum">0</span></span>
+          <span class="stars" id="starRow" aria-label="Stars earned"></span>
+        </div>
+
+        <div class="row">
+          <h2 id="roundTitle">Round 1</h2>
+          <span class="chip" id="packetChip">Packets: 3</span>
+          <span class="chip hidden" id="exposedChip" style="color:var(--bad)">EXPOSED this round</span>
+          <span class="spacer"></span>
+          <button class="hear" data-say="roundInstr" type="button">Hear it</button>
+        </div>
+        <p class="instr" id="roundInstr">Tap nodes in order to build a path, then press SEND.</p>
+        <div class="legend" id="roundLegend"></div>
+        <div class="prompt hidden" id="discussPrompt"></div>
+
+        <div class="boardwrap">
+          <svg class="board" id="board" viewBox="0 0 800 400" role="group" aria-label="Network board"></svg>
+        </div>
+
+        <p class="pathlist">Your path: <span id="pathText">none yet</span></p>
+        <div class="row">
+          <button id="undoBtn" type="button">Undo</button>
+          <button id="clearBtn" type="button">Clear path</button>
+          <span class="spacer"></span>
+          <button class="primary" id="sendBtn" type="button" disabled>SEND</button>
+        </div>
+        <p class="feedback" id="feedback" aria-live="polite"></p>
+        <div class="row">
+          <button class="primary hidden" id="nextBtn" type="button">Next round</button>
+        </div>
+      </section>
+
+      <!-- FINISH SCREEN -->
+      <section id="screenFinish" class="hidden">
+        <h2 id="finishTitle">Stream saved.</h2>
+        <p class="instr" id="finishInstr">You kept the stream alive. Claim your card.</p>
+        <div class="row"><button class="hear" data-say="finishInstr" type="button">Hear it</button></div>
+
+        <div class="savecard">
+          <div class="small">Official</div>
+          <div class="big">STREAM SAVER</div>
+          <div class="row" style="justify-content:center; margin:10px 0">
+            <input type="text" id="nameInput" maxlength="24" placeholder="Type your streamer name" aria-label="Your streamer name" />
+            <button id="nameBtn" type="button">Put it on the card</button>
+          </div>
+          <div class="big" id="cardName">Streamer</div>
+          <p id="cardStats" style="margin:6px 0"></p>
+          <p class="stars" id="cardStars"></p>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size:1.05rem">Round results</h2>
+          <ul class="rlist" id="roundResults"></ul>
+        </div>
+
+        <div class="card" id="themeCard">
+          <h2 style="font-size:1.05rem">Color themes</h2>
+          <p class="small" id="themeNote">Themes are looks only. They change colors, never the game.</p>
+          <div class="row" id="themeRow"></div>
+        </div>
+
+        <div class="row">
+          <button class="primary" id="againBtn" type="button">Play again</button>
+        </div>
+      </section>
+    </main>
+
+    <button id="teacherBtn" type="button">Teacher</button>
+    <div id="teacherPanel" class="hidden" role="dialog" aria-label="Teacher panel">
+      <h2>Teacher panel</h2>
+      <p class="small" style="margin-top:0">Jumps and skips award no points. Reveal only names a safe path here in this panel. It never touches the board.</p>
+      <div class="row" id="jumpRow"></div>
+      <div class="row">
+        <button id="skipBtn" type="button">Skip current round (no points)</button>
+        <button id="revealBtn" type="button">Reveal a safe path</button>
+      </div>
+      <p id="revealOut">No path revealed yet.</p>
+      <div class="row">
+        <button id="resetBtn" type="button">Reset everything</button>
+        <span class="spacer"></span>
+        <button id="closePanelBtn" type="button">Close</button>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      // ---------- Round data: the real node graph for every round ----------
+      // Node types: ok (fast), lag (slow but safe), down (packets lost), sniffer (packets captured).
+      var ROUNDS = [
+        {
+          name: "Round 1: First Stream", packets: 3,
+          legend: "Legend: round nodes marked OK are fast and safe. Build any path from PC to Server.",
+          prompt: "Discuss: Which node do we avoid, and why? (Trick question: nothing here is dangerous yet.)",
+          nodes: [
+            { id:"A", x:190, y:200, t:"ok" },
+            { id:"B", x:350, y:105, t:"ok" },
+            { id:"C", x:350, y:295, t:"ok" },
+            { id:"D", x:510, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["B","D"],["C","D"],["D","SV"]]
+        },
+        {
+          name: "Round 2: Lag Spike", packets: 4,
+          legend: "New node: LAG (flat hexagon). Packets slow down and bunch up there, but they still arrive safely.",
+          prompt: "Discuss: Which node do we avoid, and why? Is a slow path ever the right pick?",
+          nodes: [
+            { id:"A", x:170, y:200, t:"ok" },
+            { id:"B", x:310, y:100, t:"lag" },
+            { id:"C", x:310, y:300, t:"ok" },
+            { id:"D", x:450, y:100, t:"ok" },
+            { id:"E", x:450, y:300, t:"ok" },
+            { id:"F", x:590, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["B","D"],["C","E"],["D","F"],["E","F"],["F","SV"]]
+        },
+        {
+          name: "Round 3: Server Down", packets: 4,
+          legend: "New node: DOWN (octagon with an X). Any packet sent into a DOWN node is lost for good.",
+          prompt: "Discuss: Which node do we avoid, and why? What happens to a packet sent there?",
+          nodes: [
+            { id:"A", x:190, y:200, t:"ok" },
+            { id:"B", x:350, y:105, t:"down" },
+            { id:"C", x:350, y:295, t:"ok" },
+            { id:"D", x:510, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["B","D"],["C","D"],["D","SV"]]
+        },
+        {
+          name: "Round 4: Packet Sniffer", packets: 5,
+          legend: "New node: SNIFFER (triangle marked SPY). Packets arrive, but the sniffer copies them. That is a privacy fail.",
+          prompt: "Discuss: Which node do we avoid, and why? The packets arrive, so what is the problem?",
+          nodes: [
+            { id:"A", x:170, y:200, t:"ok" },
+            { id:"B", x:310, y:100, t:"ok" },
+            { id:"C", x:310, y:300, t:"sniffer" },
+            { id:"D", x:450, y:100, t:"ok" },
+            { id:"E", x:450, y:300, t:"ok" },
+            { id:"F", x:590, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["B","D"],["C","E"],["D","F"],["E","F"],["F","SV"]]
+        },
+        {
+          name: "Round 5: Rush Hour", packets: 6,
+          legend: "All node types are live now: OK is fast, LAG is slow, DOWN loses packets, SNIFFER captures them.",
+          prompt: "Discuss: Which node do we avoid, and why? Which hazard is worse here, and why?",
+          nodes: [
+            { id:"A", x:150, y:200, t:"ok" },
+            { id:"B", x:260, y:90,  t:"lag" },
+            { id:"C", x:260, y:200, t:"down" },
+            { id:"D", x:260, y:310, t:"ok" },
+            { id:"E", x:380, y:90,  t:"ok" },
+            { id:"F", x:380, y:310, t:"sniffer" },
+            { id:"G", x:500, y:90,  t:"ok" },
+            { id:"H", x:500, y:200, t:"ok" },
+            { id:"I", x:500, y:310, t:"ok" },
+            { id:"J", x:620, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["A","D"],["B","E"],["C","H"],["D","F"],["D","I"],
+                  ["E","G"],["E","H"],["F","I"],["G","J"],["H","J"],["I","J"],["J","SV"]]
+        },
+        {
+          name: "BOSS: Championship Stream", packets: 8, boss: true,
+          legend: "Boss round: one DOWN node and one SNIFFER node are live. Two safe paths exist. The shorter one earns a bigger time bonus.",
+          prompt: "Discuss: Which node do we avoid, and why? Two safe paths exist here. Which one should the class take?",
+          nodes: [
+            { id:"A", x:150, y:200, t:"ok" },
+            { id:"B", x:260, y:90,  t:"ok" },
+            { id:"C", x:260, y:200, t:"down" },
+            { id:"F", x:260, y:310, t:"sniffer" },
+            { id:"E", x:400, y:90,  t:"ok" },
+            { id:"D", x:400, y:200, t:"ok" },
+            { id:"I", x:400, y:310, t:"ok" },
+            { id:"G", x:520, y:90,  t:"ok" },
+            { id:"H", x:520, y:200, t:"ok" },
+            { id:"J", x:620, y:200, t:"ok" }
+          ],
+          edges: [["PC","A"],["A","B"],["A","C"],["A","D"],["A","F"],["B","E"],["C","D"],["C","H"],
+                  ["D","H"],["D","J"],["F","I"],["E","G"],["E","H"],["I","H"],["I","J"],
+                  ["G","J"],["G","H"],["H","J"],["J","SV"]]
+        }
+      ];
+      var PC = { id:"PC", x:55, y:200 }, SV = { id:"SV", x:745, y:200 };
+      var TYPE_LABEL = { ok:"OK", lag:"LAG", down:"DOWN", sniffer:"SNIFFER" };
+      var TYPE_SUB   = { ok:"fast", lag:"slow", down:"lost here", sniffer:"SPY" };
+      var XP_PER_LEVEL = 300;
+      var THEMES = [
+        { id:"teal",   name:"Stream Teal",  need:0 },
+        { id:"violet", name:"Arcade Violet", need:250 },
+        { id:"solar",  name:"Solar Orange", need:450 }
+      ];
+
+      // ---------- State (in memory only; nothing is stored or sent anywhere) ----------
+      function freshRoundState(){
+        return { visited:false, attempts:0, exposed:false, cleared:false, cleanWin:false,
+                 skipped:false, xp:0, stars:0, bonus:0 };
+      }
+      var S = null;
+      function freshState(){
+        return { mode:null, round:0, path:[], sending:false,
+                 xp:0, streak:0, bestStreak:0, theme:"teal",
+                 rounds: ROUNDS.map(freshRoundState) };
+      }
+      S = freshState();
+
+      // ---------- Helpers ----------
+      function $(id){ return document.getElementById(id); }
+      function round(){ return ROUNDS[S.round]; }
+      function rstate(){ return S.rounds[S.round]; }
+      function nodeById(r, id){
+        if (id === "PC") return PC; if (id === "SV") return SV;
+        for (var i=0;i<r.nodes.length;i++) if (r.nodes[i].id===id) return r.nodes[i];
+        return null;
+      }
+      function nodeType(r, id){
+        var n = nodeById(r, id); return n && n.t ? n.t : "ok";
+      }
+      function neighbors(r, id){
+        var out = [];
+        r.edges.forEach(function(e){
+          if (e[0]===id) out.push(e[1]);
+          if (e[1]===id) out.push(e[0]);
+        });
+        return out;
+      }
+      function isEdge(r, a, b){
+        return r.edges.some(function(e){ return (e[0]===a&&e[1]===b)||(e[0]===b&&e[1]===a); });
+      }
+      function pathComplete(){
+        if (!S.path.length) return false;
+        return isEdge(round(), S.path[S.path.length-1], "SV");
+      }
+      // Path cost from real geometry: distance plus a lag penalty. Lower cost means faster.
+      function pathCost(r, path){
+        var pts = ["PC"].concat(path).concat(["SV"]), cost = 0;
+        for (var i=1;i<pts.length;i++){
+          var a = nodeById(r, pts[i-1]), b = nodeById(r, pts[i]);
+          var d = Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2));
+          cost += d/100;
+          if (nodeType(r, pts[i])==="lag") cost += 2;
+        }
+        return cost;
+      }
+      // Outcomes computed from the actual graph and the chosen path, in travel order.
+      function evaluatePath(r, path){
+        var captured = false;
+        for (var i=0;i<path.length;i++){
+          var t = nodeType(r, path[i]);
+          if (t==="down") return { result:"lost", at:path[i], capturedBefore:captured };
+          if (t==="sniffer") captured = true;
+        }
+        if (captured) return { result:"captured" };
+        return { result:"clean" };
+      }
+      // BFS for the Reveal readout: shortest path that avoids DOWN and SNIFFER nodes.
+      function findSafePath(r){
+        var prev = { PC:null }, q = ["PC"], seen = { PC:true };
+        while (q.length){
+          var cur = q.shift();
+          if (cur==="SV") break;
+          neighbors(r, cur).forEach(function(n){
+            if (seen[n]) return;
+            if (n!=="SV" && (nodeType(r,n)==="down" || nodeType(r,n)==="sniffer")) return;
+            seen[n]=true; prev[n]=cur; q.push(n);
+          });
+        }
+        if (!seen["SV"]) return null;
+        var path = [], c = "SV";
+        while (c){ path.unshift(c); c = prev[c]; }
+        return path;
+      }
+      function speak(text){
+        try{
+          if (!("speechSynthesis" in window)) return;
+          window.speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance(text);
+          u.rate = 1; window.speechSynthesis.speak(u);
+        }catch(e){}
+      }
+
+      // ---------- Screens ----------
+      function show(id){
+        ["screenStart","screenGame","screenFinish"].forEach(function(s){ $(s).classList.toggle("hidden", s!==id); });
+        window.scrollTo(0,0);
+      }
+
+      // ---------- Board rendering ----------
+      var SVGNS = "http://www.w3.org/2000/svg";
+      function el(tag, attrs){
+        var n = document.createElementNS(SVGNS, tag);
+        for (var k in attrs) n.setAttribute(k, attrs[k]);
+        return n;
+      }
+      function shapeFor(g, n){
+        var s;
+        if (n.t==="lag"){ // flat hexagon
+          var pts=[]; for (var i=0;i<6;i++){ var a=Math.PI/3*i; pts.push((n.x+34*Math.cos(a)).toFixed(1)+","+(n.y+30*Math.sin(a)).toFixed(1)); }
+          s = el("polygon",{points:pts.join(" ")});
+        } else if (n.t==="down"){ // octagon
+          var p=[]; for (var j=0;j<8;j++){ var b=Math.PI/4*j+Math.PI/8; p.push((n.x+32*Math.cos(b)).toFixed(1)+","+(n.y+32*Math.sin(b)).toFixed(1)); }
+          s = el("polygon",{points:p.join(" ")});
+        } else if (n.t==="sniffer"){ // triangle
+          s = el("polygon",{points:(n.x)+","+(n.y-36)+" "+(n.x-34)+","+(n.y+26)+" "+(n.x+34)+","+(n.y+26)});
+        } else { // circle
+          s = el("circle",{cx:n.x, cy:n.y, r:30});
+        }
+        g.appendChild(s);
+        if (n.t==="down"){
+          var x1=el("line",{x1:n.x-11,y1:n.y-20,x2:n.x+11,y2:n.y+2,stroke:"var(--bad)","stroke-width":4});
+          var x2=el("line",{x1:n.x+11,y1:n.y-20,x2:n.x-11,y2:n.y+2,stroke:"var(--bad)","stroke-width":4});
+          g.appendChild(x1); g.appendChild(x2);
+        }
+        if (n.t==="sniffer"){
+          var eye=el("circle",{cx:n.x, cy:n.y-6, r:7, fill:"var(--bad)", stroke:"none"});
+          g.appendChild(eye);
+        }
+      }
+      function renderBoard(){
+        var r = round(), svg = $("board");
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        // edges
+        r.edges.forEach(function(e){
+          var a=nodeById(r,e[0]), b=nodeById(r,e[1]);
+          var active = false;
+          var seq = ["PC"].concat(S.path).concat(pathComplete()?["SV"]:[]);
+          for (var i=1;i<seq.length;i++) if ((seq[i-1]===e[0]&&seq[i]===e[1])||(seq[i-1]===e[1]&&seq[i]===e[0])) active=true;
+          svg.appendChild(el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,"class":"edge"+(active?" active":"")}));
+        });
+        // endpoints
+        [["PC",PC,"PC"],["SV",SV,"SERVER"]].forEach(function(pair){
+          var g = el("g",{});
+          g.appendChild(el("rect",{x:pair[1].x-34,y:pair[1].y-26,width:68,height:52,rx:10,fill:"var(--chip)",stroke:"var(--node-line)","stroke-width":3}));
+          var t = el("text",{x:pair[1].x,y:pair[1].y+5,"text-anchor":"middle","class":"endlabel"});
+          t.textContent = pair[2]; g.appendChild(t); svg.appendChild(g);
+        });
+        // nodes
+        r.nodes.forEach(function(n){
+          var g = el("g",{"class":"node"+(S.path.indexOf(n.id)>=0?" inpath":"")+(S.sending?" disabled":""), tabindex:"0", role:"button",
+                          "aria-label":"Node "+n.id+", "+TYPE_LABEL[n.t]+", "+TYPE_SUB[n.t]});
+          g.appendChild(el("circle",{cx:n.x, cy:n.y, r:50, fill:"#000000", "fill-opacity":"0", stroke:"none"})); // generous tap area
+          shapeFor(g, n);
+          var t1 = el("text",{x:n.x, y:n.y+ (n.t==="down"? 20 : 6), "text-anchor":"middle","class":"nlabel"});
+          t1.textContent = n.id; g.appendChild(t1);
+          var t2 = el("text",{x:n.x, y:n.y+52, "text-anchor":"middle","class":"ntype"});
+          t2.textContent = TYPE_LABEL[n.t]; g.appendChild(t2);
+          g.addEventListener("click", function(){ tapNode(n.id); });
+          g.addEventListener("keydown", function(ev){ if (ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); tapNode(n.id); } });
+          svg.appendChild(g);
+        });
+        var layer = el("g",{id:"packetLayer"}); svg.appendChild(layer);
+        updatePathUI();
+      }
+      function updatePathUI(){
+        $("pathText").textContent = S.path.length ? ("PC, " + S.path.join(", ") + (pathComplete() ? ", Server" : "")) : "none yet";
+        $("sendBtn").disabled = S.sending || !pathComplete();
+        $("undoBtn").disabled = S.sending || !S.path.length;
+        $("clearBtn").disabled = S.sending || !S.path.length;
+      }
+      function tapNode(id){
+        if (S.sending) return;
+        var r = round(), idx = S.path.indexOf(id);
+        if (idx >= 0){ S.path = S.path.slice(0, idx); renderBoard(); return; } // tap again to back up to before it
+        var last = S.path.length ? S.path[S.path.length-1] : "PC";
+        if (!isEdge(r, last, id)){
+          setFeedback("Node " + id + " is not connected to " + (S.path.length ? "node "+last : "the PC") + ".", "warn");
+          return;
+        }
+        S.path.push(id); setFeedback("", "");
+        renderBoard();
+      }
+
+      // ---------- HUD ----------
+      function renderHUD(){
+        var student = S.mode==="student";
+        $("hudStudent").classList.toggle("hidden", !student);
+        if (!student) return;
+        $("xpNum").textContent = S.xp;
+        $("xpFill").style.width = Math.min(100, (S.xp % XP_PER_LEVEL)/XP_PER_LEVEL*100) + "%";
+        $("xpNext").textContent = "Level " + (Math.floor(S.xp/XP_PER_LEVEL)+1);
+        $("streakNum").textContent = S.streak;
+        $("bestStreakNum").textContent = S.bestStreak;
+        var totalStars = S.rounds.reduce(function(a,r){ return a+r.stars; },0);
+        $("starRow").textContent = totalStars ? new Array(totalStars+1).join("\u2605") : "No stars yet";
+      }
+      function setFeedback(msg, kind){
+        var f = $("feedback"); f.textContent = msg; f.className = "feedback" + (kind ? " "+kind : "");
+      }
+
+      // ---------- Round flow ----------
+      function loadRound(i){
+        S.round = i; S.path = []; S.sending = false;
+        rstate().visited = true;
+        var r = round();
+        $("roundTitle").textContent = r.name;
+        $("packetChip").textContent = "Packets: " + r.packets;
+        $("roundLegend").textContent = r.legend;
+        $("exposedChip").classList.toggle("hidden", !rstate().exposed);
+        var prompt = $("discussPrompt");
+        if (S.mode==="teacher"){ prompt.textContent = r.prompt; prompt.classList.remove("hidden"); }
+        else prompt.classList.add("hidden");
+        $("nextBtn").classList.add("hidden");
+        if (rstate().cleared) setFeedback("Already cleared. Practice sends earn no new points.", "warn");
+        else if (rstate().exposed) setFeedback("This round is EXPOSED. Deliver the packets for partial credit.", "warn");
+        else setFeedback("", "");
+        renderHUD(); renderBoard();
+        show("screenGame");
+      }
+      function sendPackets(){
+        if (S.sending || !pathComplete()) return;
+        S.sending = true;
+        var r = round(), outcome = evaluatePath(r, S.path.slice());
+        animatePackets(r, S.path.slice(), outcome, function(){ finishSend(outcome); });
+        updatePathUI();
+      }
+      function animatePackets(r, path, outcome, done){
+        var svg = $("board"), layer = $("packetLayer");
+        if (!layer){ renderBoard(); layer = $("packetLayer"); }
+        var pts = ["PC"].concat(path).concat(["SV"]).map(function(id){ return nodeById(r,id); });
+        // If a DOWN node is on the path, packets travel only as far as that node.
+        var stopIdx = pts.length-1;
+        if (outcome.result==="lost"){
+          for (var i=0;i<path.length;i++) if (nodeType(r,path[i])==="down"){ stopIdx = i+1; break; }
+        }
+        var total = r.packets, finished = 0;
+        for (var p=0;p<total;p++){
+          (function(p){
+            var dot = el("circle",{r:9,"class":"packet"});
+            layer.appendChild(dot);
+            var seg = 0, segT = 0;
+            var delay = p*260;
+            var start = null;
+            function speedFor(targetId){ return nodeType(r,targetId)==="lag" ? 0.10 : 0.28; } // px per ms
+            function frame(ts){
+              if (start===null) start = ts + delay;
+              var t = ts - start;
+              if (t < 0){ dot.setAttribute("cx", pts[0].x); dot.setAttribute("cy", pts[0].y); requestAnimationFrame(frame); return; }
+              var a = pts[seg], b = pts[seg+1];
+              if (!b){ endPacket(); return; }
+              var dist = Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2));
+              var dur = dist / speedFor(path[seg] || "SV");
+              var k = Math.min(1, (segT + t) / dur);
+              // packets bunch up: followers slow down near a lag node
+              dot.setAttribute("cx", a.x + (b.x-a.x)*k);
+              dot.setAttribute("cy", a.y + (b.y-a.y)*k);
+              if (nodeType(r, path[seg])==="sniffer" || (seg>0 && capturedSoFar(seg))) dot.setAttribute("class","packet captured");
+              if (k >= 1){
+                seg++; segT = 0; start = ts;
+                if (seg > stopIdx-1 || seg >= pts.length-1){ endPacket(); return; }
+              }
+              requestAnimationFrame(frame);
+            }
+            function capturedSoFar(upto){
+              for (var j=0;j<upto && j<path.length;j++) if (nodeType(r,path[j])==="sniffer") return true;
+              return false;
+            }
+            function endPacket(){
+              if (outcome.result==="lost"){ dot.setAttribute("fill","var(--bad)"); setTimeout(function(){ if(dot.parentNode) dot.parentNode.removeChild(dot); }, 350); }
+              finished++;
+              if (finished===total) setTimeout(done, 300);
+            }
+            requestAnimationFrame(frame);
+          })(p);
+        }
+      }
+      function finishSend(outcome){
+        S.sending = false;
+        var r = round(), st = rstate();
+        st.attempts++;
+        var student = S.mode==="student";
+        if (outcome.result==="lost"){
+          S.streak = 0;
+          if (outcome.capturedBefore){
+            st.exposed = true; // a sniffer crossed before the loss still marks the round EXPOSED
+            $("exposedChip").classList.remove("hidden");
+            setFeedback("Captured by a SNIFFER, then lost at DOWN node " + outcome.at + ". Round is EXPOSED. Re-route and try again.", "bad");
+          } else {
+            setFeedback("Packets lost at DOWN node " + outcome.at + ". Re-route and try again.", "bad");
+          }
+          renderHUD(); renderBoard(); return;
+        }
+        if (outcome.result==="captured"){
+          st.exposed = true; // exposure is permanent for this round
+          S.streak = 0;
+          $("exposedChip").classList.remove("hidden");
+          setFeedback("Packets captured by a SNIFFER. This round is now EXPOSED.", "bad");
+          renderHUD(); renderBoard(); return;
+        }
+        // Clean delivery of every packet.
+        var firstTry = st.attempts===1 && !st.exposed;
+        var wasCleared = st.cleared;
+        st.cleared = true;
+        st.cleanWin = !st.exposed;
+        if (st.exposed){
+          if (!wasCleared && student){
+            st.xp = 40; st.stars = 1; S.xp += 40;
+          }
+          setFeedback("Delivered, but exposed on an earlier send. Partial credit.", "warn");
+        } else {
+          if (!wasCleared && student){
+            var bonus = firstTry ? Math.max(0, Math.min(50, Math.round(60 - pathCost(r, S.path)*5))) : 0;
+            st.bonus = bonus;
+            st.xp = firstTry ? 100 + bonus : 70;
+            st.stars = firstTry ? 3 : 2;
+            S.xp += st.xp;
+          }
+          if (firstTry){ S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak); }
+          else if (!wasCleared){ S.streak = 0; }
+          setFeedback(firstTry
+            ? "Clean send. All " + r.packets + " packets delivered safely." + (student && st.bonus ? " Time bonus: +" + st.bonus + " XP." : "")
+            : "Clean send. All " + r.packets + " packets delivered safely.", "good");
+        }
+        renderHUD(); renderBoard();
+        var nb = $("nextBtn");
+        nb.textContent = S.round >= ROUNDS.length-1 ? "See your card" : "Next round";
+        nb.classList.remove("hidden");
+      }
+
+      // ---------- Finish ----------
+      function roundStatusText(st){
+        if (st.cleared && st.exposed) return "Delivered, but exposed on an earlier send (partial credit)";
+        if (st.cleared && st.cleanWin) return "Clean win" + (st.stars ? " (" + st.stars + " stars)" : "");
+        if (st.skipped) return "Skipped, not played yet";
+        if (st.visited) return "Started, not finished yet";
+        return "Not played yet";
+      }
+      function loadFinish(){
+        var student = S.mode==="student";
+        var totalStars = S.rounds.reduce(function(a,r){ return a+r.stars; },0);
+        $("cardStats").textContent = student
+          ? ("Total XP: " + S.xp + " | Best streak: " + S.bestStreak + " | Rounds cleared: " +
+             S.rounds.filter(function(r){ return r.cleared; }).length + " of " + ROUNDS.length)
+          : ("Rounds cleared: " + S.rounds.filter(function(r){ return r.cleared; }).length + " of " + ROUNDS.length +
+             " | Played in Teacher-Led mode, no individual scores");
+        $("cardStars").textContent = student ? (totalStars ? new Array(totalStars+1).join("\u2605") + " " + totalStars + " stars" : "No stars yet") : "";
+        var ul = $("roundResults"); ul.innerHTML = "";
+        ROUNDS.forEach(function(r, i){
+          var li = document.createElement("li");
+          var a = document.createElement("span"); a.textContent = r.name;
+          var b = document.createElement("span"); b.textContent = roundStatusText(S.rounds[i]);
+          li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+        });
+        renderThemes();
+        show("screenFinish");
+      }
+      function renderThemes(){
+        var row = $("themeRow"); row.innerHTML = "";
+        THEMES.forEach(function(t){
+          var unlocked = S.mode!=="student" || S.xp >= t.need;
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "theme-btn" + (S.theme===t.id ? " sel" : "");
+          b.textContent = unlocked ? t.name : (t.name + " (unlock at " + t.need + " XP)");
+          b.disabled = !unlocked;
+          b.addEventListener("click", function(){
+            S.theme = t.id;
+            if (t.id==="teal") document.documentElement.removeAttribute("data-theme");
+            else document.documentElement.setAttribute("data-theme", t.id);
+            renderThemes();
+          });
+          row.appendChild(b);
+        });
+      }
+
+      // ---------- Teacher panel ----------
+      function buildJumpRow(){
+        var row = $("jumpRow"); row.innerHTML = "";
+        var labels = ["Start screen"];
+        ROUNDS.forEach(function(r,i){ labels.push("Round " + (i+1)); });
+        labels.push("Finish screen");
+        labels.forEach(function(label, i){
+          var b = document.createElement("button");
+          b.type="button"; b.textContent = label; b.className="quiet";
+          b.addEventListener("click", function(){
+            if (i===0){ show("screenStart"); }
+            else if (i===labels.length-1){ loadFinish(); }
+            else loadRound(i-1);
+            $("teacherPanel").classList.add("hidden");
+          });
+          row.appendChild(b);
+        });
+      }
+
+      // ---------- Wire up ----------
+      var chosenMode = null;
+      function pickMode(m){
+        chosenMode = m;
+        $("modeTeacher").classList.toggle("sel", m==="teacher");
+        $("modeStudent").classList.toggle("sel", m==="student");
+        $("startBtn").disabled = false;
+      }
+      $("modeTeacher").addEventListener("click", function(){ pickMode("teacher"); });
+      $("modeStudent").addEventListener("click", function(){ pickMode("student"); });
+      $("startBtn").addEventListener("click", function(){
+        if (!chosenMode) return;
+        S.mode = chosenMode;
+        loadRound(0);
+      });
+      $("sendBtn").addEventListener("click", sendPackets);
+      $("undoBtn").addEventListener("click", function(){ if (!S.sending){ S.path.pop(); renderBoard(); } });
+      $("clearBtn").addEventListener("click", function(){ if (!S.sending){ S.path = []; renderBoard(); } });
+      $("nextBtn").addEventListener("click", function(){
+        if (S.round >= ROUNDS.length-1) loadFinish(); else loadRound(S.round+1);
+      });
+      $("nameBtn").addEventListener("click", function(){
+        var v = $("nameInput").value.trim();
+        $("cardName").textContent = v ? v : "Streamer";
+      });
+      $("againBtn").addEventListener("click", function(){
+        var keepTheme = S.theme;
+        S = freshState(); S.theme = keepTheme; S.mode = chosenMode;
+        chosenMode = null; pickModeReset();
+        show("screenStart");
+      });
+      function pickModeReset(){
+        $("modeTeacher").classList.remove("sel"); $("modeStudent").classList.remove("sel");
+        $("startBtn").disabled = true;
+      }
+      document.querySelectorAll(".hear").forEach(function(b){
+        b.addEventListener("click", function(){ speak($(b.getAttribute("data-say")).textContent); });
+      });
+      $("teacherBtn").addEventListener("click", function(){ $("teacherPanel").classList.toggle("hidden"); });
+      $("closePanelBtn").addEventListener("click", function(){ $("teacherPanel").classList.add("hidden"); });
+      $("skipBtn").addEventListener("click", function(){
+        if (!S.mode){ $("revealOut").textContent = "Start a mode first, then skip works on the current round."; return; }
+        var st = rstate();
+        if (!st.cleared){ st.skipped = true; st.visited = true; } // skipped work earns nothing
+        $("teacherPanel").classList.add("hidden");
+        if (S.round >= ROUNDS.length-1) loadFinish(); else loadRound(S.round+1);
+      });
+      $("revealBtn").addEventListener("click", function(){
+        if (!S.mode){ $("revealOut").textContent = "Start a mode first. Reveal names a safe path for the round on screen."; return; }
+        var p = findSafePath(round());
+        $("revealOut").textContent = p ? ("Safe path: " + p.join(" - ").replace("PC","PC").replace("SV","Server")) : "No fully safe path on this board.";
+      });
+      $("resetBtn").addEventListener("click", function(){
+        var keepTheme = S.theme;
+        S = freshState(); S.theme = keepTheme;
+        chosenMode = null; pickModeReset();
+        $("revealOut").textContent = "No path revealed yet.";
+        $("teacherPanel").classList.add("hidden");
+        show("screenStart");
+      });
+      buildJumpRow();
+      show("screenStart");
+    </script>
+  </body>
+</html>

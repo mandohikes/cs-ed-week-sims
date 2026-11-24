@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Glitch Runner</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --ink:#17222b; --muted:#5a6b76;
+    --line:#d5dde2; --accent:#0e7a5f; --accent-ink:#ffffff;
+    --move:#1d8a4e; --turn:#b97a0c; --repeat:#205f9e;
+    --bad:#b3352b; --good:#0e7a5f; --cell:#e8edf0; --wall:#3c4a54;
+    --chip:#eef3f1; --shadow:0 2px 10px rgba(20,40,50,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10161b; --panel:#1a232b; --ink:#eef3f5; --muted:#a7b6bf;
+      --line:#33424d; --accent:#2fae8c; --accent-ink:#0b1512;
+      --move:#2ea364; --turn:#d99a26; --repeat:#3d84c6;
+      --bad:#e0655a; --good:#2fae8c; --cell:#232f38; --wall:#5a6d7a;
+      --chip:#22303a; --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  body[data-theme="sunset"]{ --accent:#c2510f; --move:#c2510f; --repeat:#7a4a12; --turn:#9e2f4f; }
+  body[data-theme="forest"]{ --accent:#3d7a1e; --move:#3d7a1e; --repeat:#1e6e6e; --turn:#8a6d1a; }
+  @media (prefers-color-scheme: dark){
+    body[data-theme="sunset"]{ --accent:#e07f3a; --move:#e07f3a; --repeat:#c99a3a; --turn:#e06a8a; }
+    body[data-theme="forest"]{ --accent:#6cb84a; --move:#6cb84a; --repeat:#3fa8a0; --turn:#c9a83a; }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45;
+  }
+  button, input, select{ font:inherit; }
+  button{ min-height:44px; cursor:pointer; }
+  main{ max-width:760px; margin:0 auto; padding:16px 16px 90px; }
+  h1{ font-size:2.1rem; margin:.2em 0 .1em; letter-spacing:.5px; }
+  h2{ font-size:1.35rem; margin:.2em 0 .3em; }
+  .sub{ color:var(--muted); margin:.1em 0 1em; }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px; box-shadow:var(--shadow); margin:14px 0;
+  }
+  .btn{
+    border:2px solid var(--accent); background:var(--accent); color:var(--accent-ink);
+    border-radius:10px; padding:10px 18px; font-weight:700;
+  }
+  .btn.secondary{ background:transparent; color:var(--accent); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .btn.big{ font-size:1.15rem; padding:12px 26px; }
+  .modeRow{ display:flex; gap:12px; flex-wrap:wrap; }
+  .modeRow .btn{ flex:1 1 200px; }
+  .hearBtn{
+    border:1px solid var(--line); background:var(--chip); color:var(--ink);
+    border-radius:999px; padding:4px 12px; font-size:.85rem; min-height:36px; font-weight:600;
+  }
+  .instrRow{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .instr{ font-size:1.12rem; font-weight:700; margin:0; }
+  /* HUD */
+  .hud{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin:10px 0 4px; }
+  .xpWrap{ flex:1 1 200px; }
+  .xpBar{ height:14px; background:var(--cell); border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .xpFill{ height:100%; width:0%; background:var(--accent); transition:width .5s ease; }
+  .hudStat{ font-weight:700; font-size:.95rem; }
+  .levelTag{ font-weight:800; font-size:1.05rem; }
+  .discuss{ background:var(--chip); border-radius:10px; padding:8px 12px; font-weight:600; }
+  /* Board */
+  .boardWrap{ position:relative; width:min(92vw,400px); margin:12px auto; }
+  .board{
+    display:grid; width:100%; border:2px solid var(--line); border-radius:10px; overflow:hidden;
+    background:var(--panel);
+  }
+  .cell{ aspect-ratio:1/1; background:var(--cell); border:1px solid var(--line); position:relative; }
+  .cell.wall{ background:var(--wall); }
+  .cell.goal{ background:var(--cell); }
+  .flag{ position:absolute; inset:8%; display:flex; align-items:flex-start; justify-content:center; }
+  .hero{
+    position:absolute; z-index:3; transition:left .38s ease, top .38s ease;
+    display:flex; align-items:center; justify-content:center; pointer-events:none;
+  }
+  .heroInner{ width:88%; height:88%; transition:transform .3s ease; position:relative; }
+  .hero.bump .heroInner{ animation:bump .35s ease; }
+  @keyframes bump{ 0%{transform:translateX(0)} 30%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 100%{transform:translateX(0)} }
+  .dirArrow{
+    position:absolute; top:-4px; left:50%; margin-left:-9px; width:18px; height:18px; z-index:4;
+    transition:transform .3s ease;
+  }
+  /* Blocks */
+  .scriptLabel{ font-weight:800; margin:14px 0 6px; }
+  .blocks{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+  .blk{
+    border:none; text-align:left; color:#fff; font-weight:800; letter-spacing:.4px;
+    border-radius:8px; padding:10px 16px; min-width:170px; box-shadow:var(--shadow);
+    position:relative;
+  }
+  .blk small{ display:block; font-weight:600; letter-spacing:0; opacity:.9; font-size:.75rem; }
+  .blk.move{ background:var(--move); }
+  .blk.turn{ background:var(--turn); }
+  .blk.repeat{ background:var(--repeat); }
+  .blkInner{ margin:8px 0 2px 14px; border-left:4px solid rgba(255,255,255,.55); padding-left:10px; display:flex; flex-direction:column; gap:6px; }
+  .blkInner .blk{ min-width:130px; box-shadow:none; }
+  .blk.selected{ outline:4px solid var(--ink); outline-offset:2px; }
+  .blk.wrong{ opacity:.45; text-decoration:line-through; }
+  .blk:disabled{ cursor:not-allowed; }
+  .blk.fixed{ outline:3px solid var(--good); outline-offset:2px; }
+  /* Chips and choices */
+  .chips{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .chip{
+    border:2px solid var(--accent); background:var(--chip); color:var(--ink);
+    border-radius:999px; padding:9px 16px; font-weight:700;
+  }
+  .chip:disabled{ opacity:.45; text-decoration:line-through; cursor:not-allowed; }
+  .ynRow{ display:flex; gap:12px; margin-top:10px; }
+  .ynRow .chip{ flex:1 1 120px; border-radius:12px; font-size:1.05rem; }
+  .feedback{ min-height:1.5em; font-weight:800; margin:12px 0 4px; font-size:1.05rem; }
+  .feedback.good{ color:var(--good); }
+  .feedback.bad{ color:var(--bad); }
+  .runRow{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  .stars{ font-size:1.5rem; letter-spacing:3px; color:var(--turn); }
+  #cardStars{ font-size:1rem; letter-spacing:1px; overflow-wrap:anywhere; }
+  /* Finish */
+  .fixerCard{
+    border:3px solid var(--accent); border-radius:16px; padding:18px; text-align:center;
+    background:var(--panel);
+  }
+  .fixerCard .botBig{ width:90px; margin:0 auto; }
+  .fixerName{ font-size:1.5rem; font-weight:900; margin:.2em 0 0; }
+  .nameInput{
+    width:100%; max-width:340px; padding:10px 12px; border:2px solid var(--line);
+    border-radius:10px; background:var(--panel); color:var(--ink); min-height:44px;
+  }
+  .lvlList{ list-style:none; padding:0; margin:8px 0; }
+  .lvlList li{ display:flex; justify-content:space-between; gap:10px; padding:7px 4px; border-bottom:1px solid var(--line); }
+  .themeRow{ display:flex; gap:10px; flex-wrap:wrap; }
+  .swatch{ width:26px; height:26px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:8px; border:2px solid rgba(0,0,0,.2); }
+  /* Teacher */
+  #teacherBtn{
+    position:fixed; right:12px; bottom:12px; z-index:50;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    border-radius:999px; padding:6px 14px; font-size:.85rem; min-height:40px; box-shadow:var(--shadow);
+  }
+  #teacherPanel{
+    position:fixed; inset:auto 0 0 0; z-index:60; max-height:82vh; overflow:auto;
+    background:var(--panel); border-top:3px solid var(--accent); padding:16px;
+    box-shadow:0 -6px 24px rgba(0,0,0,.25);
+  }
+  #teacherPanel h2{ margin-top:0; }
+  .tGrid{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .tGrid button{
+    border:1px solid var(--line); background:var(--chip); color:var(--ink);
+    border-radius:8px; padding:8px 12px; font-weight:600;
+  }
+  .revealBox{
+    border:2px dashed var(--turn); border-radius:10px; padding:10px 12px; margin-top:10px;
+    background:var(--chip); white-space:pre-line;
+  }
+  .hidden{ display:none !important; }
+  @media (prefers-reduced-motion: reduce){
+    .hero{ transition:none; } .xpFill{ transition:none; }
+  }
+</style>
+</head>
+<body data-theme="ocean">
+<main>
+
+  <!-- START SCREEN -->
+  <section id="startScreen">
+    <h1>Glitch Runner</h1>
+    <p class="sub">Cyber Foundations I, Unit 5: Block-Based Programming</p>
+    <div class="instrRow">
+      <p class="instr" id="startInstr">Find the bug, fix the blocks, run the hero home.</p>
+      <button class="hearBtn" data-hear="startInstr" type="button">Hear it</button>
+    </div>
+    <div class="card">
+      <h2>Pick a mode</h2>
+      <div class="modeRow">
+        <button class="btn big" id="modeStudent" type="button">Student-Led<br><small>XP, streaks, and stars</small></button>
+        <button class="btn big secondary" id="modeTeacher" type="button">Teacher-Led<br><small>Class discussion, no scores</small></button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>How it works</h2>
+      <p style="margin:.2em 0">Tap the buggy block. Pick the fix. Press RUN.</p>
+      <p style="margin:.2em 0">Levels 4 and up: predict first. Level 7 is the boss, with two bugs.</p>
+    </div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="gameScreen" class="hidden">
+    <div class="hud">
+      <span class="levelTag" id="levelTag">Level 1 of 7</span>
+      <span class="hudStat hidden" id="streakStat">Streak: 0</span>
+    </div>
+    <div class="xpWrap hidden" id="xpWrap">
+      <div style="display:flex; justify-content:space-between; font-size:.85rem; font-weight:700;">
+        <span>XP</span><span id="xpText">0</span>
+      </div>
+      <div class="xpBar"><div class="xpFill" id="xpFill"></div></div>
+    </div>
+    <p class="discuss hidden" id="discussLine">Talk it out: What is the bug here?</p>
+
+    <div class="instrRow" style="margin-top:10px">
+      <p class="instr" id="gameInstr">Tap the block with the bug.</p>
+      <button class="hearBtn" data-hear="gameInstr" type="button">Hear it</button>
+    </div>
+
+    <div class="boardWrap" id="boardWrap">
+      <div class="board" id="board"></div>
+      <div class="hero" id="hero">
+        <div class="dirArrow" id="dirArrow">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 1 L19 19 L10 14 L1 19 Z" fill="#e2483d"/></svg>
+        </div>
+        <div class="heroInner" id="heroInner">
+          <svg viewBox="0 0 60 60" width="100%" height="100%" role="img" aria-label="Runner bot">
+            <rect x="14" y="18" width="32" height="28" rx="7" fill="#2f9e44"/>
+            <rect x="20" y="24" width="20" height="12" rx="4" fill="#dff5e3"/>
+            <circle cx="26" cy="30" r="2.6" fill="#17222b"/>
+            <circle cx="34" cy="30" r="2.6" fill="#17222b"/>
+            <line x1="30" y1="18" x2="30" y2="9" stroke="#17222b" stroke-width="3"/>
+            <circle cx="30" cy="7" r="3.4" fill="#e8b10c"/>
+            <rect x="10" y="26" width="5" height="14" rx="2.5" fill="#2f9e44"/>
+            <rect x="45" y="26" width="5" height="14" rx="2.5" fill="#2f9e44"/>
+            <rect x="20" y="46" width="7" height="9" rx="3" fill="#17222b"/>
+            <rect x="33" y="46" width="7" height="9" rx="3" fill="#17222b"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <p class="scriptLabel">The script</p>
+    <div class="blocks" id="blocks"></div>
+
+    <div id="predictBox" class="hidden">
+      <p class="scriptLabel">Predict: will he make it?</p>
+      <div class="ynRow">
+        <button class="chip" id="predYes" type="button">Yes, he makes it</button>
+        <button class="chip" id="predNo" type="button">No, he gets stuck</button>
+      </div>
+    </div>
+
+    <div id="fixBox" class="hidden">
+      <p class="scriptLabel">Pick the fix</p>
+      <div class="chips" id="fixChips"></div>
+    </div>
+
+    <p class="feedback" id="feedback" aria-live="polite"></p>
+
+    <div class="runRow">
+      <button class="btn big" id="runBtn" type="button" disabled>RUN</button>
+      <button class="btn big secondary hidden" id="nextBtn" type="button">Next level</button>
+      <span class="stars hidden" id="levelStars"></span>
+    </div>
+    <p class="sub" id="replayNote"></p>
+  </section>
+
+  <!-- FINISH SCREEN -->
+  <section id="finishScreen" class="hidden">
+    <h2>Course complete</h2>
+    <div class="instrRow">
+      <p class="instr" id="finishInstr">Add your name to your Glitch Fixer card.</p>
+      <button class="hearBtn" data-hear="finishInstr" type="button">Hear it</button>
+    </div>
+
+    <div class="fixerCard" style="margin-top:14px">
+      <div class="botBig">
+        <svg viewBox="0 0 60 60" width="90" height="90" role="img" aria-label="Runner bot">
+          <rect x="14" y="18" width="32" height="28" rx="7" fill="#2f9e44"/>
+          <rect x="20" y="24" width="20" height="12" rx="4" fill="#dff5e3"/>
+          <circle cx="26" cy="30" r="2.6" fill="#17222b"/>
+          <circle cx="34" cy="30" r="2.6" fill="#17222b"/>
+          <line x1="30" y1="18" x2="30" y2="9" stroke="#17222b" stroke-width="3"/>
+          <circle cx="30" cy="7" r="3.4" fill="#e8b10c"/>
+          <rect x="10" y="26" width="5" height="14" rx="2.5" fill="#2f9e44"/>
+          <rect x="45" y="26" width="5" height="14" rx="2.5" fill="#2f9e44"/>
+          <rect x="20" y="46" width="7" height="9" rx="3" fill="#17222b"/>
+          <rect x="33" y="46" width="7" height="9" rx="3" fill="#17222b"/>
+        </svg>
+      </div>
+      <p class="fixerName" id="cardName">Glitch Fixer</p>
+      <p style="margin:.1em 0; font-weight:700;">Cyber Foundations I, Unit 5</p>
+      <p class="stars" id="cardStars"></p>
+      <p id="cardXp" style="font-weight:700; margin:.2em 0;"></p>
+    </div>
+
+    <div class="card">
+      <label for="nameInput" style="font-weight:700;">Your name for the card</label><br>
+      <input class="nameInput" id="nameInput" type="text" maxlength="24" placeholder="Type your name" style="margin-top:8px">
+    </div>
+
+    <div class="card">
+      <h2>Your levels</h2>
+      <ul class="lvlList" id="lvlList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Color themes</h2>
+      <p class="sub" style="margin-bottom:10px">Themes are just for looks. Clearing levels unlocks them.</p>
+      <div class="themeRow" id="themeRow"></div>
+      <p class="feedback" id="themeMsg"></p>
+    </div>
+
+    <div class="runRow">
+      <button class="btn big" id="againBtn" type="button">Play again</button>
+    </div>
+  </section>
+</main>
+
+<button id="teacherBtn" type="button">Teacher</button>
+
+<div id="teacherPanel" class="hidden" role="dialog" aria-label="Teacher panel">
+  <h2>Teacher panel</h2>
+  <p style="margin:.2em 0"><strong>Jump to</strong></p>
+  <div class="tGrid" id="jumpGrid"></div>
+  <p style="margin:.6em 0 .2em"><strong>Current level tools</strong></p>
+  <div class="tGrid">
+    <button id="tSkip" type="button">Skip this level (no points)</button>
+    <button id="tReveal" type="button">Reveal the bug and fix</button>
+    <button id="tReset" type="button">Reset everything</button>
+    <button id="tClose" type="button">Close panel</button>
+  </div>
+  <div class="revealBox hidden" id="revealBox"></div>
+  <p class="sub" style="margin-bottom:0">Reveal only shows the answer here. It never changes the board, scores points, or unlocks anything. Skipped levels earn no XP, stars, or unlocks.</p>
+</div>
+
+<script>
+"use strict";
+/* Directions: 0 East, 1 South, 2 West, 3 North */
+var DX = [1, 0, -1, 0];
+var DY = [0, 1, 0, -1];
+var DIRDEG = [90, 180, 270, 0]; /* arrow svg points up by default */
+
+function B(t, n, inner){ return { t:t, n:n || 0, inner: inner || null }; }
+function cloneBlocks(blocks){
+  return blocks.map(function(b){ return { t:b.t, n:b.n, inner: b.inner ? cloneBlocks(b.inner) : null }; });
+}
+function expand(blocks, out){
+  out = out || [];
+  blocks.forEach(function(b){
+    if (b.t === "REPEAT"){ for (var i=0;i<b.n;i++){ expand(b.inner, out); } }
+    else out.push(b.t);
+  });
+  return out;
+}
+function simulate(level, blocks){
+  var x = level.start.x, y = level.start.y, dir = level.start.dir;
+  var wallSet = {};
+  level.walls.forEach(function(w){ wallSet[w[0] + "," + w[1]] = true; });
+  var states = [{x:x, y:y, dir:dir, bump:false}];
+  expand(blocks).forEach(function(a){
+    var bump = false;
+    if (a === "LEFT") dir = (dir + 3) % 4;
+    else if (a === "RIGHT") dir = (dir + 1) % 4;
+    else if (a === "MOVE"){
+      var nx = x + DX[dir], ny = y + DY[dir];
+      if (nx < 0 || ny < 0 || nx >= level.cols || ny >= level.rows || wallSet[nx + "," + ny]) bump = true;
+      else { x = nx; y = ny; }
+    }
+    states.push({x:x, y:y, dir:dir, bump:bump});
+  });
+  return { states: states, success: (x === level.goal.x && y === level.goal.y), end:{x:x, y:y} };
+}
+
+/* Fix appliers: each returns a new script */
+function applySwap(script, i){ var s = cloneBlocks(script); var t = s[i]; s[i] = s[i+1]; s[i+1] = t; return s; }
+function applyWrap(script, range, n){
+  var s = cloneBlocks(script);
+  var inner = s.slice(range[0], range[1] + 1);
+  var rep = B("REPEAT", n, inner);
+  s.splice(range[0], range[1] - range[0] + 1, rep);
+  return s;
+}
+function applyCount(script, i, n){ var s = cloneBlocks(script); s[i].n = n; return s; }
+
+var LEVELS = [
+  {
+    name:"Level 1: First Steps", cols:5, rows:3,
+    start:{x:0,y:1,dir:0}, goal:{x:2,y:0},
+    walls:[[4,0],[0,2],[4,2]],
+    blocks:[B("MOVE"), B("LEFT"), B("MOVE"), B("MOVE")],
+    predict:false,
+    bugs:[{
+      tap:[1,2], kind:"swap",
+      chips:[
+        {label:"Swap with next", correct:true, apply:function(s){ return applySwap(s,1); }},
+        {label:"Wrap in REPEAT 2", correct:false},
+        {label:"Change the count", correct:false}
+      ],
+      reveal:"Bug: TURN LEFT and MOVE are in the wrong order.\nFix: tap TURN LEFT, then pick Swap with next."
+    }]
+  },
+  {
+    name:"Level 2: Too Short", cols:5, rows:3,
+    start:{x:0,y:1,dir:0}, goal:{x:4,y:1},
+    walls:[[1,0],[3,2],[0,2]],
+    blocks:[B("MOVE"), B("MOVE")],
+    predict:false,
+    bugs:[{
+      tap:[0,1], kind:"wrap",
+      chips:[
+        {label:"Wrap in REPEAT 2", correct:true, apply:function(s){ return applyWrap(s,[0,1],2); }},
+        {label:"Swap with next", correct:false},
+        {label:"Change the count", correct:false}
+      ],
+      reveal:"Bug: there is no REPEAT, so he stops short.\nFix: tap a MOVE block, then pick Wrap in REPEAT 2."
+    }]
+  },
+  {
+    name:"Level 3: Count It", cols:5, rows:3,
+    start:{x:0,y:1,dir:0}, goal:{x:3,y:1},
+    walls:[[4,0],[0,2],[4,2]],
+    blocks:[B("REPEAT", 2, [B("MOVE")])],
+    predict:false,
+    bugs:[{
+      tap:[0], kind:"count",
+      chips:[
+        {label:"Change the count to 3", correct:true, apply:function(s){ return applyCount(s,0,3); }},
+        {label:"Change the count to 5", correct:false},
+        {label:"Swap with next", correct:false}
+      ],
+      reveal:"Bug: REPEAT runs 2 times, but he needs 3 steps.\nFix: tap REPEAT, then pick Change the count to 3."
+    }]
+  },
+  {
+    name:"Level 4: The Corner", cols:4, rows:4,
+    start:{x:0,y:0,dir:0}, goal:{x:2,y:2},
+    walls:[[3,3],[0,3],[3,0]],
+    blocks:[B("MOVE"), B("RIGHT"), B("MOVE"), B("MOVE"), B("MOVE")],
+    predict:true,
+    bugs:[{
+      tap:[1,2], kind:"swap",
+      chips:[
+        {label:"Swap with next", correct:true, apply:function(s){ return applySwap(s,1); }},
+        {label:"Wrap in REPEAT 2", correct:false},
+        {label:"Change the count", correct:false}
+      ],
+      reveal:"Bug: TURN RIGHT comes one block too early.\nFix: tap TURN RIGHT, then pick Swap with next."
+    }]
+  },
+  {
+    name:"Level 5: Long Road", cols:6, rows:3,
+    start:{x:0,y:1,dir:0}, goal:{x:5,y:1},
+    walls:[[0,0],[3,0],[2,2],[5,2]],
+    blocks:[B("MOVE")],
+    predict:true,
+    bugs:[{
+      tap:[0], kind:"wrap",
+      chips:[
+        {label:"Wrap in REPEAT 5", correct:true, apply:function(s){ return applyWrap(s,[0,0],5); }},
+        {label:"Wrap in REPEAT 2", correct:false},
+        {label:"Swap with next", correct:false}
+      ],
+      reveal:"Bug: there is no REPEAT, so one step is all he gets.\nFix: tap MOVE, then pick Wrap in REPEAT 5."
+    }]
+  },
+  {
+    name:"Level 6: Up and Over", cols:5, rows:3,
+    start:{x:0,y:2,dir:0}, goal:{x:4,y:0},
+    walls:[[0,0],[1,1],[3,0]],
+    blocks:[B("REPEAT", 2, [B("MOVE")]), B("LEFT"), B("MOVE"), B("MOVE")],
+    predict:true,
+    bugs:[{
+      tap:[0], kind:"count",
+      chips:[
+        {label:"Change the count to 4", correct:true, apply:function(s){ return applyCount(s,0,4); }},
+        {label:"Change the count to 3", correct:false},
+        {label:"Wrap in REPEAT 2", correct:false}
+      ],
+      reveal:"Bug: REPEAT runs 2 times, but the road needs 4 steps.\nFix: tap REPEAT, then pick Change the count to 4."
+    }]
+  },
+  {
+    name:"BOSS: Double Glitch", cols:4, rows:4,
+    start:{x:0,y:0,dir:0}, goal:{x:2,y:3},
+    walls:[[3,3],[0,2]],
+    blocks:[B("MOVE"), B("REPEAT", 2, [B("MOVE")]), B("RIGHT"), B("LEFT"), B("MOVE")],
+    predict:true,
+    bugs:[
+      {
+        tap:[1,2], kind:"swap",
+        chips:[
+          {label:"Swap with next", correct:true, apply:function(s){ return applySwap(s,1); }},
+          {label:"Wrap in REPEAT 2", correct:false},
+          {label:"Change the count to 4", correct:false}
+        ],
+        reveal:"Boss bug 1: REPEAT and TURN RIGHT are in the wrong order.\nFix: tap REPEAT, then pick Swap with next."
+      },
+      {
+        tap:[2], kind:"count",
+        chips:[
+          {label:"Change the count to 3", correct:true, apply:function(s){ return applyCount(s,2,3); }},
+          {label:"Change the count to 5", correct:false},
+          {label:"Swap with next", correct:false}
+        ],
+        reveal:"Boss bug 2: REPEAT runs 2 times, but he needs 3 steps down.\nFix: after bug 1 is fixed, tap REPEAT, then pick Change the count to 3."
+      }
+    ]
+  }
+];
+
+var MAXXP = LEVELS.reduce(function(sum, L){ return sum + 100 + (L.predict ? 50 : 0); }, 0);
+var THEMES = [
+  { id:"ocean", name:"Ocean", color:"#0e7a5f", need:0 },
+  { id:"sunset", name:"Sunset", color:"#c2510f", need:3 },
+  { id:"forest", name:"Forest", color:"#3d7a1e", need:7 }
+];
+
+/* Game state */
+var S = null;
+function freshState(mode){
+  return {
+    mode: mode, /* "student" or "teacher" */
+    levelIdx: 0,
+    xp: 0, streak: 0, bestStreak: 0,
+    status: LEVELS.map(function(){ return "not played"; }), /* not played | cleared | skipped */
+    stars: LEVELS.map(function(){ return 0; }),
+    script: null, stage: "find", fixesApplied: 0,
+    misses: 0, checkMisses: 0, predictOk: null, predictFirstTry: false,
+    fixFirstTry: true, running: false, cleared: false
+  };
+}
+
+var $ = function(id){ return document.getElementById(id); };
+var screens = { start:$("startScreen"), game:$("gameScreen"), finish:$("finishScreen") };
+function show(name){
+  Object.keys(screens).forEach(function(k){ screens[k].classList.toggle("hidden", k !== name); });
+  window.scrollTo(0,0);
+}
+
+/* Speech: only when a Hear it button is tapped */
+document.querySelectorAll("[data-hear]").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var el = $(btn.getAttribute("data-hear"));
+    if (el && "speechSynthesis" in window){
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(el.textContent.trim()));
+    }
+  });
+});
+
+function setInstr(text){ $("gameInstr").textContent = text; }
+function setFeedback(text, kind){
+  var f = $("feedback"); f.textContent = text;
+  f.className = "feedback" + (kind ? " " + kind : "");
+}
+
+function blockLabel(b){
+  if (b.t === "MOVE") return "MOVE";
+  if (b.t === "LEFT") return "TURN LEFT";
+  if (b.t === "RIGHT") return "TURN RIGHT";
+  if (b.t === "REPEAT") return "REPEAT " + b.n;
+  return b.t;
+}
+function blockClass(b){
+  if (b.t === "MOVE") return "move";
+  if (b.t === "LEFT" || b.t === "RIGHT") return "turn";
+  return "repeat";
+}
+function makeBlockEl(b, idx, disabledSet, selectedIdx, fixedIdx){
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "blk " + blockClass(b);
+  btn.setAttribute("data-idx", idx);
+  var label = document.createElement("span");
+  label.textContent = blockLabel(b);
+  btn.appendChild(label);
+  if (b.t === "REPEAT" && b.inner){
+    var inner = document.createElement("span");
+    inner.className = "blkInner";
+    b.inner.forEach(function(ib){
+      var ibEl = document.createElement("span");
+      ibEl.className = "blk " + blockClass(ib);
+      ibEl.style.display = "block";
+      ibEl.textContent = blockLabel(ib);
+      inner.appendChild(ibEl);
+    });
+    btn.appendChild(inner);
+    var end = document.createElement("small");
+    end.textContent = "end repeat";
+    btn.appendChild(end);
+  }
+  if (disabledSet && disabledSet[idx]){ btn.disabled = true; btn.classList.add("wrong"); }
+  if (selectedIdx === idx) btn.classList.add("selected");
+  if (fixedIdx && fixedIdx[idx]) btn.classList.add("fixed");
+  btn.addEventListener("click", function(){ onBlockTap(idx); });
+  return btn;
+}
+
+var wrongBlocks = {}, fixedBlocks = {}, selectedBlock = -1;
+
+function renderBlocks(){
+  var wrap = $("blocks"); wrap.innerHTML = "";
+  S.script.forEach(function(b, i){
+    wrap.appendChild(makeBlockEl(b, i, wrongBlocks, selectedBlock, fixedBlocks));
+  });
+}
+
+function renderBoard(){
+  var L = LEVELS[S.levelIdx];
+  var board = $("board");
+  board.innerHTML = "";
+  board.style.gridTemplateColumns = "repeat(" + L.cols + ", 1fr)";
+  var wallSet = {};
+  L.walls.forEach(function(w){ wallSet[w[0] + "," + w[1]] = true; });
+  for (var y = 0; y < L.rows; y++){
+    for (var x = 0; x < L.cols; x++){
+      var c = document.createElement("div");
+      c.className = "cell" + (wallSet[x + "," + y] ? " wall" : "");
+      if (x === L.goal.x && y === L.goal.y){
+        c.classList.add("goal");
+        c.innerHTML = '<span class="flag"><svg viewBox="0 0 30 34" width="70%" height="70%" aria-label="Goal flag"><line x1="5" y1="2" x2="5" y2="32" stroke="#17222b" stroke-width="3"/><path d="M5 3 L27 9 L5 16 Z" fill="#e2483d"/></svg></span>';
+      }
+      board.appendChild(c);
+    }
+  }
+  var wrapEl = $("boardWrap");
+  wrapEl.style.aspectRatio = L.cols + " / " + L.rows;
+  placeHero(L.start.x, L.start.y, L.start.dir);
+}
+function placeHero(x, y, dir){
+  var L = LEVELS[S.levelIdx];
+  var hero = $("hero");
+  hero.style.width = (100 / L.cols) + "%";
+  hero.style.height = (100 / L.rows) + "%";
+  hero.style.left = (x * 100 / L.cols) + "%";
+  hero.style.top = (y * 100 / L.rows) + "%";
+  $("dirArrow").style.transform = "rotate(" + DIRDEG[dir] + "deg)";
+}
+
+function updateHud(){
+  var student = S.mode === "student";
+  $("xpWrap").classList.toggle("hidden", !student);
+  $("streakStat").classList.toggle("hidden", !student);
+  $("discussLine").classList.toggle("hidden", student);
+  if (student){
+    $("xpText").textContent = S.xp + " / " + MAXXP;
+    $("xpFill").style.width = Math.min(100, Math.round(S.xp / MAXXP * 100)) + "%";
+    $("streakStat").textContent = "Streak: " + S.streak + (S.streak >= 2 ? " (combo on)" : "");
+  }
+  $("levelTag").textContent = LEVELS[S.levelIdx].name + " (" + (S.levelIdx + 1) + " of " + LEVELS.length + ")";
+}
+
+function loadLevel(idx){
+  S.levelIdx = idx;
+  var L = LEVELS[idx];
+  S.script = cloneBlocks(L.blocks);
+  S.fixesApplied = 0;
+  S.misses = 0; S.checkMisses = 0;
+  S.predictOk = null; S.predictFirstTry = false; S.fixFirstTry = true;
+  S.cleared = false; S.running = false;
+  wrongBlocks = {}; fixedBlocks = {}; selectedBlock = -1;
+  $("levelStars").classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+  $("runBtn").disabled = true;
+  $("fixBox").classList.add("hidden");
+  setFeedback("", "");
+  $("replayNote").textContent = (S.status[idx] === "cleared")
+    ? "You cleared this one already. Replays are for practice and earn no new XP or stars." : "";
+  if (L.predict){
+    S.stage = "predict";
+    $("predictBox").classList.remove("hidden");
+    $("predYes").disabled = false; $("predNo").disabled = false;
+    setInstr("Predict first: will he make it?");
+  } else {
+    S.stage = "find";
+    $("predictBox").classList.add("hidden");
+    setInstr("Tap the block with the bug.");
+  }
+  renderBoard(); renderBlocks(); updateHud();
+  show("game");
+}
+
+/* Predict: scored against the LIVE simulation of the current buggy script */
+function onPredict(saidYes){
+  if (!S || S.stage !== "predict") return;
+  var L = LEVELS[S.levelIdx];
+  var outcome = simulate(L, S.script).success; /* live outcome of the buggy script */
+  var correct = (saidYes === outcome);
+  if (correct){
+    S.predictOk = true;
+    S.predictFirstTry = (S.checkMisses === 0);
+    S.stage = "find";
+    $("predictBox").classList.add("hidden");
+    setFeedback("Right. Now find the bug.", "good");
+    setInstr("Tap the block with the bug.");
+  } else {
+    S.misses++; S.checkMisses++;
+    if (S.mode === "student") S.streak = 0;
+    var btn = saidYes ? $("predYes") : $("predNo");
+    btn.disabled = true;
+    setFeedback("Not quite. Trace it again.", "bad");
+    updateHud();
+  }
+}
+$("predYes").addEventListener("click", function(){ onPredict(true); });
+$("predNo").addEventListener("click", function(){ onPredict(false); });
+
+function currentBug(){ return LEVELS[S.levelIdx].bugs[S.fixesApplied]; }
+
+function onBlockTap(idx){
+  if (!S || S.running || S.cleared) return;
+  if (S.stage !== "find") return;
+  var bug = currentBug();
+  if (!bug) return;
+  if (bug.tap.indexOf(idx) >= 0){
+    selectedBlock = idx;
+    S.stage = "fix";
+    if (S.checkMisses > 0) S.fixFirstTry = false;
+    S.checkMisses = 0;
+    renderBlocks();
+    showFixChips(bug);
+    setInstr("Pick the fix.");
+    setFeedback("That is the buggy block.", "good");
+  } else {
+    S.misses++; S.checkMisses++;
+    if (S.mode === "student") S.streak = 0;
+    wrongBlocks[idx] = true;
+    renderBlocks();
+    setFeedback("Not that block. Try another.", "bad");
+    updateHud();
+  }
+}
+
+function showFixChips(bug){
+  var box = $("fixChips"); box.innerHTML = "";
+  $("fixBox").classList.remove("hidden");
+  bug.chips.forEach(function(chip){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = chip.label;
+    b.addEventListener("click", function(){
+      if (chip.correct){
+        S.script = chip.apply(S.script);
+        fixedBlocks = {};
+        /* mark the block that now holds the fix */
+        if (bug.kind === "swap") fixedBlocks[selectedBlock] = true;
+        else if (bug.kind === "wrap") fixedBlocks[bug.tap[0]] = true;
+        else fixedBlocks[selectedBlock >= 0 ? selectedBlock : bug.tap[0]] = true;
+        S.fixesApplied++;
+        selectedBlock = -1; wrongBlocks = {};
+        $("fixBox").classList.add("hidden");
+        renderBlocks();
+        var more = S.fixesApplied < LEVELS[S.levelIdx].bugs.length;
+        if (more){
+          S.stage = "find"; S.checkMisses = 0;
+          $("runBtn").disabled = false; /* boss: may test the run, it will fail with one bug left */
+          setInstr("One bug fixed. One more hides here.");
+          setFeedback("Fixed. One bug left.", "good");
+        } else {
+          S.stage = "ready";
+          $("runBtn").disabled = false;
+          setInstr("Press RUN and watch.");
+          setFeedback("Fixed. Run it.", "good");
+        }
+      } else {
+        S.misses++; S.checkMisses++; S.fixFirstTry = false;
+        if (S.mode === "student") S.streak = 0;
+        b.disabled = true;
+        setFeedback("Not that fix. Try another.", "bad");
+        updateHud();
+      }
+    });
+    box.appendChild(b);
+  });
+}
+
+$("runBtn").addEventListener("click", function(){
+  if (!S || S.running) return;
+  /* Prediction lock: RUN stays off until a prediction is placed on Predict levels */
+  var L = LEVELS[S.levelIdx];
+  if (L.predict && S.predictOk !== true) { setFeedback("Predict first.", "bad"); return; }
+  if (S.fixesApplied === 0) { setFeedback("Fix the bug first.", "bad"); return; }
+  runAnimation();
+});
+
+function runAnimation(){
+  var L = LEVELS[S.levelIdx];
+  var result = simulate(L, S.script); /* success computed live, never scripted */
+  S.running = true;
+  $("runBtn").disabled = true;
+  setInstr("Watch him run.");
+  setFeedback("", "");
+  var i = 0;
+  var hero = $("hero");
+  function step(){
+    if (i >= result.states.length){
+      S.running = false;
+      finishRun(result.success);
+      return;
+    }
+    var st = result.states[i];
+    placeHero(st.x, st.y, st.dir);
+    hero.classList.remove("bump");
+    if (st.bump){ void hero.offsetWidth; hero.classList.add("bump"); }
+    i++;
+    setTimeout(step, 430);
+  }
+  step();
+}
+
+function finishRun(success){
+  var L = LEVELS[S.levelIdx];
+  if (!success){
+    /* Boss with one bug left fails here, by simulation */
+    if (S.fixesApplied < L.bugs.length){
+      S.stage = "find";
+      setInstr("Still stuck. Find the next bug.");
+      setFeedback("Still stuck. One bug left.", "bad");
+    } else {
+      S.stage = "ready";
+      $("runBtn").disabled = false;
+      setInstr("He got stuck. Check the script.");
+      setFeedback("He got stuck.", "bad");
+    }
+    renderBlocks();
+    return;
+  }
+  S.cleared = true;
+  S.stage = "done";
+  setInstr("He made it.");
+  var firstClear = S.status[S.levelIdx] !== "cleared";
+  var starStr = "";
+  if (S.mode === "student"){
+    if (firstClear){
+      /* Anti-farming: XP, stars, streak and combo only on first clear */
+      var gained = 0;
+      var combo = 0;
+      if (S.fixFirstTry){
+        gained += 100; /* fix points are earned only on a first-try fix */
+        S.streak++;
+        S.bestStreak = Math.max(S.bestStreak, S.streak);
+        if (S.streak >= 2) combo = (S.streak - 1) * 10;
+      } else S.streak = 0;
+      if (L.predict && S.predictFirstTry) gained += 50; /* predict points only on a first-try predict */
+      gained += combo;
+      S.xp += gained;
+      var stars = S.misses === 0 ? 3 : (S.misses <= 2 ? 2 : 1);
+      S.stars[S.levelIdx] = stars;
+      S.status[S.levelIdx] = "cleared";
+      starStr = "★".repeat(stars) + "☆".repeat(3 - stars);
+      setFeedback(gained > 0
+        ? ("Level clear. +" + gained + " XP" + (combo ? " (combo +" + combo + ")" : ""))
+        : "Level clear. First try earns XP.", "good");
+    } else {
+      setFeedback("Level clear. Practice run, no new XP.", "good");
+    }
+  } else {
+    if (firstClear) S.status[S.levelIdx] = "cleared";
+    setFeedback("He made it. Nice fix.", "good");
+  }
+  if (starStr){
+    var el = $("levelStars");
+    el.textContent = starStr;
+    el.classList.remove("hidden");
+  }
+  var next = $("nextBtn");
+  next.textContent = (S.levelIdx >= LEVELS.length - 1) ? "See your card" : "Next level";
+  next.classList.remove("hidden");
+  updateHud();
+}
+
+$("nextBtn").addEventListener("click", function(){
+  if (S.levelIdx >= LEVELS.length - 1) showFinish();
+  else loadLevel(S.levelIdx + 1);
+});
+
+/* Finish screen: honest states only (F2). Nothing shows as cleared unless it was. */
+function clearedCount(){ return S.status.filter(function(s){ return s === "cleared"; }).length; }
+function showFinish(){
+  show("finish");
+  renderFinish();
+}
+function renderFinish(){
+  var totalStars = S.stars.reduce(function(a,b){ return a + b; }, 0);
+  var maxStars = LEVELS.length * 3;
+  if (S.mode === "student"){
+    $("cardStars").textContent = totalStars + " of " + maxStars + " stars: " + "★".repeat(totalStars) + "☆".repeat(maxStars - totalStars);
+    $("cardXp").textContent = "Total XP: " + S.xp + " / " + MAXXP + "  ·  Best streak: " + S.bestStreak;
+  } else {
+    $("cardStars").textContent = "";
+    $("cardXp").textContent = "Teacher-Led mode: no individual scores.";
+  }
+  var list = $("lvlList"); list.innerHTML = "";
+  LEVELS.forEach(function(L, i){
+    var li = document.createElement("li");
+    var left = document.createElement("span"); left.textContent = L.name;
+    var right = document.createElement("span"); right.style.fontWeight = "700";
+    if (S.status[i] === "cleared"){
+      right.textContent = S.mode === "student" ? ("Cleared " + "★".repeat(S.stars[i]) + "☆".repeat(3 - S.stars[i])) : "Cleared";
+    } else if (S.status[i] === "skipped"){
+      right.textContent = "Skipped, not played";
+    } else {
+      right.textContent = "Not played yet";
+    }
+    li.appendChild(left); li.appendChild(right);
+    list.appendChild(li);
+  });
+  var row = $("themeRow"); row.innerHTML = "";
+  var cleared = clearedCount();
+  THEMES.forEach(function(th){
+    var unlocked = cleared >= th.need; /* unlocks keyed to first-clear mastery only */
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip";
+    b.innerHTML = "";
+    var sw = document.createElement("span"); sw.className = "swatch"; sw.style.background = th.color;
+    b.appendChild(sw);
+    b.appendChild(document.createTextNode(unlocked ? th.name : th.name + " (clear " + th.need + " levels to unlock)"));
+    b.disabled = !unlocked;
+    b.addEventListener("click", function(){
+      document.body.setAttribute("data-theme", th.id);
+      $("themeMsg").textContent = th.name + " theme on. Just for looks.";
+      $("themeMsg").className = "feedback good";
+    });
+    row.appendChild(b);
+  });
+}
+$("nameInput").addEventListener("input", function(){
+  var v = $("nameInput").value.trim();
+  $("cardName").textContent = v ? v + ", Glitch Fixer" : "Glitch Fixer";
+});
+$("againBtn").addEventListener("click", function(){
+  S = freshState(S.mode);
+  document.body.setAttribute("data-theme", "ocean");
+  $("nameInput").value = "";
+  $("cardName").textContent = "Glitch Fixer";
+  loadLevel(0);
+});
+
+/* Mode choice */
+$("modeStudent").addEventListener("click", function(){ S = freshState("student"); loadLevel(0); });
+$("modeTeacher").addEventListener("click", function(){ S = freshState("teacher"); loadLevel(0); });
+
+/* Teacher panel */
+var panel = $("teacherPanel");
+$("teacherBtn").addEventListener("click", function(){
+  panel.classList.toggle("hidden");
+  if (!panel.classList.contains("hidden")) buildJumpGrid();
+});
+$("tClose").addEventListener("click", function(){ panel.classList.add("hidden"); });
+
+function buildJumpGrid(){
+  var g = $("jumpGrid"); g.innerHTML = "";
+  function addBtn(label, fn){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = label;
+    b.addEventListener("click", fn);
+    g.appendChild(b);
+  }
+  addBtn("Start screen", function(){ if (!S) S = freshState("student"); show("start"); panel.classList.add("hidden"); });
+  LEVELS.forEach(function(L, i){
+    addBtn(L.name, function(){
+      if (!S) S = freshState("student");
+      loadLevel(i); panel.classList.add("hidden");
+    });
+  });
+  addBtn("Finish screen", function(){
+    if (!S) S = freshState("student");
+    showFinish(); panel.classList.add("hidden");
+  });
+}
+$("tSkip").addEventListener("click", function(){
+  if (!S || screens.game.classList.contains("hidden")) return;
+  /* Skip counts as revealed: no XP, no stars, no streak, no unlock progress */
+  if (S.status[S.levelIdx] !== "cleared") S.status[S.levelIdx] = "skipped";
+  panel.classList.add("hidden");
+  if (S.levelIdx >= LEVELS.length - 1) showFinish();
+  else loadLevel(S.levelIdx + 1);
+});
+$("tReveal").addEventListener("click", function(){
+  /* DISPLAY ONLY: writes text into this panel. Never touches the board, score, or unlocks. */
+  var box = $("revealBox");
+  if (!S || screens.game.classList.contains("hidden")){
+    box.textContent = "Jump to a level first, then reveal shows its bug here.";
+  } else {
+    var L = LEVELS[S.levelIdx];
+    var lines = L.bugs.map(function(bug, i){ return "Bug " + (i + 1) + " of " + L.bugs.length + "\n" + bug.reveal; });
+    var simBuggy = simulate(L, L.blocks).success;
+    box.textContent = L.name + "\n" + lines.join("\n\n") +
+      "\n\nLive check: the buggy script " + (simBuggy ? "reaches the flag." : "does not reach the flag.");
+  }
+  box.classList.remove("hidden");
+});
+$("tReset").addEventListener("click", function(){
+  S = freshState(S ? S.mode : "student");
+  document.body.setAttribute("data-theme", "ocean");
+  $("nameInput").value = "";
+  $("cardName").textContent = "Glitch Fixer";
+  $("revealBox").classList.add("hidden");
+  panel.classList.add("hidden");
+  show("start");
+});
+
+S = freshState("student");
+show("start");
+</script>
+</body>
+</html>

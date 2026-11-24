@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="base">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Code</title>
+<style>
+:root{
+  --bg:#10122b; --panel:#1b1e42; --panel2:#24275a; --ink:#f2f3ff; --muted:#aab0e8;
+  --acc:#ffd23f; --on:#3ddc84; --off:#2c2f5e; --bad:#ff5d73; --line:#3a3e78;
+}
+html[data-theme="sunset"]{ --bg:#2b1018; --panel:#421b26; --panel2:#5a2436; --ink:#fff2f0; --muted:#e8aaae; --acc:#ffb03f; --on:#ffe23f; --off:#5e2c38; --bad:#ff5d73; --line:#783a4a; }
+html[data-theme="forest"]{ --bg:#0d2417; --panel:#173824; --panel2:#1f4a2f; --ink:#effff4; --muted:#a8d8b6; --acc:#b6ff3f; --on:#3fd68f; --off:#2c5e40; --bad:#ff5d73; --line:#3a7850; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;padding:14px}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:30px;margin:6px 0 2px}
+h2{font-size:23px;margin:4px 0}
+.sub{color:var(--muted);font-size:15px}
+.screen{display:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:12px}
+.screen.active{display:block}
+.instr{font-size:19px;font-weight:600;margin:6px 0 12px}
+.prompt{display:none;background:var(--panel2);border-left:4px solid var(--acc);padding:8px 12px;border-radius:8px;margin:10px 0;font-size:15px}
+body.teacher .prompt{display:block}
+.hud{display:none;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px;margin-top:12px;font-size:15px}
+body.student .hud{display:flex}
+.xpbar{flex:1;height:12px;background:var(--off);border-radius:6px;overflow:hidden}
+.xpfill{height:100%;background:var(--acc);width:0%}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:10px 16px}
+button:hover{filter:brightness(1.15)}
+button.big{font-size:19px;padding:14px 22px;background:var(--acc);color:#14142b;border:none;font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+button.wrong{background:var(--bad);color:#fff;text-decoration:line-through}
+button.right{background:var(--on);color:#0b2013;font-weight:700}
+.modebtn{font-size:18px;padding:16px 20px;margin:6px}
+.board{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tile{width:86px;padding:8px 4px;text-align:center;border-radius:12px;border:2px solid var(--line);background:var(--off);user-select:none}
+.tile .pv{font-size:13px;color:var(--muted)}
+.tile .bv{font-size:30px;font-weight:800}
+.tile.on{background:var(--on);color:#0b2013}
+.tile.on .pv{color:#0b2013}
+.tile.fixed{cursor:default}
+body.student .tile{cursor:pointer}
+.tile.clickable{cursor:pointer}
+.total{font-size:22px;font-weight:700}
+.total b{color:var(--acc)}
+.feedback{font-size:18px;min-height:26px;font-weight:600;margin:8px 0}
+.opts{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.opts button{font-size:20px;min-width:84px}
+.pixgrid{display:inline-block;background:#000;border:2px solid var(--line);border-radius:8px;padding:6px}
+.pixrow{display:flex;gap:4px;margin:2px 0}
+.pix{width:26px;height:26px;border-radius:5px;background:#23233f}
+.pix.lit{background:var(--acc)}
+.chart{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:5px;margin:10px 0;font-size:14px}
+.chart div{background:var(--panel2);border-radius:7px;padding:4px 7px;text-align:center}
+.chart b{color:var(--acc)}
+.minis{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0}
+.mini .bits{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;letter-spacing:2px}
+.mini .val{color:var(--muted);font-size:14px}
+.readout{font-size:21px;font-weight:700}
+.readout b{color:var(--acc)}
+#teacherBtn{position:fixed;right:12px;bottom:12px;z-index:40;font-size:13px;padding:7px 12px;opacity:.75}
+#tpanel{position:fixed;right:12px;bottom:56px;z-index:41;width:300px;max-width:92vw;background:var(--panel);border:2px solid var(--acc);border-radius:14px;padding:14px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#tpanel.open{display:block}
+#tpanel h3{margin:0 0 8px;font-size:16px}
+#tpanel button{margin:3px 2px;padding:7px 10px;font-size:14px}
+#tp-reveal{background:var(--panel2);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:15px;min-height:22px}
+.hear{font-size:13px;padding:5px 10px;margin-left:8px;vertical-align:middle}
+.card{background:linear-gradient(135deg,var(--panel2),var(--panel));border:2px solid var(--acc);border-radius:16px;padding:18px;text-align:center;margin:12px 0}
+.card .big{font-size:27px;font-weight:800}
+input[type=text]{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink)}
+.statuslist{font-size:16px;line-height:1.7}
+.timer{font-size:21px;font-weight:800;color:var(--acc)}
+.themes button{margin:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Pixel Code</h1>
+<div class="sub">Cyber Foundations I, Unit 7: Data, Computers, and Society</div>
+
+<div class="hud" id="hud">
+  <div>XP <b id="xpnum">0</b></div>
+  <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
+  <div>Streak <b id="streaknum">0</b></div>
+  <div>Stars <b id="starsnum">0</b></div>
+</div>
+
+<!-- START -->
+<section class="screen active" id="scr-start">
+  <h2>Pixel Code</h2>
+  <p class="instr">Flip the bits. Build numbers, pictures, and secret messages.<button class="hear" data-say="Flip the bits. Build numbers, pictures, and secret messages.">Hear it</button></p>
+  <p class="sub">Pick how you will play.</p>
+  <button class="modebtn" id="mode-student">Student-Led</button>
+  <button class="modebtn" id="mode-teacher">Teacher-Led</button>
+</section>
+
+<!-- BUILD THE NUMBER -->
+<section class="screen" id="scr-build">
+  <h2>1. Build the Number</h2>
+  <p class="instr">Flip tiles until your total matches the target.<button class="hear" data-say="Flip tiles until your total matches the target.">Hear it</button></p>
+  <div class="prompt">Ask the class: how can you tell what each tile is worth before you flip it?</div>
+  <div class="total">Target: <b id="build-target">0</b> &nbsp; Your total: <b id="build-total">0</b></div>
+  <div class="board" id="build-board"></div>
+  <div class="feedback" id="build-fb"></div>
+  <button class="big" id="build-next" style="display:none">Next</button>
+</section>
+
+<!-- READ THE BITS -->
+<section class="screen" id="scr-read">
+  <h2>2. Read the Bits</h2>
+  <p class="instr">What number do these bits make?<button class="hear" data-say="What number do these bits make?">Hear it</button></p>
+  <div class="prompt">Ask the class: which tile adds the most? Which adds the least?</div>
+  <div class="board" id="read-board"></div>
+  <div class="opts" id="read-opts"></div>
+  <div class="feedback" id="read-fb"></div>
+  <button class="big" id="read-next" style="display:none">Next</button>
+</section>
+
+<!-- PIXEL ROWS -->
+<section class="screen" id="scr-pixel">
+  <h2>3. Pixel Rows</h2>
+  <p class="instr" id="pixel-instr">Flip the bits to match this row's number.<button class="hear" data-say="Flip the bits to match this row's number.">Hear it</button></p>
+  <div class="prompt">Ask the class: how can one byte draw a whole row of a picture?</div>
+  <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+    <div>
+      <div class="sub">Your picture</div>
+      <div class="pixgrid" id="pix-grid"></div>
+      <div class="sub" id="pix-name"></div>
+    </div>
+    <div style="flex:1;min-width:280px">
+      <div class="total" id="pixel-target-line">Row number: <b id="pixel-target">0</b></div>
+      <div class="board" id="pixel-board"></div>
+      <div class="opts" id="pixel-opts"></div>
+      <div class="feedback" id="pixel-fb"></div>
+    </div>
+  </div>
+  <button class="big" id="pixel-next" style="display:none">Next</button>
+  <div id="pixel-extra" style="display:none;margin-top:10px">
+    <span class="sub">Extra pictures, just for fun:</span>
+    <button data-pic="STAR">Star</button>
+    <button data-pic="A">Letter A</button>
+    <button data-pic="HEART">Heart</button>
+  </div>
+</section>
+
+<!-- SECRET MESSAGE -->
+<section class="screen" id="scr-msg">
+  <h2>4. Secret Message</h2>
+  <p class="instr" id="msg-instr">Use the chart. Flip the bits for each letter.<button class="hear" data-say="Use the chart. Flip the bits for each letter.">Hear it</button></p>
+  <div class="prompt">Ask the class: why do letters need numbers at all?</div>
+  <div class="chart" id="msg-chart"></div>
+  <div class="total" id="msg-prompt"></div>
+  <div class="minis" id="msg-minis"></div>
+  <div class="board" id="msg-board"></div>
+  <div class="readout" id="msg-readout"></div>
+  <div class="opts" id="msg-opts"></div>
+  <div class="feedback" id="msg-fb"></div>
+  <button class="big" id="msg-next" style="display:none">Next</button>
+</section>
+
+<!-- BOSS -->
+<section class="screen" id="scr-boss">
+  <h2>Boss Round: Bit Rush</h2>
+  <p class="instr" id="boss-instr">Answer fast for a time bonus. The clock never fails you.<button class="hear" data-say="Answer fast for a time bonus. The clock never fails you.">Hear it</button></p>
+  <div class="prompt">Ask the class: what trick helps you read bits fast?</div>
+  <div class="timer" id="boss-timer">Time: 60</div>
+  <div class="sub" id="boss-count"></div>
+  <div class="board" id="boss-board"></div>
+  <div class="opts" id="boss-opts"></div>
+  <div class="feedback" id="boss-fb"></div>
+  <button class="big" id="boss-next" style="display:none">Finish</button>
+</section>
+
+<!-- FINISH -->
+<section class="screen" id="scr-finish">
+  <h2>You did it!</h2>
+  <p class="instr">Type your name for your Pixel Coder card.<button class="hear" data-say="Type your name for your Pixel Coder card.">Hear it</button></p>
+  <input type="text" id="fin-name" placeholder="Your name" maxlength="24">
+  <button id="fin-make">Make my card</button>
+  <div class="card" id="fin-card" style="display:none">
+    <div class="big" id="fin-card-name">Pixel Coder</div>
+    <div id="fin-card-line"></div>
+    <div class="sub">Pixel Code, Cyber Foundations I, Unit 7</div>
+  </div>
+  <h3>Your activities</h3>
+  <div class="statuslist" id="fin-status"></div>
+  <h3>Color themes</h3>
+  <div class="themes" id="fin-themes"></div>
+  <p class="sub" id="fin-theme-note"></p>
+  <button class="big" id="fin-again">Play again</button>
+</section>
+</div>
+
+<button id="teacherBtn">Teacher</button>
+<div id="tpanel">
+  <h3>Teacher Panel</h3>
+  <div>
+    <button data-jump="scr-start">Start</button>
+    <button data-jump="scr-build">Build</button>
+    <button data-jump="scr-read">Read</button>
+    <button data-jump="scr-pixel">Pixel</button>
+    <button data-jump="scr-msg">Message</button>
+    <button data-jump="scr-boss">Boss</button>
+    <button data-jump="scr-finish">Finish</button>
+  </div>
+  <div>
+    <button id="tp-skip">Skip this step</button>
+    <button id="tp-reveal-btn">Reveal answer</button>
+    <button id="tp-reset">Reset all</button>
+    <button id="tp-close">Close</button>
+  </div>
+  <div id="tp-reveal">Reveal shows the answer here only. It never changes the board.</div>
+</div>
+
+<script>
+"use strict";
+var PV=[128,64,32,16,8,4,2,1];
+function $(id){return document.getElementById(id);}
+function bitsOf(v){var b=[];for(var i=0;i<8;i++){b.push((v&PV[i])?1:0);}return b;}
+function valOf(bits){var s=0;for(var i=0;i<8;i++){if(bits[i])s+=PV[i];}return s;}
+function bitsStr(v){return bitsOf(v).join("");}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function uniqOpts(correct,cands){var out=[correct];for(var i=0;i<cands.length&&out.length<4;i++){var c=cands[i];if(c>=0&&c<=255&&out.indexOf(c)<0)out.push(c);}var k=3;while(out.length<4){if(out.indexOf(correct+k)<0&&correct+k<=255)out.push(correct+k);k+=7;}return shuffle(out);}
+
+var S=null;
+function freshState(){return {mode:"student",xp:0,streak:0,best:0,stars:0,
+  mastered:{},actStars:{},misses:{build:0,read:0,pixel:0,msg:0,boss:0},
+  touched:{},progress:{},playedSet:{},actStatus:{},themes:["base"],theme:"base"};}
+S=freshState();
+
+var ACTS=[["build","Build the Number"],["read","Read the Bits"],["pixel","Pixel Rows"],["msg","Secret Message"],["boss","Boss Round"]];
+var screenAct={"scr-build":"build","scr-read":"read","scr-pixel":"pixel","scr-msg":"msg","scr-boss":"boss"};
+var curScreen="scr-start";
+
+function show(id){var ss=document.querySelectorAll(".screen");for(var i=0;i<ss.length;i++)ss[i].classList.remove("active");$(id).classList.add("active");curScreen=id;$("tp-reveal").textContent="Reveal shows the answer here only. It never changes the board.";}
+function updateHUD(){$("xpnum").textContent=S.xp;$("xpfill").style.width=Math.min(100,S.xp/4)+"%";$("streaknum").textContent=S.streak;$("starsnum").textContent=S.stars;}
+function award(act,pts){if(S.mode==="student"&&!S.mastered[act]){S.xp+=pts;}updateHUD();}
+var TOTAL_ITEMS={build:5,read:5,pixel:7,msg:5,boss:8};
+function playedCount(act){return Object.keys(S.playedSet[act]||{}).length;}
+function markPlayed(act,key){if(!S.playedSet[act])S.playedSet[act]={};S.playedSet[act][key]=true;}
+function completeAct(act){
+  if(playedCount(act)>=TOTAL_ITEMS[act]){
+    if(S.mastered[act])return;
+    S.mastered[act]=true;S.actStatus[act]="cleared";
+    var m=S.misses[act]||0;var st=m===0?3:(m<=2?2:1);S.actStars[act]=st;if(S.mode==="student")S.stars+=st;
+    var n=Object.keys(S.mastered).length;
+    if(n>=2&&S.themes.indexOf("sunset")<0)S.themes.push("sunset");
+    if(S.mastered.boss&&S.themes.indexOf("forest")<0)S.themes.push("forest");
+  }else{
+    if(S.mastered[act])return;
+    S.actStatus[act]=playedCount(act)>0?"partial":"skipped";
+  }
+  updateHUD();}
+function statusText(act){if(S.mastered[act])return "Cleared, "+(S.actStars[act]||0)+" stars";if(S.actStatus[act]==="skipped")return "Skipped";if(S.actStatus[act]==="partial"||S.progress[act])return "Started, not finished";return "Not played yet";}
+
+/* ---------- board factory ---------- */
+function makeBoard(el,clickable,onChange){
+  var bits=[0,0,0,0,0,0,0,0];
+  function render(){el.innerHTML="";bits.forEach(function(b,i){var d=document.createElement("div");d.className="tile"+(b?" on":"")+(!clickable?" fixed":" clickable");d.innerHTML='<div class="pv">'+PV[i]+'</div><div class="bv">'+b+'</div>';if(clickable){d.addEventListener("click",function(){bits[i]=bits[i]?0:1;render();if(onChange)onChange(valOf(bits),bits.slice());});}el.appendChild(d);});}
+  render();
+  return {value:function(){return valOf(bits);},bits:function(){return bits.slice();},
+    set:function(v){bits=bitsOf(v);render();},clear:function(){bits=[0,0,0,0,0,0,0,0];render();},
+    render:render};
+}
+
+/* ---------- multiple choice with retry pattern ---------- */
+function askMC(optsEl,fbEl,options,correct,act,pts,onDone){
+  var tries=0;optsEl.innerHTML="";fbEl.textContent="";
+  options.forEach(function(opt){
+    var b=document.createElement("button");b.textContent=opt.label;
+    b.addEventListener("click",function(){
+      if(opt.value===correct){
+        b.classList.add("right");
+        var kids=optsEl.querySelectorAll("button");for(var i=0;i<kids.length;i++)kids[i].disabled=true;
+        if(tries===0){award(act,pts);if(S.mode==="student"){S.streak++;if(S.streak>S.best)S.best=S.streak;}}
+        fbEl.textContent="Right!";
+        updateHUD();onDone();
+      }else{
+        b.disabled=true;b.classList.add("wrong");tries++;S.misses[act]++;S.streak=0;updateHUD();
+        fbEl.textContent="Not that one. Try again.";
+      }});
+    optsEl.appendChild(b);});
+}
+
+/* ---------- BUILD THE NUMBER ---------- */
+var BUILD_TARGETS=[13,42,100,255,77];
+var buildIdx=0,buildBoard=null;
+function startBuild(){buildIdx=0;buildBoard=makeBoard($("build-board"),true,function(){checkBuild();});nextBuild();}
+function nextBuild(){
+  if(buildIdx>=BUILD_TARGETS.length){completeAct("build");show("scr-read");startRead();return;}
+  S.touched.build=true;S.progress.build=true;
+  buildBoard.clear();
+  $("build-target").textContent=BUILD_TARGETS[buildIdx];
+  $("build-total").textContent="0";$("build-fb").textContent="";$("build-next").style.display="none";
+}
+function checkBuild(){
+  var v=buildBoard.value();$("build-total").textContent=v;
+  if(v===BUILD_TARGETS[buildIdx]){$("build-fb").textContent="You built it!";markPlayed("build","t"+buildIdx);award("build",10);if(S.mode==="student"){S.streak++;if(S.streak>S.best)S.best=S.streak;updateHUD();}$("build-next").style.display="inline-block";}
+  else{$("build-fb").textContent="";}
+}
+$("build-next").addEventListener("click",function(){buildIdx++;nextBuild();});
+
+/* ---------- READ THE BITS ---------- */
+var READ_POOL=[5,9,18,33,65,97,130,200,254,27];
+var readRounds=[],readIdx=0,readBoard=null;
+function startRead(){readRounds=shuffle(READ_POOL.slice()).slice(0,5);readIdx=0;readBoard=makeBoard($("read-board"),false,null);nextRead();}
+function nextRead(){
+  if(readIdx>=readRounds.length){completeAct("read");show("scr-pixel");startPixel();return;}
+  S.touched.read=true;S.progress.read=true;
+  var v=readRounds[readIdx];readBoard.set(v);
+  $("read-next").style.display="none";
+  var opts=uniqOpts(v,[v+1,v-1,v+2,v-2,v+10,v-10,v+16,v-16]).map(function(x){return {label:String(x),value:x};});
+  askMC($("read-opts"),$("read-fb"),opts,v,"read",10,function(){markPlayed("read","r"+readIdx);$("read-next").style.display="inline-block";});
+}
+$("read-next").addEventListener("click",function(){readIdx++;nextRead();});
+
+/* ---------- PIXEL ROWS ---------- */
+var PICS={HEART:[102,255,255,126,60],STAR:[24,255,126,60,102],A:[60,102,126,102,102]};
+var pixPic="HEART",pixRow=0,pixPhase="build",pixRevIdx=0,pixBoard=null,pixScored=true,pixLitRows=[];
+var REV=[{pic:"STAR",row:0},{pic:"A",row:2}];
+function drawPixGrid(lit){var g=$("pix-grid");g.innerHTML="";var rows=PICS[pixPic];for(var r=0;r<5;r++){var row=document.createElement("div");row.className="pixrow";row.setAttribute("data-r",r);var bits=(lit.indexOf(r)>=0)?bitsOf(rows[r]):[0,0,0,0,0,0,0,0];bits.forEach(function(b){var c=document.createElement("div");c.className="pix"+(b?" lit":"");row.appendChild(c);});g.appendChild(row);}$("pix-name").textContent="Picture: "+pixPic;}
+function startPixel(){pixPic="HEART";pixScored=true;pixBoard=makeBoard($("pixel-board"),true,function(){checkPixel();});startPixPic("HEART",true);}
+function startPixPic(name,scored){pixPic=name;pixScored=scored;pixRow=0;pixPhase="build";pixLitRows=[];drawPixGrid([]);nextPixRow();}
+function nextPixRow(){
+  S.touched.pixel=true;if(pixScored)S.progress.pixel=true;
+  $("pixel-opts").innerHTML="";$("pixel-next").style.display="none";$("pixel-extra").style.display="none";
+  if(pixRow>=5){
+    if(pixScored&&pixPic==="HEART"){pixPhase="reverse";pixRevIdx=0;nextPixRev();return;}
+    $("pixel-fb").textContent="Picture done!";$("pixel-instr").firstChild.textContent="Picture done! Pick another, or move on.";
+    $("pixel-extra").style.display="block";$("pixel-next").style.display="inline-block";$("pixel-next").textContent="Next: Secret Message";return;
+  }
+  $("pixel-instr").firstChild.textContent="Flip the bits to match this row's number.";
+  $("pixel-target-line").style.display="block";
+  $("pixel-target").textContent=PICS[pixPic][pixRow];
+  pixBoard.clear();$("pixel-fb").textContent="";
+}
+function checkPixel(){
+  if(pixPhase!=="build")return;
+  if(pixBoard.value()===PICS[pixPic][pixRow]){
+    if(pixScored){markPlayed("pixel","row"+pixRow);award("pixel",10);}
+    pixLitRows.push(pixRow);
+    drawPixGrid(pixLitRows);$("pixel-fb").textContent="Row lit!";
+    pixRow++;setTimeout(nextPixRow,450);
+  }
+}
+function nextPixRev(){
+  if(pixRevIdx>=REV.length){completeAct("pixel");show("scr-msg");startMsg();return;}
+  S.touched.pixel=true;
+  var item=REV[pixRevIdx];var savedPic=pixPic;pixPic=item.pic;drawPixGrid([0,1,2,3,4]);pixPic=savedPic;
+  var grows=$("pix-grid").children;if(grows[item.row])grows[item.row].style.outline="3px solid var(--acc)";
+  var v=PICS[item.pic][item.row];
+  $("pixel-instr").firstChild.textContent="The outlined row is lit. What is its number?";
+  $("pixel-target-line").style.display="none";pixBoard.clear();
+  var opts=uniqOpts(v,[v+1,v-1,v+2,v-2,v+8,v-8,v+16,v-16]).map(function(x){return {label:String(x),value:x};});
+  askMC($("pixel-opts"),$("pixel-fb"),opts,v,"pixel",10,function(){markPlayed("pixel","rev"+pixRevIdx);$("pixel-next").style.display="inline-block";$("pixel-next").textContent="Next";});
+}
+$("pixel-next").addEventListener("click",function(){
+  if(pixPhase==="reverse"){pixRevIdx++;nextPixRev();}
+  else{completeAct("pixel");show("scr-msg");startMsg();}
+});
+document.querySelectorAll("#pixel-extra button").forEach(function(b){b.addEventListener("click",function(){startPixPic(b.getAttribute("data-pic"),false);});});
+
+/* ---------- SECRET MESSAGE ---------- */
+var ENC_WORD="CAT",DEC_WORDS=[{bytes:[83,85,78],distr:["RUN","FUN","SAD"]},{bytes:[77,65,80],distr:["MOP","CAP","MAT"]}];
+var msgPhase="encode",encIdx=0,decIdx=0,msgBoard=null;
+function buildChart(){var c=$("msg-chart");c.innerHTML="";for(var code=65;code<=90;code++){var d=document.createElement("div");d.innerHTML="<b>"+String.fromCharCode(code)+"</b> = "+code;c.appendChild(d);}}
+function startMsg(){buildChart();msgPhase="encode";encIdx=0;msgBoard=makeBoard($("msg-board"),true,function(){checkEncode();});nextEncode();}
+function nextEncode(){
+  S.touched.msg=true;S.progress.msg=true;
+  $("msg-minis").innerHTML="";$("msg-opts").innerHTML="";$("msg-next").style.display="none";
+  if(encIdx>=ENC_WORD.length){msgPhase="decode";decIdx=0;nextDecode();return;}
+  var ch=ENC_WORD.charAt(encIdx),code=ch.charCodeAt(0);
+  $("msg-instr").firstChild.textContent="Use the chart. Flip the bits for each letter.";
+  $("msg-prompt").innerHTML="Word: "+ENC_WORD+" &nbsp; Letter "+(encIdx+1)+": <b>"+ch+"</b> = "+code;
+  msgBoard.clear();updMsgReadout(0);
+  $("msg-fb").textContent="";
+}
+function updMsgReadout(v){var letter=(v>=65&&v<=90)?String.fromCharCode(v):"?";$("msg-readout").innerHTML="Your bits make: <b>"+v+"</b> = letter <b>"+letter+"</b>";}
+function checkEncode(){
+  var v=msgBoard.value();updMsgReadout(v);
+  var code=ENC_WORD.charCodeAt(encIdx);
+  if(v===code){$("msg-fb").textContent="Letter locked!";markPlayed("msg","enc"+encIdx);award("msg",10);encIdx++;setTimeout(nextEncode,500);}
+}
+function nextDecode(){
+  if(decIdx>=DEC_WORDS.length){completeAct("msg");show("scr-boss");startBoss();return;}
+  S.touched.msg=true;S.progress.msg=true;
+  var item=DEC_WORDS[decIdx];
+  var word=item.bytes.map(function(b){return String.fromCharCode(b);}).join("");
+  $("msg-instr").firstChild.textContent="Read the three bytes. Which word do they spell?";
+  $("msg-prompt").innerHTML="Decode message "+(decIdx+1)+" of "+DEC_WORDS.length;
+  msgBoard.clear();
+  var minis=$("msg-minis");minis.innerHTML="";
+  item.bytes.forEach(function(b){var d=document.createElement("div");d.className="mini";d.innerHTML='<div class="bits">'+bitsStr(b)+'</div><div class="val">byte = '+b+'</div>';minis.appendChild(d);});
+  $("msg-readout").innerHTML="These bytes spell: <b>???</b>";
+  $("msg-next").style.display="none";
+  var opts=shuffle([word].concat(item.distr)).map(function(w){return {label:w,value:w};});
+  askMC($("msg-opts"),$("msg-fb"),opts,word,"msg",15,function(){
+    markPlayed("msg","dec"+decIdx);
+    var vals=minis.querySelectorAll(".val");
+    item.bytes.forEach(function(b,i){if(vals[i])vals[i].textContent="byte = "+b+" = "+String.fromCharCode(b);});
+    $("msg-readout").innerHTML="These bytes spell: <b>"+word+"</b>";
+    $("msg-next").style.display="inline-block";
+  });
+}
+$("msg-next").addEventListener("click",function(){decIdx++;nextDecode();});
+
+/* ---------- BOSS ---------- */
+var bossQs=[],bossIdx=0,bossBoard=null,bossTimer=null,bossLeft=60,bossTimeUp=false;
+function startBoss(){
+  bossQs=[];
+  var readVals=shuffle([12,40,88,150,201,99]);
+  var letters=shuffle(["H","K","R","T","W","Z"]);
+  for(var i=0;i<8;i++){
+    if(i%2===0)bossQs.push({type:"read",value:readVals[i/2]});
+    else bossQs.push({type:"letter",value:letters[(i-1)/2].charCodeAt(0)});
+  }
+  bossIdx=0;bossLeft=60;bossTimeUp=false;
+  bossBoard=makeBoard($("boss-board"),false,null);
+  $("boss-timer").textContent="Time: 60";
+  if(bossTimer)clearInterval(bossTimer);
+  bossTimer=setInterval(function(){bossLeft--;if(bossLeft<=0){bossLeft=0;bossTimeUp=true;clearInterval(bossTimer);bossTimer=null;$("boss-timer").textContent="Time bonus over. Keep going!";}else{$("boss-timer").textContent="Time: "+bossLeft;}},1000);
+  nextBoss();
+}
+function nextBoss(){
+  if(bossIdx>=bossQs.length){
+    if(bossTimer){clearInterval(bossTimer);bossTimer=null;}
+    if(!bossTimeUp&&S.mode==="student"&&!S.mastered.boss&&playedCount("boss")>=TOTAL_ITEMS.boss){S.xp+=Math.ceil(bossLeft/2);}
+    completeAct("boss");updateHUD();
+    $("boss-fb").textContent="Boss round done!";$("boss-opts").innerHTML="";$("boss-count").textContent="";
+    $("boss-next").style.display="inline-block";return;
+  }
+  S.touched.boss=true;S.progress.boss=true;
+  var q=bossQs[bossIdx];bossBoard.set(q.value);
+  $("boss-count").textContent="Question "+(bossIdx+1)+" of "+bossQs.length;
+  $("boss-next").style.display="none";
+  var opts,correct;
+  if(q.type==="read"){$("boss-instr").firstChild.textContent="What number do these bits make?";correct=q.value;opts=uniqOpts(q.value,[q.value+1,q.value-1,q.value+2,q.value-2,q.value+10,q.value-10]).map(function(x){return {label:String(x),value:x};});}
+  else{$("boss-instr").firstChild.textContent="Which letter is this byte? Use the chart in your head: A is 65.";correct=String.fromCharCode(q.value);var near=[String.fromCharCode(q.value+1),String.fromCharCode(q.value-1),String.fromCharCode(q.value+2)];opts=shuffle([correct].concat(near)).map(function(x){return {label:x,value:x};});}
+  askMC($("boss-opts"),$("boss-fb"),opts,correct,"boss",10,function(){markPlayed("boss","q"+bossIdx);bossIdx++;setTimeout(nextBoss,350);});
+}
+$("boss-next").addEventListener("click",function(){show("scr-finish");renderFinish();});
+
+/* ---------- FINISH ---------- */
+function renderFinish(){
+  var list=$("fin-status");list.innerHTML="";
+  ACTS.forEach(function(a){var d=document.createElement("div");d.textContent=a[1]+": "+statusText(a[0]);list.appendChild(d);});
+  var th=$("fin-themes");th.innerHTML="";
+  [["base","Pixel"],["sunset","Sunset"],["forest","Forest"]].forEach(function(t){
+    var b=document.createElement("button");var un=S.themes.indexOf(t[0])>=0;
+    b.textContent=t[1]+(un?"":" (locked)");b.disabled=!un;
+    b.addEventListener("click",function(){S.theme=t[0];document.documentElement.setAttribute("data-theme",t[0]);});
+    th.appendChild(b);});
+  $("fin-theme-note").textContent="Sunset unlocks when 2 activities are cleared. Forest unlocks when the Boss Round is cleared. Themes change colors only.";
+  $("fin-card").style.display="none";
+}
+$("fin-make").addEventListener("click",function(){
+  var name=$("fin-name").value.trim()||"Pixel Coder";
+  $("fin-card-name").textContent=name+" , Pixel Coder";
+  $("fin-card-line").textContent="XP "+S.xp+" , Stars "+S.stars+" , Best streak "+S.best;
+  $("fin-card").style.display="block";
+});
+$("fin-again").addEventListener("click",function(){resetAll();});
+
+/* ---------- TEACHER PANEL ---------- */
+function revealText(){
+  if(curScreen==="scr-build")return "Target "+BUILD_TARGETS[Math.min(buildIdx,BUILD_TARGETS.length-1)]+" = bits "+bitsStr(BUILD_TARGETS[Math.min(buildIdx,BUILD_TARGETS.length-1)])+".";
+  if(curScreen==="scr-read")return "The bits on the board make "+readRounds[Math.min(readIdx,readRounds.length-1)]+".";
+  if(curScreen==="scr-pixel"){
+    if(pixPhase==="reverse"){var it=REV[Math.min(pixRevIdx,REV.length-1)];return "The lit row is worth "+PICS[it.pic][it.row]+".";}
+    return "This row needs "+PICS[pixPic][pixRow]+" = bits "+bitsStr(PICS[pixPic][pixRow])+".";}
+  if(curScreen==="scr-msg"){
+    if(msgPhase==="encode"){var ch=ENC_WORD.charAt(Math.min(encIdx,ENC_WORD.length-1));return "Letter "+ch+" = "+ch.charCodeAt(0)+" = bits "+bitsStr(ch.charCodeAt(0))+".";}
+    var it2=DEC_WORDS[Math.min(decIdx,DEC_WORDS.length-1)];return "The bytes spell "+it2.bytes.map(function(b){return String.fromCharCode(b);}).join("")+".";}
+  if(curScreen==="scr-boss"){var q=bossQs[Math.min(bossIdx,bossQs.length-1)];if(!q)return "No question yet.";return q.type==="read"?("The bits make "+q.value+"."):("The byte is letter "+String.fromCharCode(q.value)+".");}
+  return "Nothing to reveal on this screen.";
+}
+$("teacherBtn").addEventListener("click",function(){$("tpanel").classList.toggle("open");});
+$("tp-close").addEventListener("click",function(){$("tpanel").classList.remove("open");});
+$("tp-reveal-btn").addEventListener("click",function(){$("tp-reveal").textContent=revealText();});
+document.querySelectorAll("#tpanel [data-jump]").forEach(function(b){b.addEventListener("click",function(){
+  var t=b.getAttribute("data-jump");show(t);
+  if(t==="scr-build"&&!buildBoard)startBuild();
+  if(t==="scr-read"&&!readBoard)startRead();
+  if(t==="scr-pixel"&&!pixBoard)startPixel();
+  if(t==="scr-msg"&&!msgBoard)startMsg();
+  if(t==="scr-boss"&&!bossBoard)startBoss();
+  if(t==="scr-finish")renderFinish();
+});});
+$("tp-skip").addEventListener("click",function(){
+  var act=screenAct[curScreen];if(!act)return;
+  if(act==="build"){buildIdx++;nextBuild();}
+  else if(act==="read"){readIdx++;nextRead();}
+  else if(act==="pixel"){if(pixPhase==="reverse"){pixRevIdx++;nextPixRev();}else{pixRow++;nextPixRow();}}
+  else if(act==="msg"){if(msgPhase==="encode"){encIdx++;nextEncode();}else{decIdx++;nextDecode();}}
+  else if(act==="boss"){bossIdx++;nextBoss();}
+});
+function resetAll(){
+  if(bossTimer){clearInterval(bossTimer);bossTimer=null;}
+  var mode=S.mode;S=freshState();S.mode=mode;
+  buildBoard=null;readBoard=null;pixBoard=null;msgBoard=null;bossBoard=null;
+  document.documentElement.setAttribute("data-theme","base");
+  updateHUD();show("scr-start");
+}
+$("tp-reset").addEventListener("click",function(){resetAll();$("tpanel").classList.remove("open");});
+
+/* ---------- MODES + HEAR ---------- */
+function setMode(m){S.mode=m;document.body.className=m;updateHUD();show("scr-build");startBuild();}
+$("mode-student").addEventListener("click",function(){setMode("student");});
+$("mode-teacher").addEventListener("click",function(){setMode("teacher");});
+document.querySelectorAll(".hear").forEach(function(b){b.addEventListener("click",function(){
+  try{var u=new SpeechSynthesisUtterance(b.getAttribute("data-say"));window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}
+});});
+updateHUD();
+</script>
+</body>
+</html>
