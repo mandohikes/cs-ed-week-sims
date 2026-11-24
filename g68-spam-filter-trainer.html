@@ -118,6 +118,8 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
 .tp-btn.primary{border-color:var(--navy);background:var(--navy);color:#fff;text-align:center}
 .tp-btn.danger{border-color:var(--rasp);color:var(--bad);text-align:center}
 .tp-btn.close-btn{text-align:center;color:var(--muted)}
+.teacher-reveal{display:none;margin-top:12px;background:var(--real-bg);border:2px solid var(--teal);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:800;line-height:1.4}
+.teacher-reveal.show{display:block}
 </style>
 </head>
 <body>
@@ -166,6 +168,7 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
       </div>
       <div class="feedback" id="sortFeedback"></div>
       <button class="btn btn-navy btn-wide" id="sortNext" style="display:none" onclick="sortNextTap()">Next ➜</button>
+      <button class="btn btn-ghost btn-wide" id="sortUndo" style="display:none" onclick="sortUndoTap()">↩ Undo last label</button>
       <p class="hint-line" id="sortHint"></p>
       <div class="note-row">
         <button class="hear-btn" id="sortHintBtn" onclick="showSortHint()">💡 Hint</button>
@@ -274,6 +277,7 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
       </div>
       <div class="feedback" id="fixFeedback"></div>
       <button class="btn btn-navy btn-wide" id="fixNext" style="display:none" onclick="fixNextTap()">Next ➜</button>
+      <button class="btn btn-ghost btn-wide" id="fixUndo" style="display:none" onclick="fixUndoTap()">↩ Undo last label</button>
       <div class="note-row"><button class="hear-btn" onclick="hearFix()">🔊 Hear it · optional</button></div>
     </div>
   </section>
@@ -346,8 +350,10 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
     <div class="tp-label">This screen</div>
     <div class="tp-grid">
       <button class="tp-btn primary" id="teacherSkipBtn" onclick="teacherSkip()">Skip this step ➜</button>
+      <button class="tp-btn" id="teacherRevealBtn" onclick="teacherReveal()">👁 Reveal answer (no points)</button>
       <button class="tp-btn danger" onclick="teacherReset()">↺ Reset</button>
     </div>
+    <div class="teacher-reveal" id="teacherRevealOut"></div>
     <button class="tp-btn close-btn" style="width:100%;margin-top:10px" onclick="toggleTeacherPanel(false)">Close</button>
   </div>
 </div>
@@ -431,6 +437,7 @@ function filterSays(body, w){
 var mode="student";
 var labeled=[];           /* {body, label} from student taps */
 var sortIdx=0, fixIdx=0, testIdx=0, quizIdx=0;
+var sortAnswered=false, fixAnswered=false;
 var predicted=null, predictScore=0;
 var results1=[], acc1={n:0,d:8}, acc2={n:0,d:8}, quizScore=0;
 var weights=null, weights2=null;
@@ -479,19 +486,24 @@ function startMode(m){
 /* ---------- STEP 1: SORT ---------- */
 function renderSort(){
   var m=TRAIN[sortIdx];
+  sortAnswered=false;
   document.getElementById("sortCount").textContent="Message "+(sortIdx+1)+" of "+TRAIN.length+" · Training set so far: "+labeled.length;
   document.getElementById("sortFrom").innerHTML="From: "+m.from;
   document.getElementById("sortBody").textContent="“"+m.body+"”";
-  document.getElementById("sortFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("sortFeats").innerHTML="";
   document.getElementById("sortBtns").style.display="grid";
   var fb=document.getElementById("sortFeedback"); fb.className="feedback"; fb.textContent="";
   document.getElementById("sortNext").style.display="none";
+  document.getElementById("sortUndo").style.display = labeled.length>0 ? "block" : "none";
   document.getElementById("sortHint").className="hint-line";
 }
 function sortTap(isSpam){
   var m=TRAIN[sortIdx];
   labeled.push({body:m.body, label:isSpam});
+  sortAnswered=true;
   document.getElementById("sortBtns").style.display="none";
+  document.getElementById("sortFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("sortUndo").style.display="block";
   var fb=document.getElementById("sortFeedback");
   if(mode==="student"){
     var ok = isSpam===m.spam;
@@ -511,6 +523,16 @@ function sortNextTap(){
   sortIdx++;
   if(sortIdx<TRAIN.length){ renderSort(); }
   else { weights=computeWeights(labeled); renderLearned(); show("s-learned"); }
+}
+function sortUndoTap(){
+  if(sortAnswered){
+    labeled.pop();
+    renderSort();
+  } else if(sortIdx>0 && labeled.length>0){
+    sortIdx--;
+    labeled.pop();
+    renderSort();
+  }
 }
 function showSortHint(){
   var m=TRAIN[sortIdx];
@@ -600,18 +622,23 @@ function goMiss(){ show("s-miss"); }
 function goFix(){ fixIdx=0; renderFix(); show("s-fix"); }
 function renderFix(){
   var m=FIX[fixIdx];
+  fixAnswered=false;
   document.getElementById("fixCount").textContent="New example "+(fixIdx+1)+" of "+FIX.length;
   document.getElementById("fixFrom").innerHTML="From: "+m.from;
   document.getElementById("fixBody").textContent="“"+m.body+"”";
-  document.getElementById("fixFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("fixFeats").innerHTML="";
   document.getElementById("fixBtns").style.display="grid";
   var fb=document.getElementById("fixFeedback"); fb.className="feedback"; fb.textContent="";
   document.getElementById("fixNext").style.display="none";
+  document.getElementById("fixUndo").style.display = labeled.length>TRAIN.length ? "block" : "none";
 }
 function fixTap(isSpam){
   var m=FIX[fixIdx];
   labeled.push({body:m.body, label:isSpam});
+  fixAnswered=true;
   document.getElementById("fixBtns").style.display="none";
+  document.getElementById("fixFeats").innerHTML=featChipsHTML(m.body);
+  document.getElementById("fixUndo").style.display="block";
   var fb=document.getElementById("fixFeedback");
   var ok=isSpam===m.spam;
   fb.className="feedback show "+(ok?"good":"bad");
@@ -624,6 +651,16 @@ function fixNextTap(){
   fixIdx++;
   if(fixIdx<FIX.length){ renderFix(); }
   else { weights2=computeWeights(labeled); renderRetest(); show("s-retest"); }
+}
+function fixUndoTap(){
+  if(fixAnswered){
+    if(labeled.length>TRAIN.length) labeled.pop();
+    renderFix();
+  } else if(fixIdx>0 && labeled.length>TRAIN.length){
+    fixIdx--;
+    labeled.pop();
+    renderFix();
+  }
 }
 function hearFix(){ hearIt(document.getElementById("fixBody").textContent); }
 
@@ -700,7 +737,42 @@ function toggleTeacherPanel(open){
   if(open){
     document.getElementById("teacherWhere").textContent="You are on: "+(STAGE_NAMES[currentScreen]||currentScreen)+" · Mode: "+(started?(mode==="teacher"?"Teacher-Led":"Student-Led"):"not started")+". Jump anywhere, skip a stuck step, or reset.";
     document.getElementById("teacherSkipBtn").textContent = currentScreen==="s-finish" ? "↺ Back to Start" : "Skip this step ➜";
+    var ro=document.getElementById("teacherRevealOut"); ro.className="teacher-reveal"; ro.textContent="";
   }
+}
+/* Standalone Reveal: shows the current answer in the panel only.
+   Never applies a label, never scores, never advances a step. */
+function teacherReveal(){
+  var out=document.getElementById("teacherRevealOut");
+  var txt="";
+  if(currentScreen==="s-sort"){
+    var m=TRAIN[sortIdx];
+    txt="👁 Message "+(sortIdx+1)+" is really: "+(m.spam?"🚫 SPAM":"✅ NOT SPAM")+". Reveal only — no label saved, no points.";
+  } else if(currentScreen==="s-fix"){
+    var fm=FIX[fixIdx];
+    txt="👁 New example "+(fixIdx+1)+" is really: "+(fm.spam?"🚫 SPAM":"✅ NOT SPAM")+". Reveal only — no label saved, no points.";
+  } else if(currentScreen==="s-test"){
+    if(!weights){
+      txt="👁 No filter yet — finish Step 1 sorting first, then the filter has patterns to reveal.";
+    } else {
+      var tm=TEST[testIdx];
+      var says=filterSays(tm.body, weights);
+      txt="👁 Filter will say: "+(says?"🚫 SPAM":"✅ NOT SPAM")+" · Really: "+(tm.spam?"Spam":"Not Spam")+" — the filter is "+(says===tm.spam?"RIGHT":"WRONG")+" on this one. Reveal only — nothing scored, nothing advanced.";
+    }
+  } else if(currentScreen==="s-quiz"){
+    var q=QUIZ[quizIdx];
+    txt="👁 Correct answer: “"+q.opts[q.a]+"” — "+q.why+" Reveal only — no points.";
+  } else if(currentScreen==="s-miss"){
+    txt="👁 The book-fair message is really ✅ NOT SPAM. Training taught “free → spam,” so the filter flagged it. Balanced examples fix it.";
+  } else if(currentScreen==="s-learned"){
+    txt = weights ? "👁 Learned leans: "+FEATURES.map(function(f){ var w=weights[f.key]; return f.label+" → "+(w>=0.5?"mostly SPAM":(w<=-0.5?"mostly NOT SPAM":(w===0?"never fired":"mixed"))); }).join(" · ") : "👁 No patterns yet — finish the sorting first.";
+  } else if(currentScreen==="s-score1"||currentScreen==="s-retest"||currentScreen==="s-finish"){
+    txt="👁 Round 1: "+acc1.n+" / "+acc1.d+" · After fix: "+acc2.n+" / "+acc2.d+". The scores are already on screen.";
+  } else {
+    txt="👁 Nothing to reveal on this screen yet — pick a mode to begin.";
+  }
+  out.textContent=txt;
+  out.className="teacher-reveal show";
 }
 function ensureStarted(){
   if(!started){ started=true; applyMode(); }
