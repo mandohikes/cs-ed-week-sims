@@ -563,6 +563,7 @@
     piece2: null,
     changedGroup: null,
     wcAnswered: false,
+    wcMisses: [],
     qIndex: 0,
     qAnswered: false,
     score: 0,
@@ -770,6 +771,7 @@
     refreshRuleGroups("rules2", state.rules2);
     document.getElementById("compare2").style.display = "none";
     state.wcAnswered = false;
+    state.wcMisses = [];
     updateStep2Gate();
     showScreen("step2");
   }
@@ -785,25 +787,35 @@
     fb.className = "feedback"; fb.textContent = "";
     document.getElementById("next2").style.display = "none";
     var opts = document.querySelectorAll("#whatChangedOpts .q-opt");
-    for (var i = 0; i < opts.length; i++){ opts[i].disabled = false; opts[i].classList.remove("correct","wrong"); }
+    for (var i = 0; i < opts.length; i++){ opts[i].disabled = false; opts[i].classList.remove("correct","wrong","missed"); }
     state.wcAnswered = false;
+    state.wcMisses = [];
   }
   document.getElementById("create2").addEventListener("click", function(){ if (diffCount() === 1) doCreate2(); });
   var wcBtns = document.querySelectorAll("#whatChangedOpts .q-opt");
   for (var w = 0; w < wcBtns.length; w++){
     wcBtns[w].addEventListener("click", function(){
       if (state.wcAnswered) return;
+      var group = this.getAttribute("data-group");
+      var ok = group === state.changedGroup;
+      var fb = document.getElementById("feedbackWC");
+      if (!ok){
+        if (state.wcMisses.indexOf(group) === -1) state.wcMisses.push(group);
+        this.disabled = true;
+        this.classList.add("wrong", "missed");
+        fb.textContent = "Look again — compare the two pieces.";
+        fb.className = "feedback show bad";
+        document.getElementById("next2").style.display = "none";
+        return;
+      }
       state.wcAnswered = true;
-      var ok = this.getAttribute("data-group") === state.changedGroup;
       var all = document.querySelectorAll("#whatChangedOpts .q-opt");
       for (var i = 0; i < all.length; i++){
         all[i].disabled = true;
         if (all[i].getAttribute("data-group") === state.changedGroup) all[i].classList.add("correct");
       }
-      if (!ok) this.classList.add("wrong");
-      var fb = document.getElementById("feedbackWC");
-      fb.textContent = ok ? "Yes — look at the two pieces." : "Look again — compare the two pieces.";
-      fb.className = "feedback show " + (ok ? "good" : "bad");
+      fb.textContent = "Yes — look at the two pieces." + (state.wcMisses.length ? " First pick missed, so this one counts as a miss." : "");
+      fb.className = "feedback show good";
       document.getElementById("next2").style.display = "block";
     });
   }
