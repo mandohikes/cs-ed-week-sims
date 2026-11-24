@@ -490,6 +490,7 @@
   <div class="panel">
     <h2>Teacher Controls</h2>
     <p class="status" id="panelStatus"></p>
+    <p class="status" id="panelReveal" style="display:none"></p>
     <h3>Jump to a stage</h3>
     <div class="btn-grid">
       <button type="button" data-jump="step1">1 · Set the Rules</button>
@@ -564,10 +565,15 @@
     changedGroup: null,
     wcAnswered: false,
     wcMisses: [],
+    wcRevealed: false,
     qIndex: 0,
     qAnswered: false,
+    qMisses: [],
+    qRevealed: false,
     score: 0,
     galleryPick: 1,
+    step2Touched: false,
+    revealText: "",
     seed: (Date.now() % 2147483646) + 1
   };
 
@@ -604,29 +610,38 @@
     }
     return '<polygon points="' + starPoints(cx, cy, size) + '" fill="' + color + '" transform="rotate(' + rot.toFixed(0) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"/>';
   }
-  function generateArt(rules){
-    var rand = rngFrom(nextSeed());
+  function generateArt(rules, baseSeed){
+    // Per-cell attributes come from a fixed table seeded by the piece's base
+    // seed alone — never by the rule values. Two pieces that share a base seed
+    // therefore differ ONLY where their rules differ: change one rule and every
+    // unchanged attribute (color pick, rotation, jitter, size) holds constant.
+    var rand = rngFrom(baseSeed);
+    var attrs = [];
+    for (var n = 0; n < 14; n++){
+      attrs.push({ x: rand(), y: rand(), s: rand(), c: rand(), r: rand() });
+    }
     var colors = PALETTES[rules.colors].colors;
+    function colorOf(a){ return colors[Math.floor(a.c * colors.length)]; }
     var parts = ['<rect x="0" y="0" width="400" height="300" fill="#FFFFFF"/>'];
-    function pickColor(){ return colors[Math.floor(rand() * colors.length)]; }
     if (rules.layout === "grid"){
-      for (var row = 0; row < 3; row++){
-        for (var col = 0; col < 4; col++){
-          var cx = 50 + col * 100 + (rand() * 16 - 8);
-          var cy = 50 + row * 100 + (rand() * 16 - 8);
-          var size = 20 + rand() * 10;
-          parts.push(shapeSVG(rules.shapes, cx, cy, size, pickColor(), rand() * 40 - 20));
-        }
+      for (var idx = 0; idx < 12; idx++){
+        var row = Math.floor(idx / 4), col = idx % 4, a = attrs[idx];
+        var cx = 50 + col * 100 + (a.x * 16 - 8);
+        var cy = 50 + row * 100 + (a.y * 16 - 8);
+        var size = 20 + a.s * 10;
+        parts.push(shapeSVG(rules.shapes, cx, cy, size, colorOf(a), a.r * 40 - 20));
       }
     } else if (rules.layout === "scattered"){
       for (var i = 0; i < 14; i++){
-        parts.push(shapeSVG(rules.shapes, 35 + rand() * 330, 35 + rand() * 230, 12 + rand() * 22, pickColor(), rand() * 360));
+        var b = attrs[i];
+        parts.push(shapeSVG(rules.shapes, 35 + b.x * 330, 35 + b.y * 230, 12 + b.s * 22, colorOf(b), b.r * 360));
       }
     } else { // mirrored
       for (var j = 0; j < 7; j++){
-        var x = 30 + rand() * 150, y = 35 + rand() * 230, sz = 13 + rand() * 19, c = pickColor(), r = rand() * 360;
-        parts.push(shapeSVG(rules.shapes, x, y, sz, c, r));
-        parts.push(shapeSVG(rules.shapes, 400 - x, y, sz, c, -r));
+        var d = attrs[j];
+        var x = 30 + d.x * 150, y = 35 + d.y * 230, sz = 13 + d.s * 19, cc = colorOf(d), rr = d.r * 360;
+        parts.push(shapeSVG(rules.shapes, x, y, sz, cc, rr));
+        parts.push(shapeSVG(rules.shapes, 400 - x, y, sz, cc, -rr));
       }
     }
     return '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Art made by the machine">' + parts.join("") + "</svg>";
@@ -733,7 +748,8 @@
   /* ---------------- Step 1 ---------------- */
   buildRuleGroups("rules1", state.rules1, null);
   function doCreate1(){
-    state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1) };
+    var seed = nextSeed();
+    state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1, seed), seed: seed };
     var f = document.getElementById("frame1");
     f.innerHTML = state.piece1.svg;
     f.classList.remove("empty");
@@ -744,7 +760,7 @@
   document.getElementById("next1").addEventListener("click", function(){ enterStep2(); });
 
   /* ---------------- Step 2 ---------------- */
-  buildRuleGroups("rules2", state.rules2, updateStep2Gate);
+  buildRuleGroups("rules2", state.rules2, function(){ state.step2Touched = true; updateStep2Gate(); });
   function diffCount(){
     var n = 0;
     GROUPS.forEach(function(g){ if (state.rules2[g.key] !== state.rules1[g.key]) n++; });
@@ -764,7 +780,65 @@
     else if (n === 1){ hint.textContent = "One change — press CREATE."; hint.classList.remove("warn"); }
     else { hint.textContent = "That's two changes — put one back."; hint.classList.add("warn"); }
   }
+  function wcAnswerText(){
+    var g = state.changedGroup;
+    var name = { colors:"colors", shapes:"shapes", layout:"layout" }[g];
+    var r1 = state.piece1.rules, r2 = state.piece2.rules;
+    var oldLabel = g === "colors" ? PALETTES[r1.colors].label : (g === "shapes" ? SHAPES[r1.shapes] : LAYOUTS[r1.layout]);
+    var newLabel = g === "colors" ? PALETTES[r2.colors].label : (g === "shapes" ? SHAPES[r2.shapes] : LAYOUTS[r2.layout]);
+    return "the " + name + " changed: " + oldLabel + " → " + newLabel;
+  }
+  function wcCorrectText(){
+    var t = "Right — " + wcAnswerText() + ".";
+    if (state.wcMisses.length) t += " First pick missed, so this one counts as a miss.";
+    return t;
+  }
+  function restoreWC(){
+    var opts = document.querySelectorAll("#whatChangedOpts .q-opt");
+    var fb = document.getElementById("feedbackWC");
+    for (var i = 0; i < opts.length; i++){
+      var g = opts[i].getAttribute("data-group");
+      opts[i].classList.remove("correct", "wrong", "missed");
+      if (state.wcAnswered){
+        opts[i].disabled = true;
+        if (g === state.changedGroup) opts[i].classList.add("correct");
+      } else if (state.wcMisses.indexOf(g) !== -1){
+        opts[i].disabled = true;
+        opts[i].classList.add("wrong", "missed");
+      } else {
+        opts[i].disabled = false;
+      }
+    }
+    if (state.wcAnswered){
+      fb.textContent = wcCorrectText();
+      fb.className = "feedback show good";
+      document.getElementById("next2").style.display = "block";
+    } else if (state.wcMisses.length){
+      fb.textContent = "Look again — compare the two pieces.";
+      fb.className = "feedback show bad";
+      document.getElementById("next2").style.display = "none";
+    } else {
+      fb.className = "feedback"; fb.textContent = "";
+      document.getElementById("next2").style.display = "none";
+    }
+  }
+  function restoreStep2(){
+    refreshRuleGroups("rules2", state.rules2);
+    if (state.piece2 && state.piece1){
+      document.getElementById("frameP1").innerHTML = state.piece1.svg;
+      document.getElementById("frameP2").innerHTML = state.piece2.svg;
+      var label = { colors:"Colors", shapes:"Shapes", layout:"Layout" }[state.changedGroup];
+      document.getElementById("changedChip").textContent = "You changed: " + label;
+      document.getElementById("compare2").style.display = "block";
+      restoreWC();
+    } else {
+      document.getElementById("compare2").style.display = "none";
+    }
+    updateStep2Gate();
+    showScreen("step2");
+  }
   function enterStep2(){
+    if (state.step2Touched){ restoreStep2(); return; }
     state.rules2.colors = state.rules1.colors;
     state.rules2.shapes = state.rules1.shapes;
     state.rules2.layout = state.rules1.layout;
@@ -772,12 +846,15 @@
     document.getElementById("compare2").style.display = "none";
     state.wcAnswered = false;
     state.wcMisses = [];
+    state.wcRevealed = false;
     updateStep2Gate();
     showScreen("step2");
   }
   function doCreate2(){
-    state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2) };
+    if (!state.piece1) ensurePiece1();
+    state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2, state.piece1.seed) };
     state.changedGroup = changedGroupKey();
+    state.step2Touched = true;
     document.getElementById("frameP1").innerHTML = state.piece1.svg;
     document.getElementById("frameP2").innerHTML = state.piece2.svg;
     var label = { colors:"Colors", shapes:"Shapes", layout:"Layout" }[state.changedGroup];
@@ -790,6 +867,7 @@
     for (var i = 0; i < opts.length; i++){ opts[i].disabled = false; opts[i].classList.remove("correct","wrong","missed"); }
     state.wcAnswered = false;
     state.wcMisses = [];
+    state.wcRevealed = false;
   }
   document.getElementById("create2").addEventListener("click", function(){ if (diffCount() === 1) doCreate2(); });
   var wcBtns = document.querySelectorAll("#whatChangedOpts .q-opt");
@@ -814,7 +892,7 @@
         all[i].disabled = true;
         if (all[i].getAttribute("data-group") === state.changedGroup) all[i].classList.add("correct");
       }
-      fb.textContent = "Yes — look at the two pieces." + (state.wcMisses.length ? " First pick missed, so this one counts as a miss." : "");
+      fb.textContent = wcCorrectText();
       fb.className = "feedback show good";
       document.getElementById("next2").style.display = "block";
     });
@@ -828,6 +906,8 @@
   function renderQuestion(){
     var q = QUESTIONS[state.qIndex];
     state.qAnswered = false;
+    state.qMisses = [];
+    state.qRevealed = false;
     document.getElementById("qPrompt").textContent = "Q" + (state.qIndex + 1) + ". " + q.q;
     var box = document.getElementById("qOpts");
     box.innerHTML = "";
@@ -837,7 +917,7 @@
       b.className = "q-opt";
       b.textContent = text;
       b.setAttribute("data-idx", idx);
-      b.addEventListener("click", function(){ answerQuestion(idx, b, false); });
+      b.addEventListener("click", function(){ answerQuestion(idx, b); });
       box.appendChild(b);
     });
     var fb = document.getElementById("feedbackQ");
@@ -847,33 +927,34 @@
     nx.textContent = (state.qIndex === QUESTIONS.length - 1) ? "Next: My Gallery Card" : "Next";
     updateScoreLine();
   }
-  function lockQuestion(revealIdx){
+  function closeQuestion(){
     var btns = document.querySelectorAll("#qOpts .q-opt");
     for (var i = 0; i < btns.length; i++){
       btns[i].disabled = true;
       if (i === QUESTIONS[state.qIndex].correct) btns[i].classList.add("correct");
-      else if (i === revealIdx) btns[i].classList.add("wrong");
     }
     document.getElementById("nextQ").style.display = "block";
   }
-  function answerQuestion(idx, btn, viaReveal){
-    if (state.qAnswered) return;
-    state.qAnswered = true;
+  function answerQuestion(idx, btn){
+    if (state.qAnswered || btn.disabled) return;
     var q = QUESTIONS[state.qIndex];
-    var ok = (idx === q.correct);
-    if (ok && !viaReveal && state.mode === "student") state.score++;
     var fb = document.getElementById("feedbackQ");
-    if (state.mode === "teacher"){
-      fb.textContent = q.why;
-      fb.className = "feedback show good";
-    } else if (ok){
-      fb.textContent = q.why;
-      fb.className = "feedback show good";
-    } else {
-      fb.textContent = "Not quite. " + q.why;
+    if (idx !== q.correct){
+      // Retry pattern (same as "What changed?"): only this option is marked,
+      // the question stays open, Next stays hidden.
+      if (state.qMisses.indexOf(idx) === -1) state.qMisses.push(idx);
+      btn.disabled = true;
+      btn.classList.add("wrong", "missed");
+      fb.textContent = "Not quite — try again.";
       fb.className = "feedback show bad";
+      document.getElementById("nextQ").style.display = "none";
+      return;
     }
-    lockQuestion(ok ? -1 : idx);
+    state.qAnswered = true;
+    if (state.mode === "student" && !state.qRevealed && state.qMisses.length === 0) state.score++;
+    fb.textContent = q.why + (state.qMisses.length ? " First pick missed, so this one counts as a miss." : "");
+    fb.className = "feedback show good";
+    closeQuestion();
     updateScoreLine();
   }
   function enterStep3(){
@@ -932,30 +1013,52 @@
   document.getElementById("playAgain").addEventListener("click", function(){ location.reload(); });
 
   /* ---------------- Setup helpers (teacher jumps / skips) ---------------- */
-  function ensurePieces(){
+  function ensurePiece1(){
     if (!state.piece1){
-      state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1) };
+      var seed = nextSeed();
+      state.piece1 = { rules: { colors: state.rules1.colors, shapes: state.rules1.shapes, layout: state.rules1.layout }, svg: generateArt(state.rules1, seed), seed: seed };
       var f = document.getElementById("frame1");
       f.innerHTML = state.piece1.svg;
       f.classList.remove("empty");
       document.getElementById("after1").style.display = "block";
     }
+  }
+  function ensurePieces(){
+    ensurePiece1();
     if (!state.piece2){
-      state.rules2.colors = state.rules1.colors;
-      state.rules2.shapes = state.rules1.shapes;
-      state.rules2.layout = state.rules1.layout;
-      // change exactly one rule: pick a different color palette
-      state.rules2.colors = (state.rules1.colors === "ocean") ? "berry" : "ocean";
-      state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2) };
-      state.changedGroup = "colors";
+      if (diffCount() !== 1){
+        state.rules2.colors = state.rules1.colors;
+        state.rules2.shapes = state.rules1.shapes;
+        state.rules2.layout = state.rules1.layout;
+        // change exactly one rule: pick a different color palette
+        state.rules2.colors = (state.rules1.colors === "ocean") ? "berry" : "ocean";
+      }
+      state.piece2 = { rules: { colors: state.rules2.colors, shapes: state.rules2.shapes, layout: state.rules2.layout }, svg: generateArt(state.rules2, state.piece1.seed) };
+      state.changedGroup = changedGroupKey();
+      state.step2Touched = true;
     }
   }
 
   /* ---------------- Teacher panel ---------------- */
   var overlay = document.getElementById("panelOverlay");
+  function refreshRevealReadout(){
+    var el = document.getElementById("panelReveal");
+    if (state.revealText){
+      el.textContent = state.revealText;
+      el.style.display = "block";
+    } else {
+      el.textContent = "";
+      el.style.display = "none";
+    }
+  }
+  function showReveal(text){
+    state.revealText = text;
+    refreshRevealReadout();
+  }
   function openPanel(){
     var modeText = state.mode === "teacher" ? "Teacher-Led" : (state.mode === "student" ? "Student-Led" : "Not picked yet");
     document.getElementById("panelStatus").textContent = "Now on: " + SCREEN_NAMES[state.screen] + " · Mode: " + modeText;
+    refreshRevealReadout();
     overlay.classList.add("open");
   }
   function closePanelFn(){ overlay.classList.remove("open"); }
@@ -969,7 +1072,7 @@
       var target = this.getAttribute("data-jump");
       if (!state.mode) setModeSilent("student");
       if (target === "step1"){ showScreen("step1"); }
-      else if (target === "step2"){ ensurePieces(); enterStep2(); }
+      else if (target === "step2"){ ensurePiece1(); enterStep2(); }
       else if (target === "step3"){ ensurePieces(); enterStep3(); }
       else if (target === "gallery"){ enterGallery(); }
       closePanelFn();
@@ -992,34 +1095,32 @@
   });
 
   document.getElementById("revealBtn").addEventListener("click", function(){
+    // Display-only on every screen (the batch-1 standard): the answer goes in
+    // the panel readout, the screen stays fully playable, and a question that
+    // was revealed earns no point when answered correctly afterward.
     if (!state.mode) setModeSilent("student");
     var cur = state.screen;
-    if (cur === "step1"){
-      state.rules1.colors = "ocean";
-      state.rules1.shapes = "stars";
-      state.rules1.layout = "mirrored";
-      refreshRuleGroups("rules1", state.rules1);
-      doCreate1();
+    if (cur === "start"){
+      showReveal("Reveal: nothing to reveal yet — pick Teacher-Led or Student-Led to begin.");
+    } else if (cur === "step1"){
+      showReveal("Reveal: Step 1 has no single right answer — any colors, shapes, and layout are correct. Press CREATE to make a piece.");
     } else if (cur === "step2"){
-      ensurePieces();
-      state.rules2.colors = state.rules1.colors;
-      state.rules2.shapes = state.rules1.shapes;
-      state.rules2.layout = state.rules1.layout;
-      state.rules2.colors = (state.rules1.colors === "ocean") ? "berry" : "ocean";
-      refreshRuleGroups("rules2", state.rules2);
-      updateStep2Gate();
-      doCreate2();
-    } else if (cur === "step3"){
-      if (!state.qAnswered){
-        state.qAnswered = true;
-        var q = QUESTIONS[state.qIndex];
-        var fb = document.getElementById("feedbackQ");
-        fb.textContent = q.why;
-        fb.className = "feedback show good";
-        lockQuestion(-1);
+      if (state.piece2){
+        state.wcRevealed = true;
+        showReveal("Reveal: the answer to 'What changed?' — " + wcAnswerText() + ".");
+      } else if (diffCount() === 1){
+        showReveal("Reveal: one rule differs so far — the " + changedGroupKey() + ". Press CREATE, and 'What changed?' asks about it.");
+      } else {
+        showReveal("Reveal: no rule changed yet — change exactly one rule, then press CREATE.");
       }
+    } else if (cur === "step3"){
+      var q = QUESTIONS[state.qIndex];
+      state.qRevealed = true;
+      showReveal("Reveal: Q" + (state.qIndex + 1) + " answer — '" + q.options[q.correct] + "' " + q.why);
+    } else if (cur === "gallery"){
+      showReveal("Reveal: no question here — Me, the machine, or both are all defensible. The vote has no wrong answer.");
     }
-    closePanelFn();
+    // The panel stays open so the teacher can read the readout.
   });
 
   document.getElementById("resetBtn").addEventListener("click", function(){ location.reload(); });
