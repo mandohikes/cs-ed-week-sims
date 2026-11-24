@@ -304,6 +304,7 @@
   .cert.show{display:block; animation:pop .4s ease}
   .cert .cname{font-family:"Baloo 2",sans-serif; font-size:2rem; font-weight:800; color:var(--blue)}
   .again-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:22px}
+  .start-over-row{display:flex; justify-content:center; margin-top:16px}
   .again-btn{
     min-height:60px; padding:12px 24px; border-radius:999px; font-size:1.1rem; font-weight:900;
     border:3.5px solid var(--teal-dark); background:var(--teal); color:#fff; box-shadow:0 5px 0 var(--teal-dark);
@@ -715,6 +716,7 @@
         <li>Speakers — it tells you 👀</li>
       </ul>
     </div>
+    <div class="start-over-row"><button class="again-btn" id="startOverParts" type="button">↺ Start Over</button></div>
   </section>
 
   <!-- ACTIVITY 2 -->
@@ -765,6 +767,7 @@
     <div class="reveal-box" id="revealSort" role="status" aria-live="polite">
       <span class="reveal-label">Answer</span> <span id="revealSortText"></span>
     </div>
+    <div class="start-over-row"><button class="again-btn" id="startOverSort" type="button">↺ Start Over</button></div>
   </section>
 
   <!-- ACTIVITY 3 -->
@@ -876,6 +879,7 @@
     <div class="reveal-box" id="revealBuild" role="status" aria-live="polite">
       <span class="reveal-label">Answer</span> <span id="revealBuildText">You need all 5 parts: Screen, Keyboard, Mouse, Brain, and Speakers — then tap POWER.</span>
     </div>
+    <div class="start-over-row"><button class="again-btn" id="startOverBuild" type="button">↺ Start Over</button></div>
   </section>
 
   <!-- ACTIVITY 4 -->
@@ -917,6 +921,7 @@
     <div class="reveal-box" id="revealQuiz" role="status" aria-live="polite">
       <span class="reveal-label">Answer</span> <span id="revealQuizText"></span>
     </div>
+    <div class="start-over-row"><button class="again-btn" id="startOverQuiz" type="button">↺ Start Over</button></div>
   </section>
 
   <!-- CELEBRATION -->
@@ -1380,7 +1385,9 @@
     ding();
   });
   document.getElementById("playAgain").addEventListener("click", function(){
-    window.scrollTo({ top:0, behavior: reduced ? "auto" : "smooth" });
+    resetAllActivities();
+    var first = document.getElementById("act1");
+    if(first) first.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   });
 
   /* ================= TEACHER BYPASS ================= */
@@ -1535,6 +1542,65 @@
       if(cel) cel.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
     }
   });
+
+  /* ---------- student Start Over: scoped per activity ---------- */
+  function resetParts(){
+    hideAllReveals();
+    found = {};
+    document.querySelectorAll(".hotspot").forEach(function(h){ h.classList.remove("found"); });
+    document.querySelectorAll(".part-btn").forEach(function(b){ b.classList.remove("found"); b.classList.remove("selected"); });
+    document.getElementById("factTitle").textContent = "Tap! 👆";
+    document.getElementById("factText").textContent = "";
+    document.querySelector("#factCard .face").textContent = "👆";
+    var tag = document.getElementById("factTag"); tag.style.display = "none"; tag.textContent = "";
+    setDots("partsDots", 0);
+    document.getElementById("partsCount").textContent = "0 / 5";
+    document.getElementById("partsDone").classList.remove("show");
+    var star = document.getElementById("tstar1"); if(star) star.classList.remove("done");
+  }
+  function resetSortActivity(){
+    hideAllReveals();
+    if(sortTimer) clearTimeout(sortTimer);
+    sortBusy = false; sortIdx = 0; renderSort(); setDots("sortDots", 0);
+    document.getElementById("sortDone").classList.remove("show");
+    var star = document.getElementById("tstar2"); if(star) star.classList.remove("done");
+  }
+  function resetBuildActivity(){
+    hideAllReveals();
+    built = {};
+    document.querySelectorAll(".placed").forEach(function(p){ p.classList.remove("on"); });
+    document.getElementById("screenOn").classList.remove("show");
+    document.querySelectorAll("[data-build]").forEach(function(b){
+      b.classList.remove("used"); b.classList.remove("reveal-hint");
+      var k = b.getAttribute("data-build");
+      b.textContent = "+ " + k.charAt(0).toUpperCase() + k.slice(1);
+    });
+    setDots("buildDots", 0);
+    document.getElementById("buildCount").textContent = "0 / 5";
+    document.getElementById("powerRow").classList.remove("show");
+    document.getElementById("buildDone").classList.remove("show");
+    var star = document.getElementById("tstar3"); if(star) star.classList.remove("done");
+  }
+  function resetQuizActivity(){
+    hideAllReveals();
+    if(quizTimer) clearTimeout(quizTimer);
+    quizBusy = false; quizIdx = 0; renderQuiz(); setDots("quizDots", 0);
+    var star = document.getElementById("tstar4"); if(star) star.classList.remove("done");
+    document.getElementById("celebrate").classList.remove("show");
+    document.getElementById("cert").classList.remove("show");
+  }
+  function resetAllActivities(){
+    stopAll();
+    resetParts(); resetSortActivity(); resetBuildActivity(); resetQuizActivity();
+    document.getElementById("celebrate").classList.remove("show");
+    document.getElementById("cert").classList.remove("show");
+    document.getElementById("starName").value = "";
+    if(currentMode === "teacher") showTeacherStep(0);
+  }
+  document.getElementById("startOverParts").addEventListener("click", resetParts);
+  document.getElementById("startOverSort").addEventListener("click", resetSortActivity);
+  document.getElementById("startOverBuild").addEventListener("click", resetBuildActivity);
+  document.getElementById("startOverQuiz").addEventListener("click", resetQuizActivity);
 
   document.getElementById("bypassReset").addEventListener("click", function(){
     hideAllReveals();

@@ -334,6 +334,7 @@ function renderSpot(){
     }
     html += '<button class="btn btn-navy mt" onclick="spotNext()">'+(state.spotIdx===7?"Next: Verify It →":"Next →")+'</button>';
   }
+  html += '<button class="btn btn-ghost mt" onclick="startOverSpot()">↺ Start Over</button>';
   html += '</section>';
   app.innerHTML = html;
 }
@@ -384,6 +385,7 @@ function renderVerify(){
   else if(state.verifyRevealed){
     html += '<div class="feedback info">Revealed by teacher — Best first step: <strong>'+v.options[v.best]+'</strong><p>'+v.good+'</p></div>';
   }
+  html += '<button class="btn btn-ghost mt" onclick="startOverVerify()">↺ Start Over</button>';
   html += '</section>';
   app.innerHTML = html;
 }
@@ -428,6 +430,7 @@ function renderShare(){
       html += '<button class="btn btn-navy mt" onclick="goFinish()">Finish →</button>';
     }
   }
+  html += '<button class="btn btn-ghost mt" onclick="startOverShare()">↺ Start Over</button>';
   html += '</section>';
   app.innerHTML = html;
 }
@@ -498,6 +501,22 @@ function downloadCert(){
 }
 function restart(){
   state = { mode:state.mode, phase:"spot", spotIdx:0, verifyIdx:0, spotScore:0, verifyScore:0, shareScore:0, spotPicked:null, spotRevealed:false, spotSkipped:false, spotTeacherReveal:false, verifyPicked:null, verifySkipped:false, verifyRevealed:false, sharePicked:null, name:state.name };
+  render();
+}
+
+/* Student Start Over, one per phase: back to the phase's first item
+   with its picks cleared and its score contribution zeroed, so
+   replaying the phase can earn each point once, never twice. */
+function startOverSpot(){
+  state.phase="spot"; state.spotIdx=0; state.spotScore=0; state.spotPicked=null; state.spotRevealed=false; state.spotSkipped=false; state.spotTeacherReveal=false;
+  render();
+}
+function startOverVerify(){
+  state.phase="verify"; state.verifyIdx=0; state.verifyScore=0; state.verifyPicked=null; state.verifySkipped=false; state.verifyRevealed=false;
+  render();
+}
+function startOverShare(){
+  state.phase="share"; state.sharePicked=null; state.shareScore=0;
   render();
 }
 

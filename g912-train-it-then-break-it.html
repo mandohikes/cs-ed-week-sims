@@ -675,6 +675,7 @@
         var label = kind === "train" ? (last ? "See What It Learned" : "Next Photo") : (last ? "Re-run the Test" : "Next Photo");
         html += '<button class="btn" type="button" onclick="App.nextLabel(\'' + kind + '\')">' + label + "</button>";
       }
+      html += '<button class="btn btn-ghost" style="margin-top:12px" type="button" onclick="App.startOver()">↺ Start Over</button>';
       return html + "</div>";
     }
 
@@ -720,6 +721,7 @@
         var last = state.testIdx === TEST.length - 1;
         html += '<button class="btn" type="button" onclick="App.nextTest()">' + (last ? "Audit It" : "Next Photo") + "</button>";
       }
+      html += '<button class="btn btn-ghost" style="margin-top:12px" type="button" onclick="App.startOver()">↺ Start Over</button>';
       return html + "</div>";
     }
 
@@ -766,6 +768,7 @@
       if(!missed.length || state.auditAnswer !== null){
         html += '<button class="btn btn-teal" style="background:var(--teal)" type="button" onclick="App.go(\'fix\')">Fix the Data</button>';
       }
+      html += '<button class="btn btn-ghost" style="margin-top:12px" type="button" onclick="App.startOver()">↺ Start Over</button>';
       return html + "</div>";
     }
 
@@ -943,6 +946,13 @@
         render();
       },
       go: function(s){ gotoScreen(s); },
+      /* Student Start Over: the four phases are one arc (the trained
+         set feeds Test, Audit, and Fix), so any phase's Start Over
+         returns to Train It with the full state reset — the same
+         reset gotoScreen('train') performs for teacher jumps. No
+         credit exists outside this state, so a restart can never
+         double-count a completion. */
+      startOver: function(){ gotoScreen("train"); },
       choose: function(kind, label){
         var list = kind === "train" ? TRAIN : FIX;
         var idx = kind === "train" ? state.trainIdx : state.fixIdx;

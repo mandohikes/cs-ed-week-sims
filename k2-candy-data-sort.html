@@ -162,6 +162,7 @@
         box-shadow:0 6px 0 #8f1a3c;
       }
       .btn-start:active{ transform:translateY(3px); box-shadow:0 3px 0 #8f1a3c; }
+      .btn-start-over{ display:block; margin:14px auto 0; }
       .btn-reveal{
         display:none; margin:14px auto 0; background:var(--gold); color:#5c4300; border:none; border-radius:999px;
         font-family:"Fredoka",sans-serif; font-weight:600; font-size:1.25rem; padding:14px 34px; min-height:58px;
@@ -514,6 +515,7 @@
           <div class="feedback" id="sortFeedback" aria-live="polite"></div>
           <button class="btn-reveal" id="sortReveal" type="button">👀 Show Answer</button>
           <button class="btn-next" id="sortNext" type="button">Next ➜</button>
+          <button class="btn-start btn-start-over" id="sortStartOver" type="button">↺ Start Over</button>
           <div class="hear-row"><button class="hear-btn" type="button" data-speak="Tap a candy. Tap its color bin!">🔊 Hear it · optional</button></div>
         </div>
       </section>
@@ -543,6 +545,7 @@
           <div class="feedback" id="chartFeedback" aria-live="polite"></div>
           <button class="btn-reveal" id="chartReveal" type="button">👀 Show Answer</button>
           <button class="btn-next" id="chartNext" type="button">Next ➜</button>
+          <button class="btn-start btn-start-over" id="chartStartOver" type="button">↺ Start Over</button>
           <div class="hear-row"><button class="hear-btn" type="button" data-speak="Tap plus one. Build each bar!">🔊 Hear it · optional</button></div>
         </div>
       </section>
@@ -569,6 +572,7 @@
           <div class="feedback" id="quizFeedback" aria-live="polite"></div>
           <button class="btn-reveal" id="quizReveal" type="button">👀 Show Answer</button>
           <button class="btn-next" id="quizNext" type="button">Next ➜</button>
+          <button class="btn-start btn-start-over" id="quizStartOver" type="button">↺ Start Over</button>
           <div class="hear-row"><button class="hear-btn" type="button" data-speak="Look at the chart. Tap the answer!">🔊 Hear it · optional</button></div>
         </div>
       </section>
@@ -634,9 +638,9 @@
       /* ---------- state ---------- */
       var state = {
         mode:null, screen:"start", stars:0,
-        sort:{ idx:0, selected:false, picked:null, locked:false, attempts:0, counts:{}, timer:null, lockTimer:null },
+        sort:{ idx:0, selected:false, picked:null, locked:false, attempts:0, starsEarned:0, counts:{}, timer:null, lockTimer:null },
         chart:{ col:0, heights:{}, locked:{}, starred:{}, timer:null, lockTimer:null },
-        quiz:{ idx:0, picked:null, locked:false, timer:null }
+        quiz:{ idx:0, picked:null, locked:false, starsEarned:0, timer:null }
       };
       var ORDER = ["start","sort","chart","quiz","done"];
 
@@ -685,6 +689,11 @@
       function addStar(){
         if(state.mode !== "student") return;
         state.stars++;
+        $("#starCount").textContent = state.stars;
+      }
+      function deductStars(n){
+        if(!n) return;
+        state.stars = Math.max(0, state.stars - n);
         $("#starCount").textContent = state.stars;
       }
       function showScreen(name){
@@ -749,7 +758,8 @@
       function resetSort(){
         var s = state.sort;
         clearTimeout(s.timer); clearTimeout(s.lockTimer);
-        state.sort = { idx:0, selected:false, picked:null, locked:false, attempts:0, revealed:false, counts:{}, timer:null, lockTimer:null };
+        deductStars(s.starsEarned || 0);
+        state.sort = { idx:0, selected:false, picked:null, locked:false, attempts:0, revealed:false, starsEarned:0, counts:{}, timer:null, lockTimer:null };
         COLORS.forEach(function(c){ state.sort.counts[c.id] = 0; });
         buildBins();
         $("#sortIntro").hidden = false;
@@ -774,7 +784,11 @@
         var s = state.sort, c = sortCandy();
         s.locked = true;
         clearTimeout(s.lockTimer);
-        if(awardStar) addStar();
+        if(awardStar){
+          var beforeSortStars = state.stars;
+          addStar();
+          if(state.stars > beforeSortStars) s.starsEarned = (s.starsEarned || 0) + 1;
+        }
         var card = $("#pileCard");
         card.classList.add("fly");
         landInBin(c, true);
@@ -841,6 +855,7 @@
       $("#sortStart").addEventListener("click", function(){
         $("#sortIntro").hidden = true; $("#sortPlay").hidden = false; renderSort();
       });
+      $("#sortStartOver").addEventListener("click", function(){ resetSort(); $("#sortStart").click(); });
       function startSort(){ resetSort(); showScreen("sort"); }
 
       /* ================= ACTIVITY 2 : CHART ================= */
@@ -872,6 +887,9 @@
       function resetChart(){
         var ch = state.chart;
         clearTimeout(ch.timer); clearTimeout(ch.lockTimer);
+        var earnedChartStars = 0;
+        COLORS.forEach(function(c){ if(ch.starred && ch.starred[c.id]) earnedChartStars++; });
+        deductStars(earnedChartStars);
         state.chart = { col:0, heights:{}, locked:{}, starred:{}, revealed:{}, timer:null, lockTimer:null };
         COLORS.forEach(function(c){
           state.chart.heights[c.id] = 0;
@@ -962,6 +980,7 @@
       $("#chartStart").addEventListener("click", function(){
         $("#chartIntro").hidden = true; $("#chartPlay").hidden = false; renderChartCol();
       });
+      $("#chartStartOver").addEventListener("click", function(){ resetChart(); $("#chartStart").click(); });
       function startChart(){ resetChart(); showScreen("chart"); }
 
       /* ================= ACTIVITY 3 : QUESTIONS ================= */
@@ -980,7 +999,8 @@
       }
       function resetQuiz(){
         clearTimeout(state.quiz.timer);
-        state.quiz = { idx:0, picked:null, locked:false, revealed:false, timer:null };
+        deductStars(state.quiz.starsEarned || 0);
+        state.quiz = { idx:0, picked:null, locked:false, revealed:false, starsEarned:0, timer:null };
         buildMiniChart();
         $("#quizIntro").hidden = false;
         $("#quizPlay").hidden = true;
@@ -1021,7 +1041,11 @@
       function quizResolve(awardStar, teachText){
         var q = state.quiz, item = QUESTIONS[q.idx];
         q.locked = true;
-        if(awardStar) addStar();
+        if(awardStar){
+          var beforeQuizStars = state.stars;
+          addStar();
+          if(state.stars > beforeQuizStars) q.starsEarned = (q.starsEarned || 0) + 1;
+        }
         $$("#quizChoices button").forEach(function(b){
           if(String(item.answer) === b.getAttribute("data-val")) b.classList.add("correct-glow");
         });
@@ -1070,6 +1094,7 @@
       $("#quizStart").addEventListener("click", function(){
         $("#quizIntro").hidden = true; $("#quizPlay").hidden = false; renderQuiz();
       });
+      $("#quizStartOver").addEventListener("click", function(){ resetQuiz(); $("#quizStart").click(); });
       function startQuiz(){ resetQuiz(); showScreen("quiz"); }
 
       /* ================= DONE ================= */

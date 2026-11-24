@@ -219,6 +219,7 @@
       .btn-phish { background: var(--danger); color: #fff; }
       @media (prefers-color-scheme: dark) { .btn-phish { color: #1c0b08; } }
       .btn-next { background: var(--ink); color: var(--bg); width: 100%; margin-top: 12px; }
+      .btn-startover { background: var(--surface); border-color: var(--line); color: var(--ink); width: 100%; margin-top: 12px; }
       .btn:disabled { opacity: .45; cursor: default; }
       .hint-line { display: none; margin-top: 12px; font-weight: 600; color: var(--warn); }
       .hint-line.on { display: block; }
@@ -439,6 +440,8 @@
 
           <div class="mail" id="mailPane"><!-- filled by JS --></div>
         </div>
+
+        <button class="btn btn-startover" id="startOverInbox" type="button">↺ Start Over</button>
       </section>
 
       <!-- ============ ROUND 2: RESPOND ============ -->
@@ -462,6 +465,7 @@
         <div id="incidentList"><!-- filled by JS --></div>
 
         <button class="btn btn-next" id="toReport" disabled>See final report</button>
+        <button class="btn btn-startover" id="startOverRespond" type="button">↺ Start Over</button>
       </section>
 
       <!-- ============ REPORT ============ -->
@@ -1112,6 +1116,27 @@
         card.scrollIntoView({ block: "center" });
       }
       $("toReport").addEventListener("click", function () { renderReport(); show("view-report"); });
+
+      /* Student Start Over: resets ONLY this round. Clearing the
+         round's recorded calls/picks also zeroes its score
+         contribution, because score() is computed from this state —
+         replaying the round can earn each point once, never twice. */
+      $("startOverInbox").addEventListener("click", function () {
+        stopSpeaking();
+        state.current = 0;
+        state.calls = {};
+        state.revealCalls = {};
+        renderList(); openMessage(0); updateChrome();
+      });
+      $("startOverRespond").addEventListener("click", function () {
+        stopSpeaking();
+        state.resp = {};
+        state.respMiss = {};
+        state.revealResp = {};
+        incidentsBuilt = false;
+        $("incidentList").innerHTML = "";
+        buildIncidents(); updateChrome();
+      });
 
       /* ================= REPORT ================= */
       function rankFor(s) {

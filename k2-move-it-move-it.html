@@ -438,6 +438,7 @@
             <button class="btn btn-gold hidden" id="order-sa" type="button">👀 Show Answer</button>
             <button class="btn btn-rasp big hidden" id="order-go" type="button">▶ Go, Bit!</button>
             <button class="btn btn-navy hidden" id="order-next" type="button">Next ➜</button>
+            <button class="btn btn-ghost" id="order-startover" type="button">↺ Start Over</button>
           </div>
         </div>
       </section>
@@ -460,6 +461,7 @@
           <div class="controls">
             <button class="btn btn-gold hidden" id="fix-sa" type="button">👀 Show Answer</button>
             <button class="btn btn-navy hidden" id="fix-next" type="button">Next ➜</button>
+            <button class="btn btn-ghost" id="fix-startover" type="button">↺ Start Over</button>
           </div>
         </div>
       </section>
@@ -726,6 +728,11 @@
         $("star-pill").textContent = "⭐ " + state.stars;
         var sp = $("star-pill"); sp.classList.remove("pop"); void sp.offsetWidth; sp.classList.add("pop");
       }
+      function deductStars(n){
+        if(!n) return;
+        state.stars = Math.max(0, state.stars - n);
+        $("star-pill").textContent = "⭐ " + state.stars;
+      }
 
       var SCREEN_ACT = { order: 1, fix: 2, move: 3, done: 3 };
       function showScreen(name){
@@ -784,10 +791,14 @@
             endText: "⭐ You did it! Clean hands!", sprout: false,
             acts: { WET: "wave", SOAP: "clap", RUB: "clap", RINSE: "wave", DRY: "bob" } }
         ],
-        started: false, round: 0, placed: 0, misses: 0, picked: null, performing: false, tapped: false
+        started: false, round: 0, placed: 0, misses: 0, picked: null, performing: false, tapped: false, starsEarned: 0
       };
       function a1Round(){ return A1.rounds[A1.round]; }
       function resetA1(){
+        deductStars(A1.starsEarned || 0);
+        A1.starsEarned = 0;
+        clearAuto();
+        A1.runToken = (A1.runToken || 0) + 1;
         A1.started = false; A1.round = 0; A1.placed = 0; A1.misses = 0;
         A1.picked = null; A1.performing = false; A1.tapped = false;
         show($("order-intro")); hide($("order-play"));
@@ -866,7 +877,11 @@
           slot.innerHTML = '<span class="num">' + (A1.placed + 1) + "</span>" + SCENES[step] + '<span class="s-label">' + step + "</span>";
         }
         A1.placed++;
-        if(award) addStar(1);
+        if(award){
+          var beforeOrderStars = state.stars;
+          addStar(1);
+          if(state.stars > beforeOrderStars) A1.starsEarned++;
+        }
         if(state.mode === "student"){
           setFeedback("order-feedback", A1.placed >= r.steps.length ? "🎉 All " + r.steps.length + " steps!" : "⭐ Yes! " + step + "!", "good");
         }else{
@@ -905,8 +920,10 @@
         show($("order-stage"));
         var bitWrap = $("order-bit").querySelector(".bit-mount");
         var prop = $("order-prop");
+        var runToken = A1.runToken || 0;
         var i = 0;
         function step(){
+          if(runToken !== (A1.runToken || 0)) return;
           if(i > 0){ var prev = $("order-slot-" + (i - 1)); if(prev) prev.classList.remove("now"); }
           if(i >= r.steps.length){
             hide(prop);
@@ -943,9 +960,12 @@
         correct: ["WAKE","EAT","BRUSH","SCHOOL"],
         display: ["WAKE","SCHOOL","EAT","BRUSH"],
         misplaced: "SCHOOL", targetIndex: 3,
-        started: false, selected: false, misses: 0, fixed: false, picked: null
+        started: false, selected: false, misses: 0, fixed: false, picked: null, starsEarned: 0
       };
       function resetA2(){
+        deductStars(A2.starsEarned || 0);
+        A2.starsEarned = 0;
+        clearAuto();
         A2.started = false; A2.selected = false; A2.misses = 0; A2.fixed = false; A2.picked = null;
         A2.display = ["WAKE","SCHOOL","EAT","BRUSH"];
         show($("fix-intro")); hide($("fix-play"));
@@ -1014,7 +1034,9 @@
         renderA2(true);
         confetti();
         if(award){
+          var beforeFixStars = state.stars;
           addStar(2);
+          if(state.stars > beforeFixStars) A2.starsEarned = 2;
           setFeedback("fix-feedback", "⭐ Fixed it!", "good");
           autoAdvance(function(){ showScreen("move"); }, 2100);
         }
@@ -1191,10 +1213,15 @@
       $("order-sa").addEventListener("click", a1ShowAnswer);
       $("order-go").addEventListener("click", a1Go);
       $("order-next").addEventListener("click", a1Advance);
+      $("order-startover").addEventListener("click", function(){ resetA1(); startA1(); });
 
       $("fix-start").addEventListener("click", startA2);
       $("fix-sa").addEventListener("click", a2ShowAnswer);
       $("fix-next").addEventListener("click", function(){ showScreen("move"); });
+      $("fix-startover").addEventListener("click", function(){
+        var misses = A2.misses;
+        resetA2(); startA2(); A2.misses = misses;
+      });
 
       $("move-start").addEventListener("click", startA3);
       $("move-undo").addEventListener("click", a3Undo);

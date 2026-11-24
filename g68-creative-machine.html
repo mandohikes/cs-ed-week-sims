@@ -357,6 +357,7 @@
       </div>
       <div id="rules1"></div>
       <button class="big-btn" type="button" id="create1">CREATE</button>
+      <button class="big-btn btn-outline" type="button" id="startOver1">↺ Start Over</button>
       <div class="art-frame empty" id="frame1"></div>
       <div id="after1" style="display:none">
         <p class="same-line">Same rules. New art every time.</p>
@@ -388,6 +389,7 @@
       <div id="rules2"></div>
       <button class="big-btn" type="button" id="create2" disabled>CREATE</button>
       <p class="hint" id="hint2">Change one rule to continue.</p>
+      <button class="big-btn btn-outline" type="button" id="startOver2">↺ Start Over</button>
       <div id="compare2" style="display:none">
         <div class="compare-grid">
           <div>
@@ -433,6 +435,7 @@
       <div class="q-options" id="qOpts"></div>
       <div class="feedback" id="feedbackQ"></div>
       <button class="big-btn btn-teal" type="button" id="nextQ" style="display:none; margin-top:16px;">Next</button>
+      <button class="big-btn btn-outline" type="button" id="startOver3">↺ Start Over</button>
       <div class="talk-box">
         <h3>Talk about it</h3>
         <ul>
@@ -472,6 +475,7 @@
         <button class="vote-btn" type="button" data-vote="both">Both</button>
       </div>
       <div class="reflection" id="reflection"></div>
+      <button class="big-btn btn-outline" type="button" id="clearGallery">↺ Start Over</button>
       <button class="big-btn" type="button" id="playAgain" style="margin-top:20px;">Play Again</button>
       <div class="talk-box">
         <h3>Talk about it</h3>
@@ -1011,6 +1015,71 @@
     });
   }
   document.getElementById("playAgain").addEventListener("click", function(){ location.reload(); });
+
+  /* ---------------- Student Start Over (scoped per screen) ---------------- */
+  document.getElementById("startOver1").addEventListener("click", function(){
+    // Back to the Step 1 starting state: default rules, no piece yet.
+    // Mutate (not replace) state.rules1 — the rule buttons hold closures over it.
+    state.rules1.colors = "berry"; state.rules1.shapes = "circles"; state.rules1.layout = "grid";
+    state.piece1 = null;
+    refreshRuleGroups("rules1", state.rules1);
+    var f = document.getElementById("frame1");
+    f.innerHTML = ""; f.classList.add("empty");
+    document.getElementById("after1").style.display = "none";
+  });
+  document.getElementById("startOver2").addEventListener("click", function(){
+    // Back to the Step 2 starting state: rules2 copies rules1 again, no Piece 2 yet.
+    state.rules2.colors = state.rules1.colors;
+    state.rules2.shapes = state.rules1.shapes;
+    state.rules2.layout = state.rules1.layout;
+    state.piece2 = null;
+    state.changedGroup = null;
+    state.wcAnswered = false; state.wcMisses = []; state.wcRevealed = false;
+    state.step2Touched = false;
+    refreshRuleGroups("rules2", state.rules2);
+    document.getElementById("frameP1").innerHTML = "";
+    document.getElementById("frameP2").innerHTML = "";
+    document.getElementById("compare2").style.display = "none";
+    var fb = document.getElementById("feedbackWC");
+    fb.className = "feedback"; fb.textContent = "";
+    document.getElementById("next2").style.display = "none";
+    updateStep2Gate();
+  });
+  document.getElementById("startOver3").addEventListener("click", function(){
+    // Zero the Quick Check's earned score before replay, then restart at Q1.
+    state.score = 0;
+    state.qIndex = 0;
+    renderQuestion();
+  });
+  document.getElementById("clearGallery").addEventListener("click", function(){
+    // Remove the accumulated pieces and return to a fresh Step 1.
+    state.piece1 = null; state.piece2 = null;
+    state.changedGroup = null;
+    state.wcAnswered = false; state.wcMisses = []; state.wcRevealed = false;
+    state.step2Touched = false;
+    state.rules1.colors = "berry"; state.rules1.shapes = "circles"; state.rules1.layout = "grid";
+    state.rules2.colors = "berry"; state.rules2.shapes = "circles"; state.rules2.layout = "grid";
+    refreshRuleGroups("rules1", state.rules1);
+    refreshRuleGroups("rules2", state.rules2);
+    state.score = 0; state.qIndex = 0;
+    state.galleryPick = 1;
+    document.getElementById("signInput").value = "";
+    document.getElementById("signature").textContent = "";
+    var vb = document.querySelectorAll(".vote-btn");
+    for (var i = 0; i < vb.length; i++) vb[i].classList.remove("selected");
+    var r = document.getElementById("reflection");
+    r.textContent = ""; r.classList.remove("show");
+    var f1 = document.getElementById("frame1");
+    f1.innerHTML = ""; f1.classList.add("empty");
+    document.getElementById("after1").style.display = "none";
+    document.getElementById("frameP1").innerHTML = "";
+    document.getElementById("frameP2").innerHTML = "";
+    document.getElementById("compare2").style.display = "none";
+    document.getElementById("galleryFrame").innerHTML = "";
+    document.getElementById("galleryRules").textContent = "";
+    updateStep2Gate();
+    showScreen("step1");
+  });
 
   /* ---------------- Setup helpers (teacher jumps / skips) ---------------- */
   function ensurePiece1(){

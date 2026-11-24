@@ -282,6 +282,13 @@
     border-radius:999px; padding:15px 38px; font-size:1.1rem; font-weight:900; min-height:58px;
     font-family:"Fredoka",sans-serif;
   }
+  .so-btn{
+    display:block; margin:14px auto 0; background:var(--card); color:var(--teal-dark); border:2px solid var(--teal);
+    border-radius:999px; padding:12px 30px; font-size:1rem; font-weight:900; min-height:52px;
+    font-family:"Fredoka",sans-serif;
+  }
+  @media (prefers-color-scheme: dark){ .so-btn{color:var(--teal);} }
+  .so-btn:active{transform:scale(.97);}
 
   /* ---------- teacher bypass (additive) ---------- */
   .tb-btn{
@@ -386,6 +393,7 @@
       </div>
       <p class="feedback" id="trainFeedback" aria-live="polite"></p>
       <button class="big-next" id="trainNext" type="button">See the machine try →</button>
+      <button class="so-btn" id="trainStartOver" type="button">↺ Start Over</button>
     </div>
   </section>
 
@@ -416,6 +424,7 @@
       <button class="big-next" id="testReveal" type="button">Reveal the machine's guess →</button>
       <button class="big-next" id="testNextItem" type="button">Next picture →</button>
       <button class="big-next" id="testNextScreen" type="button">Keep going →</button>
+      <button class="so-btn" id="testStartOver" type="button">↺ Start Over</button>
     </div>
   </section>
 
@@ -444,6 +453,7 @@
       </div>
       <p class="result-line show">Lots of dogs. Almost no cats.</p>
       <button class="big-next show" id="biasNext" type="button">Watch Machine 2 try →</button>
+      <button class="so-btn" id="biasStartOver" type="button">↺ Start Over</button>
     </div>
   </section>
 
@@ -470,6 +480,7 @@
       </div>
       <p class="feedback" id="fixFeedback" aria-live="polite"></p>
       <button class="big-next" id="fixNext" type="button">Test the fixed machine →</button>
+      <button class="so-btn" id="fixStartOver" type="button">↺ Start Over</button>
     </div>
   </section>
 
@@ -483,6 +494,7 @@
       <div class="quiz-opts" id="quizOpts"></div>
       <p class="feedback" id="quizFeedback" aria-live="polite"></p>
       <button class="big-next" id="quizNext" type="button">Next →</button>
+      <button class="so-btn" id="quizStartOver" type="button">↺ Start Over</button>
     </div>
   </section>
 
@@ -1017,6 +1029,22 @@
     if (mode) startTrain();
     else showScreen("start");
   });
+
+  /* ---------------- student start over (scoped per screen) ---------------- */
+  $("trainStartOver").addEventListener("click", function(){ startTrain(); });
+  $("testStartOver").addEventListener("click", function(){
+    phaseResults[testPhase] = null; /* zero this test phase's recorded result before replay */
+    startTest(testPhase);
+  });
+  $("biasStartOver").addEventListener("click", function(){
+    phaseResults[2] = null; /* the biased-machine test has not earned anything yet on replay */
+    startBias();
+  });
+  $("fixStartOver").addEventListener("click", function(){
+    phaseResults[3] = null; /* the fixed-machine test result belongs to the fix phase */
+    startFix();
+  });
+  $("quizStartOver").addEventListener("click", function(){ startQuiz(); });
 
   /* ---------------- teacher bypass (additive) ---------------- */
   var tbPanel = $("tbPanel"), tbBtn = $("tbBtn");

@@ -157,6 +157,9 @@
   .hint-btn{background:var(--card); border:2px solid var(--sky); color:var(--navy); border-radius:16px;
     font-size:16px; font-weight:900; min-height:60px; padding:0 18px;}
   @media (prefers-color-scheme: dark){ .hint-btn{color:#9ADCFB;} }
+  .reset-btn{background:var(--card); border:2px solid var(--raspberry); color:var(--raspberry); border-radius:16px;
+    font-size:16px; font-weight:900; min-height:60px; padding:0 18px;}
+  @media (prefers-color-scheme: dark){ .reset-btn{color:#FF8FAB;} }
   .next-btn{width:100%; margin-top:10px; background:var(--raspberry); color:#fff; border:none; border-radius:16px;
     font-size:20px; font-weight:900; min-height:58px; display:none;}
   .next-btn.show{display:block;}
@@ -341,6 +344,7 @@
           <button class="run-btn" id="runBtn">▶ Run</button>
           <button class="step-btn" id="stepBtn">👣 One Step</button>
           <button class="hint-btn" id="hintBtn">💡 Hint</button>
+          <button class="reset-btn" id="startOverBtn">↺ Start Over</button>
         </div>
         <p class="block-count" id="blockCount"></p>
         <p class="run-hint" id="runHint" aria-live="polite"></p>
@@ -448,6 +452,7 @@ var delivered=[];             // booleans per target
 var selectedFree=-1;          // index into freeHouses
 var bonks=0;
 var totalStars=0;
+var routeStars=0; /* stars the current route has contributed to totalStars */
 var running=false;
 var stepQueue=null, stepPos=0; // for teacher Step mode
 var currentScreen="start";
@@ -489,7 +494,7 @@ function showScreen(name){
   window.scrollTo(0,0);
 }
 function loadRoute(idx){
-  routeIdx=idx;
+  routeIdx=idx; routeStars=0;
   var r=route();
   program=[]; bonks=0; running=false; stepQueue=null; stepPos=0;
   robot={x:r.start.x,y:r.start.y};
@@ -792,7 +797,8 @@ function finishSuccess(){
     if(r.id==="r4") msg="You did it! 🎉 Delivered your way!";
   }
   if(mode==="student"){
-    totalStars+=stars;
+    totalStars+=stars-routeStars; /* replaying a route replaces its earlier credit, never adds */
+    routeStars=stars;
     $("starsBox").textContent="⭐ "+totalStars;
     msg+=" "+"⭐".repeat(stars);
   }
@@ -861,6 +867,10 @@ function stepOnce(){
 }
 function resetActivity(){
   var r=route();
+  if(mode==="student" && routeStars>0){ /* restarting a scored puzzle zeroes its earned stars before replay */
+    totalStars-=routeStars; routeStars=0;
+    $("starsBox").textContent="⭐ "+totalStars;
+  }
   program=[]; bonks=0; running=false; stepQueue=null; stepPos=0;
   robot={x:r.start.x,y:r.start.y};
   if(r.id==="r4"){ selectedFree=-1; delivered=[]; }
@@ -943,6 +953,7 @@ for(var q2=0;q2<repBtns.length;q2++){
 $("undoBtn").addEventListener("click",function(){ if(running)return; program.pop(); stepQueue=null; clearFeedback(); renderProgram(); });
 $("clearBtn").addEventListener("click",function(){ if(running)return; program=[]; stepQueue=null; clearFeedback(); renderProgram(); });
 $("runBtn").addEventListener("click",runProgram);
+$("startOverBtn").addEventListener("click",function(){ if(running)return; resetActivity(); });
 $("stepBtn").addEventListener("click",stepOnce);
 $("hintBtn").addEventListener("click",function(){
   if(route().id==="r4"&&selectedFree<0){ setFeedback("Tap a house first! 🏠","warn"); return; }

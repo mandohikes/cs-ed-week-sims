@@ -218,6 +218,7 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
       <div class="verdict" id="testVerdict"></div>
       <div class="feedback" id="testFeedback"></div>
       <button class="btn btn-navy btn-wide" id="testNext" style="display:none" onclick="testNextTap()">Next ➜</button>
+      <button class="btn btn-ghost btn-wide" id="testStartOver" onclick="testStartOver()">↺ Start Over</button>
       <div class="note-row"><button class="hear-btn" onclick="hearTest()">🔊 Hear it · optional</button></div>
       <div class="teacher-box teacher-only" style="display:none">
         <strong>Talk about it</strong>
@@ -291,6 +292,7 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
       <div class="score-pct" id="score2Pct"></div>
       <div class="result-list" id="retestList"></div>
       <button class="btn btn-navy btn-wide" onclick="goQuiz()">Quick Check ➜</button>
+      <button class="btn btn-ghost btn-wide" id="retestStartOver" onclick="retestStartOver()">↺ Start Over</button>
       <div class="note-row"><button class="hear-btn" onclick="hearRetest()">🔊 Hear it · optional</button></div>
       <div class="teacher-box teacher-only" style="display:none">
         <strong>Talk about it</strong>
@@ -308,6 +310,7 @@ h2.med{font-size:24px;line-height:1.2;margin:10px 0 8px;font-weight:900}
       <div id="quizOpts"></div>
       <div class="feedback" id="quizFeedback"></div>
       <button class="btn btn-navy btn-wide" id="quizNext" style="display:none" onclick="quizNextTap()">Next ➜</button>
+      <button class="btn btn-ghost btn-wide" id="quizStartOver" onclick="quizStartOver()">↺ Start Over</button>
       <div class="note-row"><button class="hear-btn" onclick="hearQuiz()">🔊 Hear it · optional</button></div>
     </div>
   </section>
@@ -560,6 +563,7 @@ function renderLearned(){
 
 /* ---------- STEP 2: TEST ---------- */
 function goTest(){ testIdx=0; results1=[]; predictScore=0; renderTest(); show("s-test"); }
+function testStartOver(){ acc1={n:0,d:TEST.length}; goTest(); }
 function renderTest(){
   var m=TEST[testIdx];
   predicted=null;
@@ -681,7 +685,9 @@ function renderRetest(){
   document.getElementById("retestList").innerHTML=html;
 }
 function hearRetest(){ hearIt("Re-test done. Your filter now got "+acc2.n+" of "+acc2.d+" right."); }
+function retestStartOver(){ acc2={n:0,d:TEST.length}; renderRetest(); }
 function goQuiz(){ quizIdx=0; quizScore=0; renderQuiz(); show("s-quiz"); }
+function quizStartOver(){ goQuiz(); }
 
 /* ---------- QUIZ ---------- */
 function renderQuiz(){
