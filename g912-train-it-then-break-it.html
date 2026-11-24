@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Train It, Then Break It</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --rasp:#CD2653; --navy:#273791; --sky:#00ADEF; --mag:#EC008C; --teal:#13A89E;
+        --bg:#F4F7FF; --ink:#1B2350; --muted:#5A648C; --card:#FFFFFF; --border:#DCE3F5;
+        --good-bg:#E2F6EC; --good-ink:#0E6B3C; --good-border:#3FB97F;
+        --bad-bg:#FDE7EF; --bad-ink:#A1123F; --bad-border:#EC7CA6;
+        --info-bg:#E4F5FE; --info-ink:#0B5B7A; --info-border:#5CC4EE;
+        --talk-bg:#FFF6D8; --talk-border:#F2D06B; --talk-ink:#6B5510;
+        --ghost-bg:#EDF1FF; --sheet-bg:#FFFFFF;
+        --shadow:0 10px 30px rgba(27,35,80,.10);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0D1230; --ink:#EEF1FF; --muted:#A7B0D8; --card:#1A2150; --border:#39448C;
+          --good-bg:#123B2A; --good-ink:#7FE3AE; --good-border:#2E7D57;
+          --bad-bg:#4A1630; --bad-ink:#FFB3CC; --bad-border:#8C3A5C;
+          --info-bg:#10384C; --info-ink:#9BDCF7; --info-border:#2C6E8F;
+          --talk-bg:#3D3411; --talk-border:#8A7420; --talk-ink:#FFE9A3;
+          --ghost-bg:#232B5E; --sheet-bg:#171D47;
+          --shadow:0 10px 30px rgba(0,0,0,.45);
+        }
+      }
+      *{ box-sizing:border-box; }
+      html,body{ margin:0; padding:0; }
+      body{
+        font-family:"Nunito",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+        background:var(--bg); color:var(--ink);
+        -webkit-font-smoothing:antialiased;
+      }
+      button, input{ font-family:inherit; }
+      button{ cursor:pointer; }
+
+      .wrap{ max-width:700px; margin:0 auto; padding:0 16px 110px; }
+
+      /* Top bar */
+      .topbar{ display:flex; align-items:center; gap:12px; padding:18px 2px 12px; }
+      .logo{
+        flex:0 0 auto; width:46px; height:46px; border-radius:13px; background:var(--navy);
+        color:#fff; display:flex; align-items:center; justify-content:center;
+        font-weight:900; font-size:19px; letter-spacing:.5px;
+        box-shadow:0 6px 14px rgba(39,55,145,.35);
+      }
+      .topbar .tt{ font-weight:900; font-size:19px; line-height:1.15; }
+      .topbar .ts{ color:var(--muted); font-weight:700; font-size:12.5px; line-height:1.3; }
+
+      /* Progress */
+      .progress{ height:10px; border-radius:99px; background:var(--border); overflow:hidden; margin:2px 0 22px; }
+      .progress > div{
+        height:100%; border-radius:99px; width:4%;
+        background:linear-gradient(90deg,var(--sky),var(--teal));
+        transition:width .45s ease;
+      }
+
+      /* Screens */
+      .screen{ animation:pop .35s ease both; }
+      @keyframes pop{ from{ transform:scale(.965); opacity:0; } to{ transform:scale(1); opacity:1; } }
+      @media (prefers-reduced-motion: reduce){
+        .screen{ animation:none; }
+        .progress > div{ transition:none; }
+      }
+
+      .kicker{
+        display:inline-block; text-transform:uppercase; letter-spacing:1.2px;
+        font-size:12px; font-weight:900; color:#fff; border-radius:99px; padding:6px 13px;
+      }
+      .k-rasp{ background:var(--rasp); } .k-navy{ background:var(--navy); }
+      .k-sky{ background:var(--sky); } .k-mag{ background:var(--mag); } .k-teal{ background:var(--teal); }
+      h1{ font-size:clamp(30px,7vw,42px); font-weight:900; line-height:1.08; margin:14px 0 8px; }
+      h2{ font-size:clamp(26px,6vw,34px); font-weight:900; line-height:1.12; margin:14px 0 8px; }
+      .sub{ color:var(--muted); font-weight:700; font-size:17px; margin:0 0 18px; }
+      .subrow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+      .subrow .sub{ flex:1; }
+
+      .card{
+        background:var(--card); border:2px solid var(--border); border-radius:20px;
+        box-shadow:var(--shadow); padding:18px; margin-bottom:16px;
+      }
+
+      /* Buttons */
+      .btn{
+        border:none; border-radius:16px; min-height:60px; padding:12px 20px;
+        font-size:18px; font-weight:900; color:#fff; background:var(--navy);
+        display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        width:100%; text-align:center; line-height:1.2;
+      }
+      .btn:active{ transform:translateY(1px); }
+      .btn small{ display:block; font-size:13px; font-weight:700; opacity:.85; }
+      .btn-sports{ background:var(--rasp); }
+      .btn-study{ background:var(--teal); }
+      .btn-mag{ background:var(--mag); }
+      .btn-sky{ background:var(--sky); }
+      .btn-ghost{ background:var(--ghost-bg); color:var(--ink); }
+      .btn:disabled{ opacity:.45; cursor:default; }
+      .btnrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .btnrow.single{ grid-template-columns:1fr; }
+      .stack{ display:grid; gap:12px; }
+      @media (max-width:420px){ .btnrow{ grid-template-columns:1fr; } }
+
+      .modebtn{ flex-direction:column; gap:2px; padding:16px; }
+      .modebtn .mt{ font-size:20px; }
+      .modebtn .md{ font-size:13.5px; font-weight:700; opacity:.88; line-height:1.35; }
+
+      .hearbtn{
+        flex:0 0 auto; border:2px solid var(--border); background:var(--card); color:var(--muted);
+        border-radius:99px; min-height:40px; padding:6px 14px; font-size:13.5px; font-weight:800;
+      }
+      .pill{
+        display:inline-flex; align-items:center; min-height:40px; padding:6px 14px;
+        border-radius:99px; background:var(--ghost-bg); color:var(--muted);
+        font-size:13.5px; font-weight:800;
+      }
+      .noterow{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px; }
+
+      /* Photo card */
+      .scene-wrap{ position:relative; }
+      .scene-wrap svg{ width:100%; height:auto; display:block; border-radius:14px; }
+      .caption{ font-size:21px; font-weight:900; text-align:center; margin:14px 0 2px; }
+      .countline{ text-align:center; color:var(--muted); font-weight:800; font-size:14px; margin:0 0 14px; }
+      .stamp{
+        position:absolute; top:14px; right:14px; transform:rotate(7deg);
+        background:rgba(255,255,255,.93); border:3.5px solid var(--rasp); color:var(--rasp);
+        font-weight:900; font-size:21px; letter-spacing:1.5px; border-radius:10px; padding:5px 14px;
+      }
+      .stamp.study{ border-color:var(--teal); color:var(--teal); }
+
+      /* Feedback */
+      .fb{ border-radius:14px; padding:13px 16px; font-weight:800; font-size:16.5px; border:2px solid; margin:14px 0; }
+      .fb.good{ background:var(--good-bg); color:var(--good-ink); border-color:var(--good-border); }
+      .fb.bad{ background:var(--bad-bg); color:var(--bad-ink); border-color:var(--bad-border); }
+      .fb.info{ background:var(--info-bg); color:var(--info-ink); border-color:var(--info-border); }
+
+      /* Talk about it */
+      .talk{
+        background:var(--talk-bg); border:2px solid var(--talk-border); color:var(--talk-ink);
+        border-radius:16px; padding:14px 16px; margin:16px 0; font-weight:800; font-size:15.5px;
+      }
+      .talk .th{ text-transform:uppercase; letter-spacing:1px; font-size:11.5px; font-weight:900; margin-bottom:5px; }
+      .talk ul{ margin:6px 0 0; padding-left:20px; }
+      .talk li{ margin:3px 0; }
+
+      /* Chips */
+      .chips{ display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 4px; }
+      .chip{
+        background:var(--ghost-bg); border:2px solid var(--border); border-radius:99px;
+        padding:9px 15px; font-weight:900; font-size:15px;
+      }
+      .bigline{ font-size:19px; font-weight:900; margin:14px 0 4px; }
+
+      /* Test tally */
+      .tally{ text-align:center; font-weight:900; font-size:17px; margin:12px 0 0; }
+      .reason{ text-align:center; color:var(--muted); font-weight:800; font-size:16px; margin:10px 0 0; }
+      .callline{ text-align:center; font-weight:900; font-size:17px; margin:10px 0 0; }
+
+      /* Audit list */
+      .arow{
+        display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px;
+        background:var(--card); border:2px solid var(--border); border-radius:16px;
+        padding:13px 16px; margin-bottom:10px; font-size:15.5px; text-align:left; color:var(--ink);
+        min-height:56px;
+      }
+      .arow .ac{ font-weight:900; }
+      .arow .av{ font-weight:800; color:var(--muted); font-size:14px; text-align:right; }
+      .arow .av b{ color:var(--ink); }
+      button.arow.miss{ border-color:var(--bad-border); background:var(--bad-bg); cursor:pointer; }
+      button.arow.miss .av{ color:var(--bad-ink); }
+      .arow.fixed{ border-color:var(--good-border); background:var(--good-bg); }
+      .tag{
+        display:inline-block; font-size:11.5px; font-weight:900; text-transform:uppercase; letter-spacing:.8px;
+        border-radius:99px; padding:3px 9px; margin-left:8px; vertical-align:middle;
+      }
+      .tag.miss{ background:var(--rasp); color:#fff; }
+      .tag.fixed{ background:var(--good-border); color:#fff; }
+      .tag.ok{ background:var(--teal); color:#fff; }
+
+      .choice{
+        width:100%; text-align:left; background:var(--card); color:var(--ink);
+        border:2px solid var(--border); border-radius:16px; min-height:56px;
+        padding:12px 16px; font-size:16.5px; font-weight:800; margin-bottom:10px;
+      }
+      .choice:disabled{ opacity:.55; }
+      .choice.picked{ border-color:var(--navy); }
+      .choice.missed{ border-color:var(--bad-border); background:var(--bad-bg); }
+
+      /* Certificate */
+      .cert{
+        border:3px solid var(--talk-border); border-radius:20px; padding:26px 20px; text-align:center;
+        background:var(--card); box-shadow:var(--shadow); margin-bottom:16px;
+      }
+      .cert .ck{ text-transform:uppercase; letter-spacing:2px; font-size:12px; font-weight:900; color:var(--muted); }
+      .cert .ct{ font-size:30px; font-weight:900; margin:8px 0 2px; }
+      .cert .cname{
+        font-size:clamp(26px,7vw,36px); font-weight:900; color:var(--navy);
+        border-bottom:3px solid var(--border); padding:8px 4px 6px; margin:10px auto 8px; max-width:420px;
+        min-height:52px; word-break:break-word;
+      }
+      @media (prefers-color-scheme: dark){ .cert .cname{ color:var(--sky); } }
+      .cert .cd{ color:var(--muted); font-weight:700; font-size:14.5px; }
+      .nameinput{
+        width:100%; min-height:56px; border:2px solid var(--border); border-radius:14px;
+        padding:10px 16px; font-size:18px; font-weight:800; background:var(--card); color:var(--ink);
+        margin-bottom:6px;
+      }
+      .tiny{ color:var(--muted); font-size:13px; font-weight:700; }
+      .report{ font-size:16.5px; font-weight:800; line-height:1.45; }
+      .report p{ margin:8px 0; }
+      .report b{ color:var(--navy); }
+      @media (prefers-color-scheme: dark){ .report b{ color:var(--sky); } }
+      .keybanner{
+        background:linear-gradient(90deg,var(--navy),var(--mag)); color:#fff; border-radius:20px;
+        padding:20px; text-align:center; font-size:20px; font-weight:900; line-height:1.3; margin:16px 0;
+      }
+
+      /* Teacher button + sheet */
+      #teacherBtn{
+        position:fixed; right:16px; bottom:16px; z-index:40;
+        min-height:44px; padding:10px 18px; border-radius:99px;
+        background:var(--card); color:var(--muted); border:2px solid var(--border);
+        font-weight:900; font-size:14px; box-shadow:var(--shadow);
+      }
+      #sheetOverlay{
+        position:fixed; inset:0; background:rgba(10,14,40,.45); z-index:50; display:none;
+      }
+      #sheetOverlay.open{ display:block; }
+      #teacherSheet{
+        position:fixed; left:0; right:0; bottom:0; z-index:60;
+        background:var(--sheet-bg); color:var(--ink);
+        border-radius:22px 22px 0 0; border-top:2px solid var(--border);
+        box-shadow:0 -12px 40px rgba(0,0,0,.25);
+        padding:18px 18px calc(20px + env(safe-area-inset-bottom));
+        transform:translateY(105%); transition:transform .3s ease;
+        max-height:86vh; overflow-y:auto;
+      }
+      #teacherSheet.open{ transform:translateY(0); }
+      @media (prefers-reduced-motion: reduce){ #teacherSheet{ transition:none; } }
+      .sheet-inner{ max-width:700px; margin:0 auto; }
+      .sheet-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; }
+      .sheet-head .st{ font-size:19px; font-weight:900; }
+      .sheet-head .sm{ color:var(--muted); font-weight:800; font-size:13.5px; }
+      .sheet-close{
+        border:2px solid var(--border); background:var(--card); color:var(--ink);
+        border-radius:99px; min-height:40px; padding:6px 16px; font-weight:900; font-size:14px; flex:0 0 auto;
+      }
+      .sheet-sec{ text-transform:uppercase; letter-spacing:1px; font-size:11.5px; font-weight:900; color:var(--muted); margin:14px 0 8px; }
+      .jump-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:9px; }
+      .jump-grid button, .sheet-action{
+        min-height:48px; border-radius:13px; border:2px solid var(--border);
+        background:var(--ghost-bg); color:var(--ink); font-weight:900; font-size:15px; padding:8px 10px;
+      }
+      .sheet-action{ width:100%; margin-bottom:9px; }
+      .sheet-action.reveal{ background:var(--navy); border-color:var(--navy); color:#fff; }
+      #revealBox{
+        background:var(--talk-bg); border:2px solid var(--talk-border); color:var(--talk-ink);
+        border-radius:14px; padding:12px 15px; font-weight:800; font-size:15.5px; margin:4px 0 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="topbar">
+        <div class="logo" aria-hidden="true">AI</div>
+        <div>
+          <div class="tt">Train It, Then Break It</div>
+          <div class="ts">CS Education Week · Center for Cyber Education</div>
+        </div>
+      </header>
+      <div class="progress" aria-hidden="true"><div id="progFill"></div></div>
+      <main id="app"></main>
+    </div>
+
+    <button id="teacherBtn" type="button">Teacher</button>
+    <div id="sheetOverlay"></div>
+    <section id="teacherSheet" aria-label="Teacher panel">
+      <div class="sheet-inner">
+        <div class="sheet-head">
+          <div>
+            <div class="st">Teacher Panel</div>
+            <div class="sm" id="sheetMeta">Start</div>
+          </div>
+          <button class="sheet-close" id="sheetClose" type="button">Close</button>
+        </div>
+        <div class="sheet-sec">Jump to</div>
+        <div class="jump-grid">
+          <button type="button" data-jump="train">Train It</button>
+          <button type="button" data-jump="test">Test It</button>
+          <button type="button" data-jump="audit">Audit It</button>
+          <button type="button" data-jump="fix">Fix It</button>
+          <button type="button" data-jump="finish">Finish</button>
+        </div>
+        <div class="sheet-sec">This step</div>
+        <button class="sheet-action" id="skipBtn" type="button">Skip this step</button>
+        <button class="sheet-action reveal" id="revealBtn" type="button">Reveal answer</button>
+        <div id="revealBox" hidden></div>
+        <button class="sheet-action" id="resetBtn" type="button">Reset (start over)</button>
+      </div>
+    </section>
+
+    <script>
+    "use strict";
+    /* ================= DATA ================= */
+    var TRAIN = [
+      {id:"t1", caption:"Basketball game",    truth:"SPORTS", place:"outdoor", cue:"sport", scene:"bballOut",    cueWord:"a ball and a hoop"},
+      {id:"t2", caption:"Football practice",  truth:"SPORTS", place:"outdoor", cue:"sport", scene:"footballOut", cueWord:"a ball and yard lines"},
+      {id:"t3", caption:"Track meet",         truth:"SPORTS", place:"outdoor", cue:"sport", scene:"track",       cueWord:"a runner on a track"},
+      {id:"t4", caption:"Pep rally",          truth:"SPORTS", place:"outdoor", cue:"sport", scene:"rally",       cueWord:"a banner and a crowd"},
+      {id:"t5", caption:"Soccer game",        truth:"SPORTS", place:"outdoor", cue:"sport", scene:"soccerOut",   cueWord:"a ball and a goal"},
+      {id:"t6", caption:"Library reading",    truth:"STUDY",  place:"indoor",  cue:"study", scene:"library",     cueWord:"books on shelves"},
+      {id:"t7", caption:"Lab experiment",     truth:"STUDY",  place:"indoor",  cue:"study", scene:"lab",         cueWord:"a beaker and a flask"},
+      {id:"t8", caption:"Chess club",         truth:"STUDY",  place:"indoor",  cue:"study", scene:"chess",       cueWord:"a chess board"},
+      {id:"t9", caption:"Homework group",     truth:"STUDY",  place:"indoor",  cue:"study", scene:"homework",    cueWord:"books on a desk"},
+      {id:"t10",caption:"Coding class",       truth:"STUDY",  place:"indoor",  cue:"study", scene:"coding",      cueWord:"a laptop screen"}
+    ];
+    var TEST = [
+      {id:"x1", caption:"Soccer match",          truth:"SPORTS", place:"outdoor", cue:"sport", scene:"soccerTest",  cueWord:"a ball and a goal"},
+      {id:"x2", caption:"Reading in the library",truth:"STUDY",  place:"indoor",  cue:"study", scene:"libraryTest", cueWord:"books on shelves"},
+      {id:"x3", caption:"Sprint race",           truth:"SPORTS", place:"outdoor", cue:"sport", scene:"sprint",      cueWord:"a runner on a track"},
+      {id:"x4", caption:"Computer lab",          truth:"STUDY",  place:"indoor",  cue:"study", scene:"complab",     cueWord:"screens on desks"},
+      {id:"x5", caption:"Football game",         truth:"SPORTS", place:"outdoor", cue:"sport", scene:"footballTest",cueWord:"a ball and yard lines"},
+      {id:"x6", caption:"Basketball in the gym", truth:"SPORTS", place:"indoor",  cue:"sport", scene:"gymBball",    cueWord:"a ball and a hoop"}
+    ];
+    var FIX = [
+      {id:"f1", caption:"Basketball practice in the gym", truth:"SPORTS", place:"indoor",  cue:"sport", scene:"gymBballFix", cueWord:"a ball and a hoop"},
+      {id:"f2", caption:"Volleyball in the gym",          truth:"SPORTS", place:"indoor",  cue:"sport", scene:"gymVolley",   cueWord:"a ball and a net"},
+      {id:"f3", caption:"Reading under a tree",           truth:"STUDY",  place:"outdoor", cue:"study", scene:"treeRead",    cueWord:"a book under a tree"},
+      {id:"f4", caption:"Nature walk with a clipboard",   truth:"STUDY",  place:"outdoor", cue:"study", scene:"natureWalk",  cueWord:"a clipboard and a leaf"}
+    ];
+    var ALL = {};
+    TRAIN.concat(TEST, FIX).forEach(function(c){ ALL[c.id] = c; });
+
+    /* ================= STATE ================= */
+    var state = {
+      mode: null,               // 'teacher' | 'student'
+      screen: "start",
+      speakText: "",
+      trainIdx: 0, trainChosen: null, trainLabels: [],
+      testIdx: 0, testRun: null, testResults: [],
+      auditPick: null, auditAnswer: null, auditMisses: [], auditLastWrong: null,
+      fixIdx: 0, fixChosen: null, fixLabels: [],
+      retestResults: null,
+      certName: ""
+    };
+
+    /* ================= THE MACHINE (really learns) ================= */
+    function featureWeight(labels, key, val){
+      var sub = labels.filter(function(l){ return l[key] === val; });
+      if(!sub.length) return 0;
+      var s = sub.filter(function(l){ return l.label === "SPORTS"; }).length;
+      var t = sub.filter(function(l){ return l.label === "STUDY"; }).length;
+      return (s - t) / sub.length;
+    }
+    function predict(card, labels){
+      var placeTerm = 2 * featureWeight(labels, "place", card.place);
+      var cueTerm   = 1 * featureWeight(labels, "cue", card.cue);
+      var score = placeTerm + cueTerm;
+      var pred;
+      if(score > 0) pred = "SPORTS";
+      else if(score < 0) pred = "STUDY";
+      else {
+        var s = labels.filter(function(l){ return l.label === "SPORTS"; }).length;
+        var t = labels.filter(function(l){ return l.label === "STUDY"; }).length;
+        pred = s >= t ? "SPORTS" : "STUDY";
+      }
+      var reason;
+      if(Math.abs(placeTerm) >= Math.abs(cueTerm)){
+        reason = card.place === "outdoor" ? "Outdoors, on a field — " + pred : "Indoors — " + pred;
+      } else {
+        reason = "It sees " + card.cueWord + " — " + pred;
+      }
+      return { pred: pred, reason: reason, correct: pred === card.truth };
+    }
+    function patternOf(labels, key, val, name){
+      var sub = labels.filter(function(l){ return l[key] === val; });
+      if(!sub.length) return null;
+      var s = sub.filter(function(l){ return l.label === "SPORTS"; }).length;
+      var t = sub.length - s;
+      if(s === t) return { text: name + " → split (" + s + " SPORTS · " + t + " STUDY)", share: 0.5, total: sub.length };
+      var maj = s > t ? "SPORTS" : "STUDY";
+      var cnt = Math.max(s, t);
+      return { text: name + " → " + maj + " (" + cnt + " of " + sub.length + ")", share: cnt / sub.length, total: sub.length, label: maj, cnt: cnt };
+    }
+    function learnedChips(){
+      var L = state.trainLabels, out = [];
+      [["place","outdoor","Outdoors"],["place","indoor","Indoors"],["cue","sport","Ball / field"],["cue","study","Books / screens"]]
+      .forEach(function(f){
+        var p = patternOf(L, f[0], f[1], f[2]);
+        if(p) out.push(p.text);
+      });
+      return out;
+    }
+    function strongestPattern(){
+      var L = state.trainLabels, best = null;
+      [["place","outdoor","Outdoors"],["place","indoor","Indoors"],["cue","sport","Ball / field"],["cue","study","Books / screens"]]
+      .forEach(function(f){
+        var p = patternOf(L, f[0], f[1], f[2]);
+        if(p && p.label && (!best || p.share > best.share || (p.share === best.share && p.total > best.total))) best = p;
+      });
+      return best ? best.text : "No clear pattern in the labels";
+    }
+    function missedResults(){ return state.testResults.filter(function(r){ return !r.correct; }); }
+    function machineScore(results){ return results.filter(function(r){ return r.correct; }).length; }
+
+    /* ================= SVG SCENES ================= */
+    function P(x, y, shirt, skin){
+      skin = skin || "#F2C094";
+      return '<circle cx="'+x+'" cy="'+y+'" r="11" fill="'+skin+'"/>'
+        + '<rect x="'+(x-12)+'" y="'+(y+10)+'" width="24" height="30" rx="9" fill="'+shirt+'"/>'
+        + '<rect x="'+(x-11)+'" y="'+(y+38)+'" width="9" height="15" rx="4" fill="#3B4370"/>'
+        + '<rect x="'+(x+2)+'" y="'+(y+38)+'" width="9" height="15" rx="4" fill="#3B4370"/>';
+    }
+    function bball(x, y, r){
+      r = r || 13;
+      return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#F07D2B" stroke="#B34A12" stroke-width="2"/>'
+        + '<path d="M'+(x-r)+' '+y+' H'+(x+r)+' M'+x+' '+(y-r)+' V'+(y+r)+'" stroke="#B34A12" stroke-width="2" fill="none"/>';
+    }
+    function sball(x, y, r){
+      r = r || 12;
+      return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#ffffff" stroke="#1B2350" stroke-width="2"/>'
+        + '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#1B2350"/>'
+        + '<circle cx="'+(x-7)+'" cy="'+(y-6)+'" r="2.6" fill="#1B2350"/><circle cx="'+(x+7)+'" cy="'+(y-6)+'" r="2.6" fill="#1B2350"/>'
+        + '<circle cx="'+(x-7)+'" cy="'+(y+7)+'" r="2.6" fill="#1B2350"/><circle cx="'+(x+7)+'" cy="'+(y+7)+'" r="2.6" fill="#1B2350"/>';
+    }
+    function fball(x, y){
+      return '<ellipse cx="'+x+'" cy="'+y+'" rx="15" ry="9" fill="#8A4B21" transform="rotate(-25 '+x+' '+y+')"/>'
+        + '<line x1="'+(x-5)+'" y1="'+(y-3)+'" x2="'+(x+5)+'" y2="'+(y+3)+'" stroke="#ffffff" stroke-width="2.5"/>';
+    }
+    function hoop(x, y, pole){
+      var s = pole ? '<line x1="'+(x+26)+'" y1="'+(y+36)+'" x2="'+(x+26)+'" y2="152" stroke="#5A648C" stroke-width="6"/>' : "";
+      return s + '<rect x="'+x+'" y="'+y+'" width="52" height="36" fill="#ffffff" stroke="#273791" stroke-width="3"/>'
+        + '<rect x="'+(x+16)+'" y="'+(y+11)+'" width="20" height="14" fill="none" stroke="#CD2653" stroke-width="3"/>'
+        + '<path d="M'+(x+18)+' '+(y+27)+' h16 l-3 14 h-10 z" fill="none" stroke="#5A648C" stroke-width="2"/>';
+    }
+    function tree(x, y, s){
+      s = s || 1;
+      return '<rect x="'+(x-6*s)+'" y="'+y+'" width="'+(12*s)+'" height="'+(46*s)+'" fill="#8A5A33"/>'
+        + '<circle cx="'+x+'" cy="'+(y-14*s)+'" r="'+(27*s)+'" fill="#3E9B4F"/>'
+        + '<circle cx="'+(x-23*s)+'" cy="'+(y-2*s)+'" r="'+(18*s)+'" fill="#4CAF63"/>'
+        + '<circle cx="'+(x+23*s)+'" cy="'+(y-2*s)+'" r="'+(18*s)+'" fill="#359846"/>';
+    }
+    function bgOut(extra){
+      return '<rect width="320" height="200" fill="#AEE3FF"/>'
+        + '<circle cx="284" cy="30" r="18" fill="#FFD93D"/>'
+        + '<ellipse cx="58" cy="32" rx="30" ry="11" fill="#ffffff" opacity=".9"/>'
+        + '<ellipse cx="158" cy="22" rx="23" ry="9" fill="#ffffff" opacity=".8"/>'
+        + '<rect y="150" width="320" height="50" fill="#79C76D"/>' + (extra || "");
+    }
+    function bgIn(extra){
+      return '<rect width="320" height="200" fill="#E9ECF7"/>'
+        + '<rect y="150" width="320" height="50" fill="#C9B18C"/>'
+        + '<line x1="0" y1="150" x2="320" y2="150" stroke="#A98F63" stroke-width="3"/>'
+        + '<rect x="240" y="24" width="56" height="64" rx="6" fill="#BDEBFF" stroke="#ffffff" stroke-width="5"/>' + (extra || "");
+    }
+    function bgGym(extra){
+      return '<rect width="320" height="200" fill="#F6E7CB"/>'
+        + '<rect y="140" width="320" height="60" fill="#E3A758"/>'
+        + '<line x1="0" y1="140" x2="320" y2="140" stroke="#B97A2E" stroke-width="3"/>'
+        + '<path d="M0 172 H320 M160 140 V200" stroke="#ffffff" stroke-width="3" opacity=".65" fill="none"/>'
+        + '<circle cx="160" cy="202" r="32" fill="none" stroke="#ffffff" stroke-width="3" opacity=".65"/>' + (extra || "");
+    }
+    function shelves(x, y){
+      var cols = ["#CD2653","#00ADEF","#13A89E","#EC008C","#F2A93B","#273791"];
+      var s = '<rect x="'+x+'" y="'+y+'" width="118" height="112" rx="4" fill="#8A5A33"/>';
+      for(var r = 0; r < 3; r++){
+        var yy = y + 8 + r * 36;
+        for(var i = 0; i < 6; i++){
+          s += '<rect x="'+(x + 8 + i * 18)+'" y="'+yy+'" width="12" height="26" rx="2" fill="'+cols[(r * 6 + i) % cols.length]+'"/>';
+        }
+        s += '<rect x="'+(x+4)+'" y="'+(yy+28)+'" width="110" height="5" fill="#6E4525"/>';
+      }
+      return s;
+    }
+    function desk(x, y, w){
+      return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="10" rx="3" fill="#8A5A33"/>'
+        + '<rect x="'+(x+6)+'" y="'+(y+10)+'" width="8" height="30" fill="#6E4525"/>'
+        + '<rect x="'+(x+w-14)+'" y="'+(y+10)+'" width="8" height="30" fill="#6E4525"/>';
+    }
+    function openBook(x, y){
+      return '<path d="M'+x+' '+y+' q15 -9 30 0 q15 -9 30 0 v27 q-15 -9 -30 0 q-15 -9 -30 0 z" fill="#ffffff" stroke="#273791" stroke-width="2.5"/>'
+        + '<line x1="'+(x+30)+'" y1="'+y+'" x2="'+(x+30)+'" y2="'+(y+27)+'" stroke="#273791" stroke-width="2"/>';
+    }
+    function bookStack(x, y){
+      return '<rect x="'+x+'" y="'+y+'" width="34" height="9" rx="2" fill="#CD2653"/>'
+        + '<rect x="'+(x+3)+'" y="'+(y-9)+'" width="30" height="9" rx="2" fill="#00ADEF"/>'
+        + '<rect x="'+(x+6)+'" y="'+(y-18)+'" width="26" height="9" rx="2" fill="#13A89E"/>';
+    }
+    function laptop(x, y){
+      return '<rect x="'+x+'" y="'+y+'" width="54" height="37" rx="4" fill="#273791"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+9)+'" x2="'+(x+36)+'" y2="'+(y+9)+'" stroke="#7FE3AE" stroke-width="4"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+18)+'" x2="'+(x+44)+'" y2="'+(y+18)+'" stroke="#00ADEF" stroke-width="4"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+27)+'" x2="'+(x+28)+'" y2="'+(y+27)+'" stroke="#FFD93D" stroke-width="4"/>'
+        + '<rect x="'+(x-5)+'" y="'+(y+37)+'" width="64" height="7" rx="3" fill="#5A648C"/>';
+    }
+    function monitor(x, y){
+      return '<rect x="'+x+'" y="'+y+'" width="56" height="40" rx="4" fill="#273791"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+10)+'" x2="'+(x+38)+'" y2="'+(y+10)+'" stroke="#7FE3AE" stroke-width="4"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+20)+'" x2="'+(x+46)+'" y2="'+(y+20)+'" stroke="#00ADEF" stroke-width="4"/>'
+        + '<line x1="'+(x+8)+'" y1="'+(y+30)+'" x2="'+(x+30)+'" y2="'+(y+30)+'" stroke="#FFD93D" stroke-width="4"/>'
+        + '<rect x="'+(x+24)+'" y="'+(y+40)+'" width="8" height="9" fill="#5A648C"/>';
+    }
+    function flask(x, y){
+      return '<path d="M'+(x+11)+' '+y+' h12 v13 l13 25 a5 5 0 0 1 -5 7 h-28 a5 5 0 0 1 -5 -7 l13 -25 z" fill="#BDEBFF" stroke="#273791" stroke-width="2.5"/>'
+        + '<path d="M'+(x+6)+' '+(y+33)+' h22 l7 13 a5 5 0 0 1 -5 5 h-27 a5 5 0 0 1 -5 -5 z" fill="#13A89E" opacity=".85"/>';
+    }
+    function beaker(x, y){
+      return '<path d="M'+x+' '+y+' h30 l-4 34 a4 4 0 0 1 -4 4 h-14 a4 4 0 0 1 -4 -4 z" fill="#BDEBFF" stroke="#273791" stroke-width="2.5"/>'
+        + '<rect x="'+(x+3)+'" y="'+(y+20)+'" width="24" height="16" fill="#EC008C" opacity=".75"/>';
+    }
+    function chess(x, y){
+      var s = '<rect x="'+x+'" y="'+y+'" width="56" height="40" fill="#ffffff" stroke="#273791" stroke-width="2.5"/>';
+      for(var r = 0; r < 4; r++) for(var c = 0; c < 4; c++)
+        if((r + c) % 2) s += '<rect x="'+(x + c * 14)+'" y="'+(y + r * 10)+'" width="14" height="10" fill="#273791"/>';
+      s += '<circle cx="'+(x+14)+'" cy="'+(y+15)+'" r="5" fill="#CD2653"/><circle cx="'+(x+42)+'" cy="'+(y+25)+'" r="5" fill="#1B2350"/>';
+      return s;
+    }
+    function goal(x, y){
+      return '<path d="M'+x+' 152 V'+y+' H'+(x+94)+' V152" fill="none" stroke="#ffffff" stroke-width="6"/>'
+        + '<path d="M'+x+' '+(y+18)+' H'+(x+94)+' M'+(x+24)+' '+y+' V152 M'+(x+47)+' '+y+' V152 M'+(x+70)+' '+y+' V152" stroke="#ffffff" stroke-width="1.5" opacity=".55" fill="none"/>';
+    }
+    function yardLines(){
+      return '<path d="M40 152 V196 M120 152 V196 M200 152 V196 M280 152 V196" stroke="#ffffff" stroke-width="3" opacity=".7"/>';
+    }
+    function trackBase(){
+      return '<rect y="128" width="320" height="72" fill="#C65D3B"/>'
+        + '<path d="M0 146 H320 M0 164 H320 M0 182 H320" stroke="#ffffff" stroke-width="2.5" opacity=".8"/>';
+    }
+    function sceneSVG(card){
+      var s = "";
+      switch(card.scene){
+        case "bballOut":
+          s = bgOut() + hoop(228, 30, true) + P(118, 96, "#CD2653") + bball(148, 122, 13); break;
+        case "footballOut":
+          s = bgOut(yardLines()) + P(130, 96, "#273791") + fball(168, 140) + P(216, 100, "#CD2653", "#8A5A3B"); break;
+        case "track":
+          s = bgOut(trackBase()) + '<path d="M52 118 h26 M40 132 h26" stroke="#5A648C" stroke-width="4" stroke-linecap="round"/>'
+            + P(120, 92, "#EC008C") + P(216, 98, "#00ADEF", "#8A5A3B"); break;
+        case "rally":
+          s = bgOut('<rect x="0" y="88" width="320" height="62" fill="#B9C2E0"/><path d="M0 108 H320 M0 128 H320" stroke="#8E9AC4" stroke-width="3"/>'
+            + '<circle cx="40" cy="98" r="6" fill="#CD2653"/><circle cx="90" cy="98" r="6" fill="#00ADEF"/><circle cx="140" cy="98" r="6" fill="#13A89E"/><circle cx="230" cy="98" r="6" fill="#EC008C"/><circle cx="285" cy="98" r="6" fill="#F2A93B"/>'
+            + '<rect x="96" y="34" width="128" height="26" rx="6" fill="#ffffff" stroke="#CD2653" stroke-width="3"/><circle cx="116" cy="47" r="6" fill="#CD2653"/><circle cx="204" cy="47" r="6" fill="#00ADEF"/>')
+            + P(120, 102, "#CD2653") + '<path d="M146 118 l22 -10 -4 16 z" fill="#F2A93B"/>' + P(196, 102, "#273791", "#8A5A3B"); break;
+        case "soccerOut":
+          s = bgOut() + goal(24, 62) + P(196, 96, "#13A89E") + sball(228, 138, 12); break;
+        case "library":
+          s = bgIn() + shelves(18, 38) + P(196, 96, "#273791") + openBook(222, 112); break;
+        case "lab":
+          s = bgIn() + desk(70, 118, 180) + flask(110, 66) + beaker(196, 78) + P(160, 62, "#13A89E"); break;
+        case "chess":
+          s = bgIn() + desk(84, 118, 152) + chess(132, 80) + P(96, 84, "#CD2653") + P(224, 84, "#273791", "#8A5A3B"); break;
+        case "homework":
+          s = bgIn() + desk(74, 120, 172) + bookStack(96, 118) + openBook(196, 100) + P(120, 76, "#00ADEF") + P(212, 76, "#EC008C", "#8A5A3B"); break;
+        case "coding":
+          s = bgIn() + desk(88, 122, 144) + laptop(134, 84) + P(160, 66, "#F2A93B"); break;
+        case "soccerTest":
+          s = bgOut() + goal(202, 62) + P(96, 96, "#CD2653") + sball(140, 140, 12); break;
+        case "libraryTest":
+          s = bgIn() + shelves(184, 38) + P(96, 96, "#13A89E", "#8A5A3B") + openBook(70, 112); break;
+        case "sprint":
+          s = bgOut(trackBase()) + '<rect x="262" y="96" width="7" height="60" fill="#ffffff"/><rect x="52" y="96" width="7" height="60" fill="#ffffff"/>'
+            + '<path d="M96 112 h26 M84 126 h26" stroke="#5A648C" stroke-width="4" stroke-linecap="round"/>' + P(160, 88, "#CD2653"); break;
+        case "complab":
+          s = bgIn() + desk(36, 124, 112) + desk(176, 124, 112) + monitor(62, 82) + monitor(204, 82) + P(92, 66, "#273791") + P(232, 66, "#EC008C", "#8A5A3B"); break;
+        case "footballTest":
+          s = bgOut(yardLines() + '<path d="M282 150 V84 M258 84 h48" stroke="#FFD93D" stroke-width="6" fill="none"/>')
+            + P(110, 96, "#CD2653") + fball(146, 138); break;
+        case "gymBball":
+          s = bgGym() + hoop(226, 26, false) + P(120, 88, "#CD2653") + bball(150, 116, 13); break;
+        case "gymBballFix":
+          s = bgGym() + hoop(30, 26, false) + P(196, 88, "#273791", "#8A5A3B") + bball(178, 140, 12); break;
+        case "gymVolley":
+          s = bgGym('<line x1="70" y1="66" x2="70" y2="142" stroke="#5A648C" stroke-width="5"/><line x1="250" y1="66" x2="250" y2="142" stroke="#5A648C" stroke-width="5"/>'
+            + '<rect x="70" y="66" width="180" height="42" fill="#ffffff" opacity=".45"/><path d="M70 80 H250 M70 94 H250 M100 66 V108 M130 66 V108 M160 66 V108 M190 66 V108 M220 66 V108" stroke="#5A648C" stroke-width="1.6"/>')
+            + '<circle cx="160" cy="42" r="13" fill="#ffffff" stroke="#CD2653" stroke-width="2.5"/><path d="M148 36 q12 8 24 0" stroke="#CD2653" stroke-width="2" fill="none"/>'
+            + P(104, 92, "#13A89E") + P(224, 92, "#CD2653", "#8A5A3B"); break;
+        case "treeRead":
+          s = bgOut() + tree(84, 108, 1.15) + P(196, 100, "#273791") + openBook(222, 116); break;
+        case "natureWalk":
+          s = bgOut('<path d="M120 200 L168 150 H206 L236 200 z" fill="#E8D9A8"/>') + tree(262, 104, 0.95)
+            + P(120, 94, "#13A89E") + '<rect x="140" y="106" width="24" height="32" rx="3" fill="#8A5A33"/><rect x="144" y="110" width="16" height="24" fill="#ffffff"/>'
+            + '<ellipse cx="88" cy="128" rx="11" ry="6" fill="#3E9B4F" transform="rotate(-30 88 128)"/>'; break;
+        default:
+          s = bgOut();
+      }
+      return '<svg viewBox="0 0 320 200" role="img" aria-label="' + card.caption + '">' + s + "</svg>";
+    }
+
+    /* ================= HELPERS ================= */
+    var app = document.getElementById("app");
+    var progFill = document.getElementById("progFill");
+    function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+    function speakCurrent(){
+      try{
+        if(!("speechSynthesis" in window) || !state.speakText) return;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(state.speakText));
+      }catch(e){}
+    }
+    function head(kicker, kcls, title, sub, speak){
+      state.speakText = speak || sub;
+      return '<span class="kicker ' + kcls + '">' + kicker + '</span>'
+        + "<h2>" + title + "</h2>"
+        + '<div class="subrow"><p class="sub">' + sub + "</p>"
+        + '<button class="hearbtn" type="button" onclick="App.speak()">Hear it · optional</button></div>';
+    }
+    function photoCard(card){
+      return '<div class="card"><div class="scene-wrap">' + sceneSVG(card) + "</div>"
+        + '<div class="caption">' + card.caption + "</div></div>";
+    }
+    function labelFeedback(card, chosen){
+      if(state.mode === "teacher"){
+        return { cls: "info", text: "This one is " + card.truth + " — label saved." };
+      }
+      if(chosen === card.truth) return { cls: "good", text: "Right — label saved." };
+      return { cls: "bad", text: "Not quite — that one was " + card.truth + ". Your label still counts." };
+    }
+    function progressFor(){
+      switch(state.screen){
+        case "start": return 4;
+        case "train": return 10 + state.trainIdx * 2;
+        case "learned": return 32;
+        case "test": return 40 + state.testIdx * 3;
+        case "audit": return 62;
+        case "fix": return 70 + state.fixIdx * 3;
+        case "retest": return 90;
+        case "finish": return 100;
+      }
+      return 4;
+    }
+
+    /* ================= SCREENS ================= */
+    function scrStart(){
+      state.speakText = "Teach a machine to sort school photos — then catch where it breaks.";
+      return '<div class="screen"><span class="kicker k-rasp">Grades 9–12 · AI &amp; Data</span>'
+        + "<h1>Train It, Then Break It</h1>"
+        + '<p class="sub">Teach a machine to sort school photos — then catch where it breaks.</p>'
+        + '<div class="stack">'
+        + '<button class="btn btn-sky modebtn" type="button" onclick="App.pickMode(\'teacher\')"><span class="mt">Teacher-Led</span><span class="md">For the projector — the class talks it through. No individual scoring.</span></button>'
+        + '<button class="btn btn-mag modebtn" type="button" onclick="App.pickMode(\'student\')"><span class="mt">Student-Led</span><span class="md">Your own pace, instant feedback, your own score.</span></button>'
+        + "</div>"
+        + '<div class="noterow"><span class="pill">No sound needed</span>'
+        + '<button class="hearbtn" type="button" onclick="App.speak()">Hear it · optional</button></div>'
+        + '<p class="tiny" style="margin-top:18px">Mississippi standards DA.3A.4 · DA.3A.2</p>'
+        + "</div>";
+    }
+
+    function labelScreen(kind){
+      var list = kind === "train" ? TRAIN : FIX;
+      var idx = kind === "train" ? state.trainIdx : state.fixIdx;
+      var chosen = kind === "train" ? state.trainChosen : state.fixChosen;
+      var card = list[idx];
+      var html = '<div class="screen">';
+      if(kind === "train"){
+        html += head("Step 1 · Train It", "k-rasp", "Train It", "Label 10 photos. The machine learns from YOU.");
+      } else {
+        html += head("Step 4 · Fix It", "k-teal", "Fix It", "Add 4 balanced photos.");
+      }
+      html += '<p class="countline">Card ' + (idx + 1) + " of " + list.length + "</p>";
+      html += photoCard(card);
+      html += '<div class="btnrow">'
+        + '<button class="btn btn-sports" type="button" ' + (chosen ? "disabled" : "") + ' onclick="App.choose(\'' + kind + '\',\'SPORTS\')">SPORTS</button>'
+        + '<button class="btn btn-study" type="button" ' + (chosen ? "disabled" : "") + ' onclick="App.choose(\'' + kind + '\',\'STUDY\')">STUDY</button>'
+        + "</div>";
+      if(chosen){
+        var fb = labelFeedback(card, chosen);
+        html += '<div class="fb ' + fb.cls + '">' + fb.text + "</div>";
+        var last = idx === list.length - 1;
+        var label = kind === "train" ? (last ? "See What It Learned" : "Next Photo") : (last ? "Re-run the Test" : "Next Photo");
+        html += '<button class="btn" type="button" onclick="App.nextLabel(\'' + kind + '\')">' + label + "</button>";
+      }
+      return html + "</div>";
+    }
+
+    function scrLearned(){
+      var chips = learnedChips().map(function(c){ return '<span class="chip">' + c + "</span>"; }).join("");
+      return '<div class="screen">'
+        + head("What It Learned", "k-navy", "What It Learned", "Patterns from your labels.")
+        + '<div class="card"><div class="chips">' + chips + "</div>"
+        + '<p class="bigline">It has never judged a new photo. Until now.</p></div>'
+        + '<div class="talk"><div class="th">Talk about it</div>Did it learn the activity — or the place?</div>'
+        + '<button class="btn btn-mag" type="button" onclick="App.go(\'test\')">Test It</button>'
+        + "</div>";
+    }
+
+    function scrTest(){
+      var card = TEST[state.testIdx];
+      var html = '<div class="screen">'
+        + head("Step 2 · Test It", "k-sky", "Test It", "Tap Run. The machine calls it.");
+      html += '<p class="countline">Photo ' + (state.testIdx + 1) + " of " + TEST.length + "</p>";
+      html += '<div class="card"><div class="scene-wrap">' + sceneSVG(card);
+      if(state.testRun){
+        html += '<div class="stamp' + (state.testRun.pred === "STUDY" ? " study" : "") + '">' + state.testRun.pred + "</div>";
+      }
+      html += '</div><div class="caption">' + card.caption + "</div>";
+      if(state.testRun){
+        html += '<p class="reason">' + state.testRun.reason + "</p>";
+        if(state.mode === "teacher"){
+          html += '<p class="callline">Talk it over: did the machine get this one right?</p>';
+        } else {
+          html += '<p class="callline">' + (state.testRun.correct ? "Right call." : "It missed this one.") + "</p>";
+          var done = state.testResults.length;
+          var right = machineScore(state.testResults);
+          html += '<p class="tally">Machine: ' + right + " of " + done + "</p>";
+        }
+        if(card.id === "x6" && !state.testRun.correct && state.testRun.pred === "STUDY"){
+          html += '<div class="fb bad">Your training photos taught it: sports = outdoors.</div>';
+        }
+      }
+      html += "</div>";
+      if(!state.testRun){
+        html += '<button class="btn btn-sky" type="button" onclick="App.runTest()">Run</button>';
+      } else {
+        var last = state.testIdx === TEST.length - 1;
+        html += '<button class="btn" type="button" onclick="App.nextTest()">' + (last ? "Audit It" : "Next Photo") + "</button>";
+      }
+      return html + "</div>";
+    }
+
+    function scrAudit(){
+      var html = '<div class="screen">'
+        + head("Step 3 · Audit It", "k-mag", "Audit It", "Tap the card the machine missed.");
+      state.testResults.forEach(function(r){
+        var card = ALL[r.id];
+        var inner = '<span class="ac">' + card.caption + (r.correct ? "" : '<span class="tag miss">Missed</span>') + "</span>"
+          + '<span class="av">Machine: <b>' + r.pred + "</b> · Truth: <b>" + card.truth + "</b></span>";
+        if(r.correct){
+          html += '<div class="arow">' + inner + "</div>";
+        } else {
+          html += '<button class="arow miss" type="button" onclick="App.auditTap(\'' + r.id + '\')">' + inner + "</button>";
+        }
+      });
+      var missed = missedResults();
+      if(!missed.length){
+        html += '<div class="fb good">The machine missed nothing this run.</div>';
+      } else if(state.auditPick){
+        var picked = ALL[state.auditPick];
+        html += '<p class="bigline">Why did it miss &ldquo;' + picked.caption + '&rdquo;?</p>';
+        var choices = ["The training data was lopsided", "The photo was blurry", "The machine is broken"];
+        choices.forEach(function(c, i){
+          var missedPick = state.auditMisses.indexOf(i) !== -1;
+          html += '<button class="choice' + (state.auditAnswer === i ? " picked" : "") + (missedPick ? " missed" : "") + '" type="button" '
+            + (state.auditAnswer !== null || missedPick ? "disabled" : "") + ' onclick="App.auditAnswer(' + i + ')">' + c + "</button>";
+        });
+        if(state.auditAnswer === 0){
+          var oS = state.trainLabels.filter(function(l){ return l.place === "outdoor" && l.label === "SPORTS"; }).length;
+          var oT = state.trainLabels.filter(function(l){ return l.place === "outdoor"; }).length;
+          var iS = state.trainLabels.filter(function(l){ return l.place === "indoor" && l.label === "STUDY"; }).length;
+          var iT = state.trainLabels.filter(function(l){ return l.place === "indoor"; }).length;
+          html += '<div class="fb good">Right. Outdoors were labeled SPORTS ' + oS + " of " + oT
+            + " times, indoors STUDY " + iS + " of " + iT + " — it learned place, not activity."
+            + (state.auditMisses.length ? " First pick missed, so this one counts as a miss." : "") + "</div>";
+        } else if(state.auditLastWrong === 1){
+          html += '<div class="fb bad">The photo is clear — the machine read it fine. Try again.</div>';
+        } else if(state.auditLastWrong === 2){
+          html += '<div class="fb bad">The machine works. It learned the wrong lesson. Try again.</div>';
+        }
+      }
+      html += '<div class="talk"><div class="th">Talk about it</div>Whose fault is the miss — the machine, or the photos it learned from?</div>';
+      if(!missed.length || state.auditAnswer !== null){
+        html += '<button class="btn btn-teal" style="background:var(--teal)" type="button" onclick="App.go(\'fix\')">Fix the Data</button>';
+      }
+      return html + "</div>";
+    }
+
+    function scrRetest(){
+      var before = machineScore(state.testResults);
+      var after = machineScore(state.retestResults);
+      var html = '<div class="screen">'
+        + head("Re-Test", "k-navy", "Re-Test", "Same 6 photos. New machine.");
+      state.retestResults.forEach(function(r, i){
+        var card = ALL[r.id];
+        var was = state.testResults[i];
+        var isFixed = was && !was.correct && r.correct;
+        var stillMiss = !r.correct;
+        html += '<div class="arow' + (isFixed ? " fixed" : "") + '"><span class="ac">' + card.caption
+          + (isFixed ? '<span class="tag fixed">Fixed</span>' : (stillMiss ? '<span class="tag miss">Still missed</span>' : '<span class="tag ok">Right</span>'))
+          + '</span><span class="av">' + (was ? was.pred : "?") + " &rarr; <b>" + r.pred + "</b> · Truth: <b>" + card.truth + "</b></span></div>";
+      });
+      html += '<p class="tally">Machine: ' + before + "/6 &rarr; " + after + "/6</p>";
+      html += '<button class="btn btn-mag" type="button" onclick="App.go(\'finish\')">See Your Certificate</button>';
+      return html + "</div>";
+    }
+
+    function scrFinish(){
+      var missed = missedResults();
+      var failLine = missed.length
+        ? missed.map(function(r){ var c = ALL[r.id]; return c.caption + " — called " + r.pred + ", truly " + c.truth + "."; }).join(" ")
+        : "It missed nothing on the first test.";
+      var after = state.retestResults ? machineScore(state.retestResults) : 0;
+      var fixLine = state.retestResults && after === TEST.length
+        ? "Adding 4 balanced photos — indoor sports and outdoor study — fixed the miss."
+        : "Adding 4 balanced photos — indoor sports and outdoor study — retrained the machine.";
+      var html = '<div class="screen">'
+        + head("Finish", "k-teal", "You&rsquo;re an AI Auditor", "Your audit, in three lines.");
+      html += '<div class="cert"><div class="ck">Certificate</div><div class="ct">AI Auditor</div>'
+        + '<div class="cname" id="certName">' + (state.certName ? esc(state.certName) : "Your Name") + "</div>"
+        + '<div class="cd">Completed Train It, Then Break It · CS Education Week</div></div>';
+      html += '<div class="card"><label for="nameInput" style="font-weight:900;display:block;margin-bottom:8px">Your name for the certificate</label>'
+        + '<input class="nameinput" id="nameInput" type="text" autocomplete="off" placeholder="Type your name" value="' + esc(state.certName).replace(/"/g, "&quot;") + '" oninput="App.nameInput(this.value)" />'
+        + '<div class="tiny">Your name stays on this device.</div></div>';
+      html += '<div class="card report"><p><b>What it learned:</b> ' + strongestPattern() + '.</p>'
+        + '<p><b>Where it failed:</b> ' + failLine + "</p>"
+        + '<p><b>What fixed it:</b> ' + fixLine + "</p></div>";
+      html += '<div class="keybanner">A model is only as fair as the data it learned from.</div>';
+      if(state.mode === "teacher"){
+        html += '<div class="talk"><div class="th">Talk about it — wrap-up</div><ul>'
+          + "<li>Where else could lopsided data sneak in?</li>"
+          + "<li>Who should check a model before it is used?</li>"
+          + "<li>What photos would you add next?</li></ul></div>";
+      }
+      html += '<button class="btn btn-ghost" type="button" onclick="location.reload()">Play Again</button>';
+      return html + "</div>";
+    }
+
+    /* ================= RENDER ================= */
+    function render(){
+      var html = "";
+      switch(state.screen){
+        case "start": html = scrStart(); break;
+        case "train": html = labelScreen("train"); break;
+        case "learned": html = scrLearned(); break;
+        case "test": html = scrTest(); break;
+        case "audit": html = scrAudit(); break;
+        case "fix": html = labelScreen("fix"); break;
+        case "retest": html = scrRetest(); break;
+        case "finish": html = scrFinish(); break;
+      }
+      app.innerHTML = html;
+      progFill.style.width = progressFor() + "%";
+      document.getElementById("sheetMeta").textContent =
+        screenName(state.screen) + " · " + (state.mode === "teacher" ? "Teacher-Led" : state.mode === "student" ? "Student-Led" : "No mode picked");
+      window.scrollTo(0, 0);
+    }
+    function screenName(s){
+      return { start: "Start", train: "Train It", learned: "What It Learned", test: "Test It",
+               audit: "Audit It", fix: "Fix It", retest: "Re-Test", finish: "Finish" }[s] || s;
+    }
+
+    /* ================= FLOW FILLS (teacher jumps/skips) ================= */
+    function fillTrain(){
+      TRAIN.forEach(function(c){
+        if(!state.trainLabels.some(function(l){ return l.id === c.id; }))
+          state.trainLabels.push({ id: c.id, label: c.truth, place: c.place, cue: c.cue });
+      });
+    }
+    function ensureTest(){
+      if(state.testResults.length < TEST.length){
+        state.testResults = TEST.map(function(c){
+          var p = predict(c, state.trainLabels);
+          return { id: c.id, pred: p.pred, reason: p.reason, correct: p.correct };
+        });
+      }
+    }
+    function fillFix(){
+      FIX.forEach(function(c){
+        if(!state.fixLabels.some(function(l){ return l.id === c.id; }))
+          state.fixLabels.push({ id: c.id, label: c.truth, place: c.place, cue: c.cue });
+      });
+    }
+    function computeRetest(){
+      var allLabels = state.trainLabels.concat(state.fixLabels);
+      state.retestResults = TEST.map(function(c){
+        var p = predict(c, allLabels);
+        return { id: c.id, pred: p.pred, reason: p.reason, correct: p.correct };
+      });
+    }
+    function gotoScreen(s){
+      if(!state.mode) state.mode = "student";
+      if(s === "train"){
+        state.trainLabels = []; state.trainIdx = 0; state.trainChosen = null;
+        state.testResults = []; state.testIdx = 0; state.testRun = null;
+        state.fixLabels = []; state.fixIdx = 0; state.fixChosen = null;
+        state.retestResults = null; state.auditPick = null; state.auditAnswer = null; state.auditMisses = []; state.auditLastWrong = null;
+      }
+      if(s === "test"){ fillTrain(); state.testResults = []; state.testIdx = 0; state.testRun = null; }
+      if(s === "audit"){ fillTrain(); ensureTest(); }
+      if(s === "fix"){ fillTrain(); ensureTest(); }
+      if(s === "retest"){ fillTrain(); ensureTest(); fillFix(); computeRetest(); }
+      if(s === "finish"){ fillTrain(); ensureTest(); fillFix(); computeRetest(); }
+      state.screen = s;
+      render();
+    }
+    function skipStep(){
+      switch(state.screen){
+        case "start": gotoScreen("train"); break;
+        case "train": fillTrain(); gotoScreen("learned"); break;
+        case "learned": gotoScreen("test"); break;
+        case "test": fillTrain(); ensureTest(); gotoScreen("audit"); break;
+        case "audit": gotoScreen("fix"); break;
+        case "fix": fillFix(); gotoScreen("retest"); break;
+        case "retest": gotoScreen("finish"); break;
+        case "finish": break;
+      }
+    }
+    function revealText(){
+      switch(state.screen){
+        case "start":
+          return "Pick a mode to begin. Hidden trap: every training SPORTS photo is outdoors, every STUDY photo is indoors.";
+        case "train": {
+          var c = TRAIN[state.trainIdx];
+          return "Current card: \u201C" + c.caption + "\u201D — true label: " + c.truth + ".";
+        }
+        case "learned":
+          return "Trap warning: place and activity are tangled — the machine may have learned place, not activity. Watch the indoor basketball photo in the test.";
+        case "test": {
+          var tc = TEST[state.testIdx];
+          var p = predict(tc, state.trainLabels);
+          return "Current photo: \u201C" + tc.caption + "\u201D — machine calls " + p.pred + "; true label: " + tc.truth + ".";
+        }
+        case "audit": {
+          var m = missedResults();
+          if(!m.length) return "The machine missed nothing this run.";
+          return "Missed: " + m.map(function(r){ return ALL[r.id].caption; }).join(", ")
+            + ". Correct why: \u201CThe training data was lopsided.\u201D";
+        }
+        case "fix": {
+          var fc = FIX[state.fixIdx];
+          return "Current card: \u201C" + fc.caption + "\u201D — true label: " + fc.truth + ".";
+        }
+        case "retest":
+        case "finish": {
+          var b = machineScore(state.testResults);
+          var a = state.retestResults ? machineScore(state.retestResults) : 0;
+          return "Machine score before \u2192 after: " + b + "/6 \u2192 " + a + "/6.";
+        }
+      }
+      return "";
+    }
+
+    /* ================= APP ACTIONS ================= */
+    var App = {
+      speak: speakCurrent,
+      pickMode: function(m){
+        state.mode = m;
+        state.screen = "train";
+        render();
+      },
+      go: function(s){ gotoScreen(s); },
+      choose: function(kind, label){
+        var list = kind === "train" ? TRAIN : FIX;
+        var idx = kind === "train" ? state.trainIdx : state.fixIdx;
+        var card = list[idx];
+        var entry = { id: card.id, label: label, place: card.place, cue: card.cue };
+        if(kind === "train"){ state.trainChosen = label; state.trainLabels.push(entry); }
+        else { state.fixChosen = label; state.fixLabels.push(entry); }
+        render();
+      },
+      nextLabel: function(kind){
+        if(kind === "train"){
+          if(state.trainIdx < TRAIN.length - 1){ state.trainIdx++; state.trainChosen = null; state.screen = "train"; }
+          else state.screen = "learned";
+        } else {
+          if(state.fixIdx < FIX.length - 1){ state.fixIdx++; state.fixChosen = null; state.screen = "fix"; }
+          else { computeRetest(); state.screen = "retest"; }
+        }
+        render();
+      },
+      runTest: function(){
+        var card = TEST[state.testIdx];
+        var p = predict(card, state.trainLabels);
+        state.testRun = p;
+        state.testResults.push({ id: card.id, pred: p.pred, reason: p.reason, correct: p.correct });
+        render();
+      },
+      nextTest: function(){
+        state.testRun = null;
+        if(state.testIdx < TEST.length - 1){ state.testIdx++; state.screen = "test"; }
+        else { state.auditPick = null; state.auditAnswer = null; state.auditMisses = []; state.auditLastWrong = null; state.screen = "audit"; }
+        render();
+      },
+      auditTap: function(id){
+        state.auditPick = id;
+        state.auditAnswer = null;
+        state.auditMisses = [];
+        state.auditLastWrong = null;
+        render();
+      },
+      auditAnswer: function(i){
+        if(state.auditAnswer !== null) return;
+        if(i === 0){
+          state.auditAnswer = 0;
+          state.auditLastWrong = null;
+        } else {
+          if(state.auditMisses.indexOf(i) === -1) state.auditMisses.push(i);
+          state.auditLastWrong = i;
+        }
+        render();
+      },
+      nameInput: function(v){
+        state.certName = v;
+        var el = document.getElementById("certName");
+        if(el) el.textContent = v.trim() ? v : "Your Name";
+      }
+    };
+    window.App = App;
+
+    /* ================= TEACHER PANEL ================= */
+    var sheet = document.getElementById("teacherSheet");
+    var overlay = document.getElementById("sheetOverlay");
+    var revealBox = document.getElementById("revealBox");
+    function openSheet(){
+      revealBox.hidden = true;
+      document.getElementById("sheetMeta").textContent =
+        screenName(state.screen) + " · " + (state.mode === "teacher" ? "Teacher-Led" : state.mode === "student" ? "Student-Led" : "No mode picked");
+      sheet.classList.add("open");
+      overlay.classList.add("open");
+    }
+    function closeSheet(){ sheet.classList.remove("open"); overlay.classList.remove("open"); }
+    document.getElementById("teacherBtn").addEventListener("click", openSheet);
+    document.getElementById("sheetClose").addEventListener("click", closeSheet);
+    overlay.addEventListener("click", closeSheet);
+    sheet.querySelectorAll("[data-jump]").forEach(function(b){
+      b.addEventListener("click", function(){ closeSheet(); gotoScreen(b.getAttribute("data-jump")); });
+    });
+    document.getElementById("skipBtn").addEventListener("click", function(){ closeSheet(); skipStep(); });
+    document.getElementById("revealBtn").addEventListener("click", function(){
+      revealBox.textContent = revealText();
+      revealBox.hidden = false;
+    });
+    document.getElementById("resetBtn").addEventListener("click", function(){ location.reload(); });
+
+    render();
+    </script>
+  </body>
+</html>
