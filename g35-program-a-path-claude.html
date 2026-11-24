@@ -159,6 +159,8 @@ body.projector .top h1{font-size:62px}
 @media (prefers-color-scheme: dark){ .cell.goal{background:#431407} }
 .cell.filled{background:#2563eb !important; border-color:#1d4ed8}
 .cell.start-cell{box-shadow:inset 0 0 0 3px var(--teal-bg)}
+.cell.pixel-start{box-shadow:inset 0 0 0 4px var(--teal); border-color:var(--teal)}
+.start-tag{position:absolute; top:3px; left:3px; z-index:3; background:var(--teal); color:#fff; font-size:9px; font-weight:900; letter-spacing:.05em; line-height:1; padding:2px 4px; border-radius:4px; pointer-events:none}
 .robot{width:78%; height:78%; transition:transform .2s; filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)); z-index:2}
 .robot.bump{animation:shake .4s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
@@ -481,7 +483,7 @@ var PATH_LEVELS = [
   {title:"The Big Maze", cols:6, rows:6, start:{x:0,y:5}, goal:{x:5,y:0}, walls:[{x:2,y:0},{x:2,y:1},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:4,y:5}], best:10, hint:"Find 2 gaps!"}
 ];
 var PIXEL_LEVELS = [
-  {title:"Plus Sign", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:2,y:0},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:2}], best:9, hint:"Fill the blue squares."},
+  {title:"Plus Sign", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:2,y:0},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:2,y:2}], best:13, hint:"Fill the blue squares."},
   {title:"Letter L", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:0,y:3},{x:1,y:3},{x:2,y:3}], best:11, hint:"Fill first! Then go down."},
   {title:"Little Heart", cols:5, rows:5, start:{x:0,y:0}, fills:[{x:1,y:0},{x:3,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},{x:1,y:2},{x:2,y:2},{x:3,y:2},{x:2,y:3}], best:22, hint:"Go row by row."}
 ];
@@ -517,7 +519,7 @@ var PATH_SOLUTIONS = [
 ];
 var PIXEL_STRATEGY = [
   "Route: → → ■ ↓ ■ ← ■ → → ■ ↓ ← ■. Fill 5 only.",
-  "Fill start first! Then ↓ ■ ↓ ■ ↓ ■ → ■ → ■.",
+  "Fill at the start square first, then Down Fill, Down Fill, Down Fill, Right Fill, Right Fill — 6 fills, 11 steps total.",
   "Row by row. Top row: skip the middle gap."
 ];
 var TEACHER_PROMPTS = [
@@ -694,6 +696,7 @@ function renderBoard(){
       if(filled[x+','+y]) cls+=' filled';
       if(mode==='path' && L.goal.x===x && L.goal.y===y){ cls+=' goal'; inner+='<span aria-label="star goal">⭐</span>'; }
       if(L.start.x===x && L.start.y===y && !(robot.x===x&&robot.y===y)) cls+=' start-cell';
+      if(mode==='pixel' && L.start.x===x && L.start.y===y){ cls+=' pixel-start'; inner+='<span class="start-tag">START</span>'; }
       if(robot.x===x && robot.y===y){ inner += (mode==='path'? robotSVG : cursorSVG); }
       html+='<div class="'+cls+'">'+inner+'</div>';
     }
