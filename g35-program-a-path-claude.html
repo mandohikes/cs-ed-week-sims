@@ -557,7 +557,7 @@ function setMode(m){
     ? '<span>🤖 Bit</span><span>⭐ Goal</span><span>⬛ Wall</span>'
     : '<span>🟣 You</span><span>■ Fill = paint</span>';
   renderAll(); renderTeacherPanel(); renderVotes();
-  setMessage(m==='path' ? "Get Bit to the ⭐!" : "Fill the blue squares!", '');
+  setMessage(m==='path' ? "Get Bit to the ⭐!" : "Move onto a blue square, then tap Fill ■ — fill them all!", '');
 }
 
 function setClassMode(m){
@@ -724,7 +724,7 @@ function addCmd(c){ if(running) return; resetState(); program.push(c); renderTra
 function removeCmd(i){ if(running) return; resetState(); program.splice(i,1); renderTray(); renderBoard(); }
 function undoCmd(){ if(running) return; resetState(); program.pop(); renderTray(); renderBoard(); }
 function clearProgram(){ if(running) return; resetState(); program=[]; renderTray(); renderBoard(); setMessage('Cleared!',''); }
-function goLevel(i){ stopSpeech(); levelIdx=i; program=[]; tries=0; hintRevealed=(classMode==='teacher'); solutionRevealed=false; promptIdx=0; votes={up:0,down:0,left:0,right:0}; resetState(); document.getElementById('nextBtn').style.display='none'; var hb=document.getElementById('hintBtn'); if(hb) hb.textContent='💡 Hint'; var hs=document.getElementById('hintStatus'); if(hs) hs.textContent=''; renderAll(); renderVotes(); renderTeacherPanel(); setMessage(mode==='path' ? 'Get Bit to the ⭐!' : 'Fill the blue squares!',''); }
+function goLevel(i){ stopSpeech(); levelIdx=i; program=[]; tries=0; hintRevealed=(classMode==='teacher'); solutionRevealed=false; promptIdx=0; votes={up:0,down:0,left:0,right:0}; resetState(); document.getElementById('nextBtn').style.display='none'; var hb=document.getElementById('hintBtn'); if(hb) hb.textContent='💡 Hint'; var hs=document.getElementById('hintStatus'); if(hs) hs.textContent=''; renderAll(); renderVotes(); renderTeacherPanel(); setMessage(mode==='path' ? 'Get Bit to the ⭐!' : 'Move onto a blue square, then tap Fill ■ — fill them all!',''); }
 function nextLevel(){ if(levelIdx < levels().length-1) goLevel(levelIdx+1); }
 function resetRun(){ resetState(); renderBoard(); document.querySelectorAll('.block').forEach(function(b){b.classList.remove('current')}); setMessage('Back to start. Fix it. Run!',''); }
 
